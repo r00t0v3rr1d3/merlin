@@ -32,10 +32,10 @@ import (
 	"github.com/chzyer/readline"
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 
 	// Merlin
-	"github.com/Ne0nd0g/merlin/pkg"
+	merlin "github.com/Ne0nd0g/merlin/pkg"
 	"github.com/Ne0nd0g/merlin/pkg/agents"
 	agentAPI "github.com/Ne0nd0g/merlin/pkg/api/agents"
 	listenerAPI "github.com/Ne0nd0g/merlin/pkg/api/listeners"
@@ -333,11 +333,11 @@ func Shell() {
 					menuSetMain()
 				case "cd":
 					MessageChannel <- agentAPI.CD(shellAgent, cmd)
-				case "cmd", "shell":
+				case "exec":
 					MessageChannel <- agentAPI.CMD(shellAgent, cmd)
 				case "download":
 					MessageChannel <- agentAPI.Download(shellAgent, cmd)
-				case "execute-shellcode":
+				case "shinject":
 					MessageChannel <- agentAPI.ExecuteShellcode(shellAgent, cmd)
 				case "exit", "quit":
 					if len(cmd) > 1 {
@@ -1143,17 +1143,16 @@ func menuHelpAgent() {
 
 	data := [][]string{
 		{"cd", "Change directories", "cd ../../ OR cd c:\\\\Users"},
-		{"cmd", "Execute a command on the agent (DEPRECIATED)", "cmd ping -c 3 8.8.8.8"},
 		{"back", "Return to the main menu", ""},
 		{"download", "Download a file from the agent", "download <remote_file>"},
-		{"execute-shellcode", "Execute shellcode", "self, remote <pid>, RtlCreateUserThread <pid>"},
+		{"exec", "Execute a command on the agent", "exec ping -c 3 8.8.8.8"},
 		{"info", "Display all information about the agent", ""},
 		{"kill", "Instruct the agent to die or quit", ""},
 		{"ls", "List directory contents", "ls /etc OR ls C:\\\\Users"},
 		{"main", "Return to the main menu", ""},
 		{"pwd", "Display the current working directory", "pwd"},
+		{"shinject", "Execute shellcode", "self, remote <pid>, RtlCreateUserThread <pid>"},
 		{"set", "Set the value for one of the agent's options", "ja3, killdate, maxretry, padding, skew, sleep"},
-		{"shell", "Execute a command on the agent", "shell ping -c 3 8.8.8.8"},
 		{"status", "Print the current status of the agent", ""},
 		{"upload", "Upload a file to the agent", "upload <local_file> <remote_file>"},
 		{"*", "Anything else will be execute on the host operating system", ""},
