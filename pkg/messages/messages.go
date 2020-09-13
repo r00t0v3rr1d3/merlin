@@ -28,6 +28,7 @@ func init() {
 	gob.Register(AgentControl{})
 	gob.Register(AgentInfo{})
 	gob.Register(CmdPayload{})
+	gob.Register(WinExecute{})
 	gob.Register(CmdResults{})
 	gob.Register(FileTransfer{})
 	gob.Register(KeyExchange{})
@@ -58,6 +59,14 @@ type FileTransfer struct {
 // CmdPayload is the JSON payload for commands to execute on an agent
 type CmdPayload struct {
 	Command string `json:"executable"`
+	Args    string `json:"args"`
+	Job     string `json:"job"`
+}
+
+// ExecuteCommand is a JSON payload for commands to execute using the native Windows API
+type WinExecute struct {
+	Command string `json:"executable"`
+    Ppid    int    `json:"ppid"`
 	Args    string `json:"args"`
 	Job     string `json:"job"`
 }

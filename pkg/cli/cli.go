@@ -335,6 +335,8 @@ func Shell() {
 					MessageChannel <- agentAPI.CD(shellAgent, cmd)
 				case "exec":
 					MessageChannel <- agentAPI.CMD(shellAgent, cmd)
+				case "winexec":
+					MessageChannel <- agentAPI.WinExec(shellAgent, cmd)
 				case "download":
 					MessageChannel <- agentAPI.Download(shellAgent, cmd)
 				case "shinject":
@@ -1155,6 +1157,7 @@ func menuHelpAgent() {
 		{"set", "Set the value for one of the agent's options", "ja3, killdate, maxretry, padding, skew, sleep"},
 		{"status", "Print the current status of the agent", ""},
 		{"upload", "Upload a file to the agent", "upload <local_file> <remote_file>"},
+		{"winexec", "Execute a program using windows API calls. Does not provdie stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"},
 		{"*", "Anything else will be execute on the host operating system", ""},
 	}
 

