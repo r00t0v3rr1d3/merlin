@@ -1157,7 +1157,7 @@ func menuHelpAgent() {
 		{"set", "Set the value for one of the agent's options", "ja3, killdate, maxretry, padding, skew, sleep"},
 		{"status", "Print the current status of the agent", ""},
 		{"upload", "Upload a file to the agent", "upload <local_file> <remote_file>"},
-		{"winexec", "Execute a program using windows API calls. Does not provdie stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"},
+		{"winexec", "Execute a program using Windows API calls. Does not provide stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"},
 		{"*", "Anything else will be execute on the host operating system", ""},
 	}
 
