@@ -1172,7 +1172,7 @@ func (a *Agent) list(path string) (string, error) {
 
 	for _, f := range files {
 		perms := f.Mode().String()
-        size := fmt.Sprintf("%-15s", strconv.FormatInt(f.Size(), 10))
+		size := strconv.FormatInt(f.Size(), 10)
 		modTime := f.ModTime().String()[0:19]
 		name := f.Name()
 		details = details + perms + "\t" + modTime + "\t" + size + "\t" + name + "\n"
