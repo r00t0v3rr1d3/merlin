@@ -23,8 +23,10 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/signal"
 	"path"
 	"strings"
+	"syscall"
 	"time"
 
 	// 3rd Party
@@ -63,6 +65,7 @@ var clientID = uuid.NewV4()
 // Shell is the exported function to start the command line interface
 func Shell() {
 
+	osSignalHandler()
 	shellCompleter = getCompleter("main")
 
 	printUserMessage()
@@ -101,10 +104,8 @@ func Shell() {
 	for {
 		line, err := prompt.Readline()
 		if err == readline.ErrInterrupt {
-			if len(line) == 0 {
-				break
-			} else {
-				continue
+			if confirm("Are you sure you want to exit?") {
+				exit()
 			}
 		} else if err == io.EOF {
 			exit()
@@ -1290,6 +1291,18 @@ func exit() {
 	color.Red("[!]Quitting...")
 	logging.Server("Shutting down Merlin due to user input")
 	os.Exit(0)
+}
+
+// Prevent the server from falling over just from an accidental Ctrl-C
+func osSignalHandler() {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-c
+		if confirm("Are you sure you want to exit?") {
+			exit()
+		}
+	}()
 }
 
 func executeCommand(name string, arg []string) {
