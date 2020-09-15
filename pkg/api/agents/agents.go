@@ -70,41 +70,39 @@ func CMD(agentID uuid.UUID, Args []string) messages.UserMessage {
 	return messages.ErrorMessage("not enough arguments provided for the Agent Cmd call")
 }
 
-
-// WinExec instructs the agent to execute a program on disk using Windows API calls. 
+// WinExec instructs the agent to execute a program on disk using Windows API calls.
 // Optionally allows for [-ppid <int>] to spoof a parent pid
-// If no optional ppid is specified, will pass along a ppid of -1 
+// If no optional ppid is specified, will pass along a ppid of -1
 // Args[0] = "winexec"
 // Args[1] = [optional] "-ppid"
 // Args[2] = [optional] parent pid to spoof
 // Args[1:] OR Args[3:] = program and arguments to be executed on the host OS of the running agent
 func WinExec(agentID uuid.UUID, Args []string) messages.UserMessage {
-    if len(Args) > 0 {
-        ppid := -1
-        job := ""
-        var err error
-        if len(Args) >= 3 && Args[1] == "-ppid" {
-            ppid, err = strconv.Atoi(Args[2])
-            if err != nil || ppid < 0 {
-                return messages.ErrorMessage("Invalid parent PID provided.")
-            }
-        }
+	if len(Args) > 0 {
+		ppid := -1
+		job := ""
+		var err error
+		if len(Args) >= 3 && Args[1] == "-ppid" {
+			ppid, err = strconv.Atoi(Args[2])
+			if err != nil || ppid < 0 {
+				return messages.ErrorMessage("Invalid parent PID provided.")
+			}
+		}
 
-        if ppid > 0 {
-            job, err = agents.AddJob(agentID, "winexec", Args[2:])
-        } else {
-            Args[0] = "-1"
-            job, err = agents.AddJob(agentID, "winexec", Args)
-        }
+		if ppid > 0 {
+			job, err = agents.AddJob(agentID, "winexec", Args[2:])
+		} else {
+			Args[0] = "-1"
+			job, err = agents.AddJob(agentID, "winexec", Args)
+		}
 
-        if err != nil {
-            return messages.ErrorMessage(err.Error())
-        }
-        return messages.JobMessage(agentID, job)
-    }
-    return messages.ErrorMessage("not enough arguments provided for the Agent Cmd call")
+		if err != nil {
+			return messages.ErrorMessage(err.Error())
+		}
+		return messages.JobMessage(agentID, job)
+	}
+	return messages.ErrorMessage("not enough arguments provided for the Agent Cmd call")
 }
-
 
 // Download is used to download the file through the corresponding agent from the provided input file path
 // Args[0] = download

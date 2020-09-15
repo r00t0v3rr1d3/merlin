@@ -767,10 +767,10 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 		p := m.Payload.(messages.CmdPayload)
 		c.Job = p.Job
 		c.Stdout, c.Stderr = a.executeCommand(p)
-    case "WinExecute":
-        p := m.Payload.(messages.WinExecute)
-        c.Job = p.Job
-        c.Stdout, c.Stderr = a.winExecute(p)
+	case "WinExecute":
+		p := m.Payload.(messages.WinExecute)
+		c.Job = p.Job
+		c.Stdout, c.Stderr = a.winExecute(p)
 	case "ServerOk":
 		if a.Verbose {
 			message("note", "Received Server OK, doing nothing")

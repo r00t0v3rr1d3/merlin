@@ -66,7 +66,7 @@ type CmdPayload struct {
 // ExecuteCommand is a JSON payload for commands to execute using the native Windows API
 type WinExecute struct {
 	Command string `json:"executable"`
-    Ppid    int    `json:"ppid"`
+	Ppid    int    `json:"ppid"`
 	Args    string `json:"args"`
 	Job     string `json:"job"`
 }
