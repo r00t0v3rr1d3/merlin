@@ -60,7 +60,7 @@ func CD(agentID uuid.UUID, Args []string) messages.UserMessage {
 // Args[0] = "cmd"
 // Args[1:] = program and arguments to be executed on the host OS of the running agent
 func CMD(agentID uuid.UUID, Args []string) messages.UserMessage {
-	if len(Args) > 0 {
+	if len(Args) > 1 {
 		job, err := agents.AddJob(agentID, "cmd", Args[1:])
 		if err != nil {
 			return messages.ErrorMessage(err.Error())
@@ -78,7 +78,7 @@ func CMD(agentID uuid.UUID, Args []string) messages.UserMessage {
 // Args[2] = [optional] parent pid to spoof
 // Args[1:] OR Args[3:] = program and arguments to be executed on the host OS of the running agent
 func WinExec(agentID uuid.UUID, Args []string) messages.UserMessage {
-	if len(Args) > 0 {
+	if len(Args) > 1 {
 		ppid := -1
 		job := ""
 		var err error
@@ -101,7 +101,7 @@ func WinExec(agentID uuid.UUID, Args []string) messages.UserMessage {
 		}
 		return messages.JobMessage(agentID, job)
 	}
-	return messages.ErrorMessage("not enough arguments provided for the Agent Cmd call")
+	return messages.ErrorMessage("not enough arguments provided for the Agent WinExec call")
 }
 
 // Download is used to download the file through the corresponding agent from the provided input file path
