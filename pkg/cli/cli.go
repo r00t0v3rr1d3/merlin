@@ -962,7 +962,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("winexec"),
 		readline.PcItem("back"),
 		readline.PcItem("download"),
-		readline.PcItem("shinject-shellcode",
+		readline.PcItem("shinject",
 			readline.PcItem("self"),
 			readline.PcItem("remote"),
 			readline.PcItem("RtlCreateUserThread"),

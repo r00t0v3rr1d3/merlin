@@ -67,7 +67,7 @@ func CMD(agentID uuid.UUID, Args []string) messages.UserMessage {
 		}
 		return messages.JobMessage(agentID, job)
 	}
-	return messages.ErrorMessage("not enough arguments provided for the Agent Cmd call")
+	return messages.ErrorMessage("not enough arguments provided for the Agent Exec call")
 }
 
 // WinExec instructs the agent to execute a program on disk using Windows API calls.
