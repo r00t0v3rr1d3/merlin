@@ -958,10 +958,11 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 
 	// Agent Menu
 	var agent = readline.NewPrefixCompleter(
-		readline.PcItem("cmd"),
+		readline.PcItem("exec"),
+		readline.PcItem("winexec"),
 		readline.PcItem("back"),
 		readline.PcItem("download"),
-		readline.PcItem("execute-shellcode",
+		readline.PcItem("shinject-shellcode",
 			readline.PcItem("self"),
 			readline.PcItem("remote"),
 			readline.PcItem("RtlCreateUserThread"),
@@ -973,7 +974,6 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("cd"),
 		readline.PcItem("pwd"),
 		readline.PcItem("main"),
-		readline.PcItem("shell"),
 		readline.PcItem("set",
 			readline.PcItem("ja3"),
 			readline.PcItem("killdate"),
@@ -1261,7 +1261,7 @@ func confirm(question string) bool {
 	//fmt.Print(color.RedString(fmt.Sprintf("%s [yes/NO]: ", question)))
 	MessageChannel <- messages.UserMessage{
 		Level:   messages.Plain,
-		Message: color.RedString(fmt.Sprintf("%s [yes/NO]: ", question)),
+		Message: color.RedString(fmt.Sprintf("%s [Yes/No]: ", question)),
 		Time:    time.Now().UTC(),
 		Error:   false,
 	}
