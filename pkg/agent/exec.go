@@ -52,8 +52,8 @@ func ExecuteCommand(name string, arg string) (stdout string, stderr string) {
 }
 
 // WinExec is only a valid function on Windows agents
-func WinExec(command string, args string, ppid int) {
-	return errors.New("Windows API is not implemented for this operating system")
+func WinExec(command string, args string, ppid int) (stdout string, stderr string) {
+	return "", "Windows API is not implemented for this operating system"
 }
 
 // ExecuteShellcodeSelf executes provided shellcode in the current process
