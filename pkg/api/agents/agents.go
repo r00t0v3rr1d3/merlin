@@ -184,13 +184,13 @@ func ExecuteShellcode(agentID uuid.UUID, Args []string) messages.UserMessage {
 // Kill instructs the agent to quit running
 func Kill(agentID uuid.UUID, Args []string) messages.UserMessage {
 	if len(Args) > 0 {
-		job, err := agents.AddJob(agentID, "kill", Args[0:])
+		job, err := agents.AddJob(agentID, "exit", Args[0:])
 		if err != nil {
 			return messages.ErrorMessage(err.Error())
 		}
 		return messages.JobMessage(agentID, job)
 	}
-	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent Kill call: %s", Args))
+	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent Exit call: %s", Args))
 }
 
 // LS uses native Go to list the directory

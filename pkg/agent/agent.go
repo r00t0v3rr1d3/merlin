@@ -48,14 +48,14 @@ import (
 	"github.com/fatih/color"
 	"github.com/lucas-clemente/quic-go"
 	"github.com/lucas-clemente/quic-go/http3"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/pbkdf2"
 	"golang.org/x/net/http2"
 	"gopkg.in/square/go-jose.v2"
 	"gopkg.in/square/go-jose.v2/jwt"
 
 	// Merlin
-	"github.com/Ne0nd0g/merlin/pkg"
+	merlin "github.com/Ne0nd0g/merlin/pkg"
 	"github.com/Ne0nd0g/merlin/pkg/core"
 	"github.com/Ne0nd0g/merlin/pkg/messages"
 )
@@ -848,9 +848,9 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 		p := m.Payload.(messages.AgentControl)
 		c.Job = p.Job
 		switch p.Command {
-		case "kill":
+		case "exit":
 			if a.Verbose {
-				message("note", "Received Agent Kill Message")
+				message("note", "Received Agent Exit Message")
 			}
 			os.Exit(0)
 		case "sleep":

@@ -39,7 +39,7 @@ import (
 	"github.com/cretz/gopaque/gopaque"
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 	"go.dedis.ch/kyber/v3"
 
 	// Merlin
@@ -697,7 +697,7 @@ func GetMessageForJob(agentID uuid.UUID, job Job) (messages.Base, error) {
 			Job:     job.ID,
 		}
 		m.Payload = p
-	case "kill":
+	case "exit":
 		m.Type = "AgentControl"
 		p := messages.AgentControl{
 			Command: job.Args[0],

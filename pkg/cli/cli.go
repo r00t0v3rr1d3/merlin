@@ -104,7 +104,7 @@ func Shell() {
 	for {
 		line, err := prompt.Readline()
 		if err == readline.ErrInterrupt {
-			if confirm("Are you sure you want to exit?") {
+			if confirm("Are you sure you want to exit the server?") {
 				exit()
 			}
 		} else if err == io.EOF {
@@ -143,13 +143,13 @@ func Shell() {
 					menuHelpMain()
 				case "?":
 					menuHelpMain()
-				case "exit", "quit":
+				case "quit":
 					if len(cmd) > 1 {
 						if strings.ToLower(cmd[1]) == "-y" {
 							exit()
 						}
 					}
-					if confirm("Are you sure you want to exit?") {
+					if confirm("Are you sure you want to exit the server?") {
 						exit()
 					}
 				case "interact":
@@ -289,13 +289,13 @@ func Shell() {
 					}
 				case "back", "main":
 					menuSetMain()
-				case "exit", "quit":
+				case "quit":
 					if len(cmd) > 1 {
 						if strings.ToLower(cmd[1]) == "-y" {
 							exit()
 						}
 					}
-					if confirm("Are you sure you want to exit?") {
+					if confirm("Are you sure you want to exit the server?") {
 						exit()
 					}
 				case "unset":
@@ -333,61 +333,67 @@ func Shell() {
 					menuSetMain()
 				case "cd":
 					MessageChannel <- agentAPI.CD(shellAgent, cmd)
-				case "exec":
-					MessageChannel <- agentAPI.CMD(shellAgent, cmd)
-				case "winexec":
-					MessageChannel <- agentAPI.WinExec(shellAgent, cmd)
 				case "download":
 					MessageChannel <- agentAPI.Download(shellAgent, cmd)
-				case "shinject":
-					MessageChannel <- agentAPI.ExecuteShellcode(shellAgent, cmd)
-				case "exit", "quit":
+				case "exec":
+					MessageChannel <- agentAPI.CMD(shellAgent, cmd)
+				case "exit":
 					if len(cmd) > 1 {
 						if strings.ToLower(cmd[1]) == "-y" {
-							exit()
+							menuSetMain()
+							MessageChannel <- agentAPI.Kill(shellAgent, cmd)
 						}
-					}
-					if confirm("Are you sure you want to exit?") {
-						exit()
+					} else {
+						if confirm("Are you sure you want to exit the agent?") {
+							menuSetMain()
+							MessageChannel <- agentAPI.Kill(shellAgent, cmd)
+						}
 					}
 				case "?", "help":
 					menuHelpAgent()
 				case "info":
 					agents.ShowInfo(shellAgent)
-				case "kill":
-					menuSetMain()
-					MessageChannel <- agentAPI.Kill(shellAgent, cmd)
-
+				case "interact":
+					if len(cmd) > 1 {
+						i, errUUID := uuid.FromString(cmd[1])
+						if errUUID != nil {
+							MessageChannel <- messages.UserMessage{
+								Level:   messages.Warn,
+								Message: fmt.Sprintf("There was an error interacting with agent %s", cmd[1]),
+								Time:    time.Now().UTC(),
+								Error:   true,
+							}
+						} else {
+							menuSetAgent(i)
+						}
+					}
+				case "ja3":
+					MessageChannel <- agentAPI.SetJA3(shellAgent, cmd)
+				case "killdate":
+					MessageChannel <- agentAPI.SetKillDate(shellAgent, cmd)
 				case "ls":
 					MessageChannel <- agentAPI.LS(shellAgent, cmd)
 				case "main":
 					menuSetMain()
+				case "maxretry":
+					MessageChannel <- agentAPI.SetMaxRetry(shellAgent, cmd)
+				case "padding":
+					MessageChannel <- agentAPI.SetPadding(shellAgent, cmd)
 				case "pwd":
 					MessageChannel <- agentAPI.PWD(shellAgent, cmd)
-				case "set":
+				case "quit":
 					if len(cmd) > 1 {
-						switch cmd[1] {
-						case "ja3":
-							MessageChannel <- agentAPI.SetJA3(shellAgent, cmd)
-						case "killdate":
-							MessageChannel <- agentAPI.SetKillDate(shellAgent, cmd)
-						case "maxretry":
-							MessageChannel <- agentAPI.SetMaxRetry(shellAgent, cmd)
-						case "padding":
-							MessageChannel <- agentAPI.SetPadding(shellAgent, cmd)
-						case "sleep":
-							MessageChannel <- agentAPI.SetSleep(shellAgent, cmd)
-						case "skew":
-							MessageChannel <- agentAPI.SetSkew(shellAgent, cmd)
-						default:
-							MessageChannel <- messages.UserMessage{
-								Level:   messages.Warn,
-								Message: fmt.Sprintf("invalid option to set: %s", cmd[1]),
-								Time:    time.Time{},
-								Error:   true,
-							}
+						if strings.ToLower(cmd[1]) == "-y" {
+							exit()
 						}
 					}
+					if confirm("Are you sure you want to exit the server?") {
+						exit()
+					}
+				case "shinject":
+					MessageChannel <- agentAPI.ExecuteShellcode(shellAgent, cmd)
+				case "sleep":
+					MessageChannel <- agentAPI.SetSleep(shellAgent, cmd)
 				case "status":
 					status := agents.GetAgentStatus(shellAgent)
 					if status == "Active" {
@@ -421,6 +427,8 @@ func Shell() {
 					}
 				case "upload":
 					MessageChannel <- agentAPI.Upload(shellAgent, cmd)
+				case "winexec":
+					MessageChannel <- agentAPI.WinExec(shellAgent, cmd)
 				default:
 					if len(cmd) > 1 {
 						executeCommand(cmd[0], cmd[1:])
@@ -576,13 +584,13 @@ func menuListener(cmd []string) {
 				MessageChannel <- um
 			}
 		}
-	case "exit", "quit":
+	case "quit":
 		if len(cmd) > 1 {
 			if strings.ToLower(cmd[1]) == "-y" {
 				exit()
 			}
 		}
-		if confirm("Are you sure you want to exit?") {
+		if confirm("Are you sure you want to exit the server?") {
 			exit()
 		}
 	case "help":
@@ -642,13 +650,13 @@ func menuListener(cmd []string) {
 // menuListeners handles all the logic for the root Listeners menu
 func menuListeners(cmd []string) {
 	switch strings.ToLower(cmd[0]) {
-	case "exit", "quit":
+	case "quit":
 		if len(cmd) > 1 {
 			if strings.ToLower(cmd[1]) == "-y" {
 				exit()
 			}
 		}
-		if confirm("Are you sure you want to exit?") {
+		if confirm("Are you sure you want to exit the server?") {
 			exit()
 		}
 	case "delete":
@@ -801,13 +809,13 @@ func menuListenerSetup(cmd []string) {
 		shellMenuContext = "listenersmain"
 		prompt.Config.AutoComplete = getCompleter("listenersmain")
 		prompt.SetPrompt("\033[31mMerlin[\033[32mlisteners\033[31m]»\033[0m ")
-	case "exit", "quit":
+	case "quit":
 		if len(cmd) > 1 {
 			if strings.ToLower(cmd[1]) == "-y" {
 				exit()
 			}
 		}
-		if confirm("Are you sure you want to exit?") {
+		if confirm("Are you sure you want to exit the server?") {
 			exit()
 		}
 	case "help":
@@ -958,32 +966,33 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 
 	// Agent Menu
 	var agent = readline.NewPrefixCompleter(
-		readline.PcItem("exec"),
-		readline.PcItem("winexec"),
 		readline.PcItem("back"),
+		readline.PcItem("cd"),
 		readline.PcItem("download"),
+		readline.PcItem("exec"),
+		readline.PcItem("exit"),
+		readline.PcItem("help"),
+		readline.PcItem("info"),
+		readline.PcItem("interact",
+			readline.PcItemDynamic(agents.GetAgentList()),
+		),
+		readline.PcItem("ja3"),
+		readline.PcItem("killdate"),
+		readline.PcItem("ls"),
+		readline.PcItem("main"),
+		readline.PcItem("maxretry"),
+		readline.PcItem("padding"),
+		readline.PcItem("pwd"),
+		readline.PcItem("quit"),
 		readline.PcItem("shinject",
 			readline.PcItem("self"),
 			readline.PcItem("remote"),
 			readline.PcItem("RtlCreateUserThread"),
 		),
-		readline.PcItem("help"),
-		readline.PcItem("info"),
-		readline.PcItem("kill"),
-		readline.PcItem("ls"),
-		readline.PcItem("cd"),
-		readline.PcItem("pwd"),
-		readline.PcItem("main"),
-		readline.PcItem("set",
-			readline.PcItem("ja3"),
-			readline.PcItem("killdate"),
-			readline.PcItem("maxretry"),
-			readline.PcItem("padding"),
-			readline.PcItem("skew"),
-			readline.PcItem("sleep"),
-		),
+		readline.PcItem("sleep"),
 		readline.PcItem("status"),
 		readline.PcItem("upload"),
+		readline.PcItem("winexec"),
 	)
 
 	// Listener Menu (a specific listener)
@@ -1080,7 +1089,6 @@ func menuHelpMain() {
 	data := [][]string{
 		{"agent", "Interact with agents or list agents", "interact, list"},
 		{"banner", "Print the Merlin banner", ""},
-		{"exit", "Exit and close the Merlin server", ""},
 		{"listeners", "Move to the listeners menu", ""},
 		{"interact", "Interact with an agent. Alias for Empire users", ""},
 		{"quit", "Exit and close the Merlin server", ""},
@@ -1142,17 +1150,24 @@ func menuHelpAgent() {
 	table.SetHeader([]string{"Command", "Description", "Options"})
 
 	data := [][]string{
-		{"cd", "Change directories", "cd ../../ OR cd c:\\\\Users"},
 		{"back", "Return to the main menu", ""},
+		{"cd", "Change directories", "cd ../../ OR cd c:\\\\Users"},
 		{"download", "Download a file from the agent", "download <remote_file>"},
 		{"exec", "Execute a command on the agent", "exec ping -c 3 8.8.8.8"},
+		{"exit", "Instruct the agent to die or quit", ""},
+		{"help", "Display this message", ""},
 		{"info", "Display all information about the agent", ""},
-		{"kill", "Instruct the agent to die or quit", ""},
+		{"interact", "Interact with an agent. Alias for Empire users", ""},
+		{"ja3", "TO_BE_COMPLETED", "TO_BE_COMPLETED"},
+		{"killdate", "Set agent's killdate", "TO_BE_COMPLETED"},
 		{"ls", "List directory contents", "ls /etc OR ls C:\\\\Users"},
 		{"main", "Return to the main menu", ""},
+		{"maxretry", "Set number of failed check in attempts before the agent exits", "TO_BE_COMPLETED"},
+		{"padding", "TO_BE_COMPLETED", "TO_BE_COMPLETED"},
 		{"pwd", "Display the current working directory", "pwd"},
+		{"quit", "Shutdown and close the server", ""},
 		{"shinject", "Execute shellcode", "self, remote <pid>, RtlCreateUserThread <pid>"},
-		{"set", "Set the value for one of the agent's options", "ja3, killdate, maxretry, padding, skew, sleep"},
+		{"sleep", "<min> <max> (in seconds)", "TO_BE_COMPLETED"},
 		{"status", "Print the current status of the agent", ""},
 		{"upload", "Upload a file to the agent", "upload <local_file> <remote_file>"},
 		{"winexec", "Execute a program using Windows API calls. Does not provide stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"},
@@ -1299,7 +1314,7 @@ func osSignalHandler() {
 	signal.Notify(c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-c
-		if confirm("Are you sure you want to exit?") {
+		if confirm("Are you sure you want to exit the server?") {
 			exit()
 		}
 	}()
