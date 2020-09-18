@@ -981,6 +981,8 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 			} else {
 				c.Stdout = fmt.Sprintf("Current working directory: %s", dir)
 			}
+		case "ifconfig", "ipconfig":
+			c.Stdout, c.Stderr = a.ifconfig()
 		default:
 			c.Stderr = fmt.Sprintf("%s is not a valid NativeCMD type", p.Command)
 		}
@@ -1064,6 +1066,29 @@ func (a *Agent) winExecute(j messages.WinExecute) (stdout string, stderr string)
 
 	return stdout, stderr
 
+}
+
+// Functionality is split between Windows and non-windows because extra API calls need to be made
+func (a *Agent) ifconfig() (stdout string, stderr string) {
+	if a.Debug {
+		message("debug", fmt.Sprintf("Running ifconfig function"))
+	} else if a.Verbose {
+		message("success", fmt.Sprintf("Executing ifconfig function"))
+	}
+
+	stdout, stderr = Ifconfig()
+
+	if a.Verbose {
+		if stderr != "" {
+			message("warn", fmt.Sprintf("There was an error executing ifconfig"))
+			message("success", stdout)
+			message("warn", fmt.Sprintf("Error: %s", stderr))
+
+		} else {
+			message("success", stdout)
+		}
+	}
+	return stdout, stderr
 }
 
 func (a *Agent) executeShellcode(shellcode messages.Shellcode) error {

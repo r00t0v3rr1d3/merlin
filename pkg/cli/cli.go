@@ -371,6 +371,8 @@ func Shell() {
 					MessageChannel <- agentAPI.SetJA3(shellAgent, cmd)
 				case "killdate":
 					MessageChannel <- agentAPI.SetKillDate(shellAgent, cmd)
+				case "ipconfig", "ifconfig":
+					MessageChannel <- agentAPI.Ifconfig(shellAgent, cmd)
 				case "ls":
 					MessageChannel <- agentAPI.LS(shellAgent, cmd)
 				case "main":

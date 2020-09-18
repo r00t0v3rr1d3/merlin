@@ -717,6 +717,14 @@ func GetMessageForJob(agentID uuid.UUID, job Job) (messages.Base, error) {
 			p.Args = "./"
 		}
 		m.Payload = p
+	case "ifconfig":
+		m.Type = "NativeCmd"
+		p := messages.NativeCmd{
+			Job:     job.ID,
+			Command: job.Args[0],
+			Args:    "",
+		}
+		m.Payload = p
 	case "killdate":
 		m.Type = "AgentControl"
 		p := messages.AgentControl{

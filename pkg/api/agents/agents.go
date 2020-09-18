@@ -215,6 +215,15 @@ func LS(agentID uuid.UUID, Args []string) messages.UserMessage {
 	return messages.JobMessage(agentID, job)
 }
 
+// Ifconfig uses native Go to fetch basic interface information
+func Ifconfig(agentID uuid.UUID, Args []string) messages.UserMessage {
+	job, err := agents.AddJob(agentID, "ifconfig", Args)
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
 // PWD is used to print the Agent's current working directory
 func PWD(agentID uuid.UUID, Args []string) messages.UserMessage {
 	job, err := agents.AddJob(agentID, "pwd", Args)

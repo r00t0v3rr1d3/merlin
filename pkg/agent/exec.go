@@ -23,6 +23,7 @@ import (
 	// Standard
 	"errors"
 	"fmt"
+	"net"
 	"os/exec"
 
 	// 3rd Party
@@ -48,6 +49,27 @@ func ExecuteCommand(name string, arg string) (stdout string, stderr string) {
 		stderr = err.Error()
 	}
 
+	return stdout, stderr
+}
+
+// Ifconfig can be implemented in *non-windows hosts using Native go commands
+func Ifconfig() (stdout string, stderr string) {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		stderr = "There was an error getting network interface information"
+	}
+	stdout = ""
+	for _, i := range ifaces {
+		stdout += fmt.Sprintf("%s\n", i.Name)
+		stdout += fmt.Sprintf("  MAC Address\t%s\n", i.HardwareAddr.String())
+		addrs, err := i.Addrs()
+		if err != nil {
+			stderr = "There was an error getting network interface information"
+		}
+		for _, a := range addrs {
+			stdout += fmt.Sprintf("  IP Address\t%s\n", a.String())
+		}
+	}
 	return stdout, stderr
 }
 
