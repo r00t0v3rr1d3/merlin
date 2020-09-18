@@ -82,6 +82,7 @@ type Agent struct {
 	HostName      string          // HostName is the computer's host name
 	Ips           []string        // Ips is a slice of all the IP addresses assigned to the host's interfaces
 	Pid           int             // Pid is the Process ID that the agent is running under
+	Process       string          // Process is this agent's process name in memory
 	iCheckIn      time.Time       // iCheckIn is a timestamp of the agent's initial check in time
 	sCheckIn      time.Time       // sCheckIn is a timestamp of the agent's last status check in time
 	Version       string          // Version is the version number of the Merlin Agent program
@@ -149,8 +150,13 @@ func New(protocol string, url string, host string, psk string, proxy string, ja3
 	if errH != nil {
 		return a, fmt.Errorf("there was an error getting the hostname:\r\n%s", errH)
 	}
-
 	a.HostName = h
+
+	p, errP := os.Executable()
+	if errP != nil {
+		return a, fmt.Errorf("there was an error getting the process:\r\n%s", errH)
+	}
+	a.Process = p
 
 	interfaces, errI := net.Interfaces()
 	if errI != nil {
@@ -200,6 +206,7 @@ func New(protocol string, url string, host string, psk string, proxy string, ja3
 		message("info", fmt.Sprintf("\tUser GUID: %s", a.UserGUID))
 		message("info", fmt.Sprintf("\tHostname: %s", a.HostName))
 		message("info", fmt.Sprintf("\tPID: %d", a.Pid))
+		message("info", fmt.Sprintf("\tProcess: %d", a.Process))
 		message("info", fmt.Sprintf("\tIPs: %v", a.Ips))
 		message("info", fmt.Sprintf("\tProtocol: %s", a.Proto))
 		message("info", fmt.Sprintf("\tProxy: %v", proxy))
@@ -1534,6 +1541,7 @@ func (a *Agent) getAgentInfoMessage() messages.Base {
 		UserGUID:     a.UserGUID,
 		HostName:     a.HostName,
 		Pid:          a.Pid,
+		Process:      a.Process,
 		Ips:          a.Ips,
 	}
 

@@ -63,6 +63,7 @@ type agent struct {
 	HostName         string
 	Ips              []string
 	Pid              int
+	Process          string
 	agentLog         *os.File
 	channel          chan []Job
 	InitialCheckIn   time.Time
@@ -484,6 +485,7 @@ func UpdateInfo(m messages.Base) error {
 	Agents[m.ID].Architecture = p.SysInfo.Architecture
 	Agents[m.ID].HostName = p.SysInfo.HostName
 	Agents[m.ID].Pid = p.SysInfo.Pid
+	Agents[m.ID].Process = p.SysInfo.Process
 	Agents[m.ID].Ips = p.SysInfo.Ips
 	Agents[m.ID].Platform = p.SysInfo.Platform
 	Agents[m.ID].UserName = p.SysInfo.UserName
@@ -537,6 +539,7 @@ func ShowInfo(agentID uuid.UUID) {
 		{"User GUID", Agents[agentID].UserGUID},
 		{"Hostname", Agents[agentID].HostName},
 		{"Process ID", strconv.Itoa(Agents[agentID].Pid)},
+		{"Process Name", Agents[agentID].Process},
 		{"IP", fmt.Sprintf("%v", Agents[agentID].Ips)},
 		{"Initial Check In", Agents[agentID].InitialCheckIn.Format(time.RFC3339)},
 		{"Last Check In", Agents[agentID].StatusCheckIn.Format(time.RFC3339)},

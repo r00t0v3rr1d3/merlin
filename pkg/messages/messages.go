@@ -80,6 +80,7 @@ type SysInfo struct {
 	UserGUID     string   `json:"userguid,omitempty"`
 	HostName     string   `json:"hostname,omitempty"`
 	Pid          int      `json:"pid,omitempty"`
+	Process      string   `json:"process,omitempty"`
 	Ips          []string `json:"ips,omitempty"`
 }
 
