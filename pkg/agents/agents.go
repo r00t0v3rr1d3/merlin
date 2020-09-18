@@ -69,11 +69,11 @@ type agent struct {
 	StatusCheckIn    time.Time
 	Version          string
 	Build            string
-	WaitTime         string
+	WaitTimeMin      int64
+	WaitTimeMax      int64
 	PaddingMax       int
 	MaxRetry         int
 	FailedCheckin    int
-	Skew             int64
 	Proto            string
 	KillDate         int64
 	RSAKeys          *rsa.PrivateKey                // RSA Private/Public key pair; Private key used to decrypt messages
@@ -449,8 +449,8 @@ func UpdateInfo(m messages.Base) error {
 		message("debug", "Processing new agent info")
 		message("debug", fmt.Sprintf("Agent Version: %s", p.Version))
 		message("debug", fmt.Sprintf("Agent Build: %s", p.Build))
-		message("debug", fmt.Sprintf("Agent waitTime: %s", p.WaitTime))
-		message("debug", fmt.Sprintf("Agent skew: %d", p.Skew))
+		message("debug", fmt.Sprintf("Agent waitTime: %d", p.WaitTimeMin))
+		message("debug", fmt.Sprintf("Agent waitTime: %d", p.WaitTimeMax))
 		message("debug", fmt.Sprintf("Agent paddingMax: %d", p.PaddingMax))
 		message("debug", fmt.Sprintf("Agent maxRetry: %d", p.MaxRetry))
 		message("debug", fmt.Sprintf("Agent failedCheckin: %d", p.FailedCheckin))
@@ -461,8 +461,8 @@ func UpdateInfo(m messages.Base) error {
 	Log(m.ID, "Processing AgentInfo message:")
 	Log(m.ID, fmt.Sprintf("\tAgent Version: %s ", p.Version))
 	Log(m.ID, fmt.Sprintf("\tAgent Build: %s ", p.Build))
-	Log(m.ID, fmt.Sprintf("\tAgent waitTime: %s ", p.WaitTime))
-	Log(m.ID, fmt.Sprintf("\tAgent skew: %d ", p.Skew))
+	Log(m.ID, fmt.Sprintf("\tAgent waitTime: %d ", p.WaitTimeMin))
+	Log(m.ID, fmt.Sprintf("\tAgent waitTime: %d ", p.WaitTimeMax))
 	Log(m.ID, fmt.Sprintf("\tAgent paddingMax: %d ", p.PaddingMax))
 	Log(m.ID, fmt.Sprintf("\tAgent maxRetry: %d ", p.MaxRetry))
 	Log(m.ID, fmt.Sprintf("\tAgent failedCheckin: %d ", p.FailedCheckin))
@@ -472,8 +472,8 @@ func UpdateInfo(m messages.Base) error {
 
 	Agents[m.ID].Version = p.Version
 	Agents[m.ID].Build = p.Build
-	Agents[m.ID].WaitTime = p.WaitTime
-	Agents[m.ID].Skew = p.Skew
+	Agents[m.ID].WaitTimeMin = p.WaitTimeMin
+	Agents[m.ID].WaitTimeMax = p.WaitTimeMax
 	Agents[m.ID].PaddingMax = p.PaddingMax
 	Agents[m.ID].MaxRetry = p.MaxRetry
 	Agents[m.ID].FailedCheckin = p.FailedCheckin
@@ -542,8 +542,8 @@ func ShowInfo(agentID uuid.UUID) {
 		{"Last Check In", Agents[agentID].StatusCheckIn.Format(time.RFC3339)},
 		{"Agent Version", Agents[agentID].Version},
 		{"Agent Build", Agents[agentID].Build},
-		{"Agent Wait Time", Agents[agentID].WaitTime},
-		{"Agent Wait Time Skew", strconv.FormatInt(Agents[agentID].Skew, 10)},
+		{"Agent Wait Time Min", strconv.FormatInt(Agents[agentID].WaitTimeMin, 10)},
+		{"Agent Wait Time Max", strconv.FormatInt(Agents[agentID].WaitTimeMax, 10)},
 		{"Agent Message Padding Max", strconv.Itoa(Agents[agentID].PaddingMax)},
 		{"Agent Max Retries", strconv.Itoa(Agents[agentID].MaxRetry)},
 		{"Agent Failed Check In", strconv.Itoa(Agents[agentID].FailedCheckin)},
@@ -773,26 +773,12 @@ func GetMessageForJob(agentID uuid.UUID, job Job) (messages.Base, error) {
 			p.Args = job.Args[1]
 		}
 		m.Payload = p
-	case "skew":
-		m.Type = "AgentControl"
-		p := messages.AgentControl{
-			Command: job.Args[0],
-			Job:     job.ID,
-		}
-
-		if len(job.Args) == 2 {
-			p.Args = job.Args[1]
-		}
-		m.Payload = p
 	case "sleep":
 		m.Type = "AgentControl"
 		p := messages.AgentControl{
 			Command: job.Args[0],
 			Job:     job.ID,
-		}
-
-		if len(job.Args) == 2 {
-			p.Args = job.Args[1]
+			Args:    strings.Join(job.Args, " "),
 		}
 		m.Payload = p
 	case "ja3":
@@ -853,11 +839,7 @@ func GetAgentStatus(agentID uuid.UUID) string {
 	if !isAgent(agentID) {
 		return fmt.Sprintf("%s is not a valid agent", agentID.String())
 	}
-	dur, errDur := time.ParseDuration(Agents[agentID].WaitTime)
-	if errDur != nil {
-		message("warn", fmt.Sprintf("Error converting %s to a time duration: %s", Agents[agentID].WaitTime,
-			errDur.Error()))
-	}
+	dur := time.Duration(Agents[agentID].WaitTimeMax) * time.Second
 	if Agents[agentID].StatusCheckIn.Add(dur).After(time.Now()) {
 		status = "Active"
 	} else if Agents[agentID].StatusCheckIn.Add(dur * time.Duration(Agents[agentID].MaxRetry+1)).After(time.Now()) { // +1 to account for skew
@@ -888,8 +870,10 @@ func GetAgentFieldValue(agentID uuid.UUID, field string) (string, error) {
 			return Agents[agentID].Architecture, nil
 		case "username":
 			return Agents[agentID].UserName, nil
-		case "waittime":
-			return Agents[agentID].WaitTime, nil
+		case "waittimemin":
+			return strconv.FormatInt(Agents[agentID].WaitTimeMin, 10), nil
+		case "waittimemax":
+			return strconv.FormatInt(Agents[agentID].WaitTimeMax, 10), nil
 		}
 		return "", fmt.Errorf("the provided agent field could not be found: %s", field)
 	}
@@ -1066,12 +1050,9 @@ func GetLifetime(agentID uuid.UUID) (time.Duration, error) {
 		return 0, nil
 	}
 
-	sleep, errSleep := time.ParseDuration(Agents[agentID].WaitTime)
-	if errSleep != nil {
-		return 0, fmt.Errorf("there was an error parsing the agent WaitTime to a duration:\r\n%s", errSleep.Error())
-	}
+	sleep := Agents[agentID].WaitTimeMax
 	if sleep == 0 {
-		return 0, fmt.Errorf("agent WaitTime is equal to zero")
+		return 0, fmt.Errorf("agent WaitTimeMax is equal to zero")
 	}
 
 	retry := Agents[agentID].MaxRetry
@@ -1079,18 +1060,17 @@ func GetLifetime(agentID uuid.UUID) (time.Duration, error) {
 		return 0, fmt.Errorf("agent MaxRetry is equal to zero")
 	}
 
-	skew := time.Duration(Agents[agentID].Skew) * time.Millisecond
 	maxRetry := Agents[agentID].MaxRetry
 
 	// Calculate the worst case scenario that an agent could be alive before dying
-	lifetime := sleep + skew
+	lifetime := sleep
 	for maxRetry > 1 {
-		lifetime = lifetime + (sleep + skew)
+		lifetime = lifetime + sleep
 		maxRetry--
 	}
 
 	if Agents[agentID].KillDate > 0 {
-		if time.Now().Add(lifetime).After(time.Unix(Agents[agentID].KillDate, 0)) {
+		if time.Now().Add(time.Duration(lifetime) * time.Second).After(time.Unix(Agents[agentID].KillDate, 0)) {
 			return 0, fmt.Errorf("the agent lifetime will exceed the killdate")
 		}
 	}
@@ -1099,7 +1079,7 @@ func GetLifetime(agentID uuid.UUID) (time.Duration, error) {
 		message("debug", "Leaving agents.GetLifeTime without error")
 	}
 
-	return lifetime, nil
+	return time.Duration(lifetime) * time.Second, nil
 
 }
 

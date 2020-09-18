@@ -1169,7 +1169,7 @@ func menuHelpAgent() {
 		{"pwd", "Display the current working directory", "pwd"},
 		{"quit", "Shutdown and close the server", ""},
 		{"shinject", "Execute shellcode", "self, remote <pid>, RtlCreateUserThread <pid>"},
-		{"sleep", "<min> <max> (in seconds)", "TO_BE_COMPLETED"},
+		{"sleep", "<min> <max> (in seconds)", "sleep 15 30"},
 		{"status", "Print the current status of the agent", ""},
 		{"upload", "Upload a file to the agent", "upload <local_file> <remote_file>"},
 		{"winexec", "Execute a program using Windows API calls. Does not provide stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"},

