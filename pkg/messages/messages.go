@@ -20,7 +20,8 @@ package messages
 import (
 	"crypto/rsa"
 	"encoding/gob"
-	"github.com/satori/go.uuid"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 // init registers message types with gob that are an interface for Base.Payload
@@ -102,11 +103,11 @@ type AgentControl struct {
 type AgentInfo struct {
 	Version       string  `json:"version,omitempty"`
 	Build         string  `json:"build,omitempty"`
-	WaitTime      string  `json:"waittime,omitempty"`
+	WaitTimeMin   int64   `json:"waittimemin,omitempty"`
+	WaitTimeMax   int64   `json:"waittimemax,omitempty"`
 	PaddingMax    int     `json:"paddingmax,omitempty"`
 	MaxRetry      int     `json:"maxretry,omitempty"`
 	FailedCheckin int     `json:"failedcheckin,omitempty"`
-	Skew          int64   `json:"skew,omitempty"`
 	Proto         string  `json:"proto,omitempty"`
 	SysInfo       SysInfo `json:"sysinfo,omitempty"`
 	KillDate      int64   `json:"killdate,omitempty"`

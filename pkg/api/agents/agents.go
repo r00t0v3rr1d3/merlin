@@ -280,26 +280,41 @@ func SetPadding(agentID uuid.UUID, Args []string) messages.UserMessage {
 
 // SetSleep configures the Agent's sleep time between checkins
 func SetSleep(agentID uuid.UUID, Args []string) messages.UserMessage {
-	if len(Args) > 2 {
-		job, err := agents.AddJob(agentID, "sleep", Args[1:])
-		if err != nil {
-			return messages.ErrorMessage(err.Error())
+	if len(Args) == 3 {
+		NewWaitTimeMin, err1 := strconv.ParseInt(Args[1], 10, 64)
+		if err1 != nil {
+			return messages.ErrorMessage(err1.Error())
 		}
-		return messages.JobMessage(agentID, job)
+		NewWaitTimeMax, err2 := strconv.ParseInt(Args[2], 10, 64)
+		if err2 != nil {
+			return messages.ErrorMessage(err2.Error())
+		}
+		if NewWaitTimeMin > 0 && NewWaitTimeMax > 0 && NewWaitTimeMax >= NewWaitTimeMin {
+			job, err := agents.AddJob(agentID, "sleep", Args)
+			if err != nil {
+				return messages.ErrorMessage(err.Error())
+			}
+			return messages.JobMessage(agentID, job)
+		}
+		return messages.ErrorMessage(fmt.Sprintf("First value (min) must be smaller than second value (max): %s", Args))
+	} else if len(Args) == 2 {
+		NewWaitTime, err3 := strconv.ParseInt(Args[1], 10, 64)
+		if err3 != nil {
+			return messages.ErrorMessage(err3.Error())
+		}
+		if NewWaitTime > 0 {
+			Args = append(Args, Args[1])
+			job, err := agents.AddJob(agentID, "sleep", Args)
+			if err != nil {
+				return messages.ErrorMessage(err.Error())
+			}
+			return messages.JobMessage(agentID, job)
+		}
+		return messages.ErrorMessage(fmt.Sprintf("Sleep value must be greater than zero: %s", Args))
+	} else {
+		return messages.ErrorMessage(fmt.Sprintf("Not enough arguments provided for the Agent SetSleep call: %s", Args))
 	}
-	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent SetSleep call: %s", Args))
-}
 
-// SetSkew configures the amount of skew an Agent uses to randomize checkin times
-func SetSkew(agentID uuid.UUID, Args []string) messages.UserMessage {
-	if len(Args) > 2 {
-		job, err := agents.AddJob(agentID, "skew", Args[1:])
-		if err != nil {
-			return messages.ErrorMessage(err.Error())
-		}
-		return messages.JobMessage(agentID, job)
-	}
-	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent SetSkew call: %s", Args))
 }
 
 // Upload transfers a file from the Merlin Server to the Agent

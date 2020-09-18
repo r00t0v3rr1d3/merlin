@@ -86,11 +86,11 @@ type Agent struct {
 	sCheckIn      time.Time       // sCheckIn is a timestamp of the agent's last status check in time
 	Version       string          // Version is the version number of the Merlin Agent program
 	Build         string          // Build is the build number of the Merlin Agent program
-	WaitTime      time.Duration   // WaitTime is how much time the agent waits in-between checking in
+	WaitTimeMin   int64           // WaitTimeMin is shortest amount of time in which the agent waits in-between checking in
+	WaitTimeMax   int64           // WaitTimeMax is longest amount of time in which the agent waits in-between checking in
 	PaddingMax    int             // PaddingMax is the maximum size allowed for a randomly selected message padding length
 	MaxRetry      int             // MaxRetry is the maximum amount of failed check in attempts before the agent quits
 	FailedCheckin int             // FailedCheckin is a count of the total number of failed check ins
-	Skew          int64           // Skew is size of skew added to each WaitTime to vary check in attempts
 	Verbose       bool            // Verbose enables verbose messages to standard out
 	Debug         bool            // Debug enables debug messages to standard out
 	Proto         string          // Proto contains the transportation protocol the agent is using (i.e. http2 or http3)
@@ -120,10 +120,10 @@ func New(protocol string, url string, host string, psk string, proxy string, ja3
 		Architecture: runtime.GOARCH,
 		Pid:          os.Getpid(),
 		Version:      merlin.Version,
-		WaitTime:     30000 * time.Millisecond,
+		WaitTimeMin:  15,
+		WaitTimeMax:  30,
 		PaddingMax:   4096,
-		MaxRetry:     7,
-		Skew:         3000,
+		MaxRetry:     9999,
 		Verbose:      verbose,
 		Debug:        debug,
 		Proto:        protocol,
@@ -237,14 +237,14 @@ func (a *Agent) Run() error {
 		} else {
 			return fmt.Errorf("agent kill date has been exceeded: %s", time.Unix(a.KillDate, 0).UTC().Format(time.RFC3339))
 		}
-
-		timeSkew := time.Duration(0)
-
-		if a.Skew > 0 {
-			timeSkew = time.Duration(rand.Int63n(a.Skew)) * time.Millisecond // #nosec G404 - Does not need to be cryptographically secure, deterministic is OK
+		var totalWaitTime time.Duration
+		if a.WaitTimeMin != a.WaitTimeMax {
+			rand.Seed(time.Now().UnixNano())
+			totalWaitTimeInt := rand.Int63n(a.WaitTimeMax-a.WaitTimeMin) + a.WaitTimeMin
+			totalWaitTime = time.Duration(totalWaitTimeInt) * time.Second
+		} else {
+			totalWaitTime = time.Duration(a.WaitTimeMax) * time.Second
 		}
-
-		totalWaitTime := a.WaitTime + timeSkew
 
 		if a.Verbose {
 			message("note", fmt.Sprintf("Sleeping for %s at %s", totalWaitTime.String(), time.Now().UTC().Format(time.RFC3339)))
@@ -854,30 +854,32 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 			}
 			os.Exit(0)
 		case "sleep":
+			ArgsArray := strings.Fields(p.Args)
 			if a.Verbose {
-				message("note", fmt.Sprintf("Setting agent sleep time to %s", p.Args))
+				message("note", fmt.Sprintf("Setting agent sleep time to %s - %s seconds", ArgsArray[1], ArgsArray[2]))
 			}
-			t, err := time.ParseDuration(p.Args)
+			tmin, err := strconv.ParseInt(string(ArgsArray[1]), 10, 64)
 			if err != nil {
-				c.Stderr = fmt.Sprintf("there was an error changing the agent waitTime:\r\n%s", err.Error())
+				c.Stderr = fmt.Sprintf("Could not parse WaitTimeMin as an integer:\r\n%s", err.Error())
 				break
 			}
-			if t > 0 {
-				a.WaitTime = t
+			tmax, err2 := strconv.ParseInt(string(ArgsArray[2]), 10, 64)
+			if err2 != nil {
+				c.Stderr = fmt.Sprintf("Could not parse WaitTimeMax as an integer:\r\n%s", err2.Error())
+				break
+			}
+			if tmin > 0 {
+				a.WaitTimeMin = tmin
 			} else {
-				c.Stderr = fmt.Sprintf("the agent was provided with a time that was not greater than zero:\r\n%s", t.String())
+				c.Stderr = fmt.Sprintf("The agent was provided with a WaitTimeMin that was not greater than zero:\r\n%s", strconv.FormatInt(tmin, 10))
 				break
 			}
-		case "skew":
-			t, err := strconv.ParseInt(p.Args, 10, 64)
-			if err != nil {
-				c.Stderr = fmt.Sprintf("there was an error changing the agent skew interval:\r\n%s", err.Error())
+			if tmax > 0 {
+				a.WaitTimeMax = tmax
+			} else {
+				c.Stderr = fmt.Sprintf("The agent was provided with a WaitTimeMax that was not greater than zero:\r\n%s", strconv.FormatInt(tmax, 10))
 				break
 			}
-			if a.Verbose {
-				message("note", fmt.Sprintf("Setting agent skew interval to %d", t))
-			}
-			a.Skew = t
 		case "padding":
 			t, err := strconv.Atoi(p.Args)
 			if err != nil {
@@ -1513,11 +1515,11 @@ func (a *Agent) getAgentInfoMessage() messages.Base {
 	agentInfoMessage := messages.AgentInfo{
 		Version:       merlin.Version,
 		Build:         build,
-		WaitTime:      a.WaitTime.String(),
+		WaitTimeMin:   a.WaitTimeMin,
+		WaitTimeMax:   a.WaitTimeMax,
 		PaddingMax:    a.PaddingMax,
 		MaxRetry:      a.MaxRetry,
 		FailedCheckin: a.FailedCheckin,
-		Skew:          a.Skew,
 		Proto:         a.Proto,
 		SysInfo:       sysInfoMessage,
 		KillDate:      a.KillDate,
