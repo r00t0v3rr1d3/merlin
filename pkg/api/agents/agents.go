@@ -181,8 +181,8 @@ func ExecuteShellcode(agentID uuid.UUID, Args []string) messages.UserMessage {
 	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent ExecuteShellcode call: %s", Args))
 }
 
-// Kill instructs the agent to quit running
-func Kill(agentID uuid.UUID, Args []string) messages.UserMessage {
+// Exit instructs the agent to quit running
+func Exit(agentID uuid.UUID, Args []string) messages.UserMessage {
 	if len(Args) > 0 {
 		job, err := agents.AddJob(agentID, "exit", Args[0:])
 		if err != nil {
@@ -191,6 +191,33 @@ func Kill(agentID uuid.UUID, Args []string) messages.UserMessage {
 		return messages.JobMessage(agentID, job)
 	}
 	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent Exit call: %s", Args))
+}
+
+// Ifconfig uses native Go to fetch basic interface information
+func Ifconfig(agentID uuid.UUID, Args []string) messages.UserMessage {
+	job, err := agents.AddJob(agentID, "ifconfig", Args)
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
+// Kill uses native Go to kill a process
+func Kill(agentID uuid.UUID, Args []string) messages.UserMessage {
+	if len(Args) == 2 {
+		pid, err := strconv.Atoi(Args[1])
+		if err != nil || pid < 0 {
+			return messages.ErrorMessage("Invalid PID provided.")
+		}
+
+		job, err := agents.AddJob(agentID, "kill", Args)
+
+		if err != nil {
+			return messages.ErrorMessage(err.Error())
+		}
+		return messages.JobMessage(agentID, job)
+	}
+	return messages.ErrorMessage(fmt.Sprintf("Usage: kill <pid>"))
 }
 
 // LS uses native Go to list the directory
@@ -209,15 +236,6 @@ func LS(agentID uuid.UUID, Args []string) messages.UserMessage {
 		return messages.JobMessage(agentID, job)
 	}
 	job, err := agents.AddJob(agentID, "ls", Args)
-	if err != nil {
-		return messages.ErrorMessage(err.Error())
-	}
-	return messages.JobMessage(agentID, job)
-}
-
-// Ifconfig uses native Go to fetch basic interface information
-func Ifconfig(agentID uuid.UUID, Args []string) messages.UserMessage {
-	job, err := agents.AddJob(agentID, "ifconfig", Args)
 	if err != nil {
 		return messages.ErrorMessage(err.Error())
 	}

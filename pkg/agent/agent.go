@@ -992,6 +992,23 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 			}
 		case "ifconfig", "ipconfig":
 			c.Stdout, c.Stderr = a.ifconfig()
+		case "kill":
+			pid, err := strconv.Atoi(p.Args)
+			if err != nil {
+				c.Stderr = fmt.Sprintf("Error parsing the pid: %s\r\n%s", p.Args, err.Error())
+			} else {
+				proc, err := os.FindProcess(pid)
+				if err != nil {
+					c.Stderr = fmt.Sprintf("Could not find a process with pid %d\r\n%s", pid, err.Error())
+				} else {
+					err = proc.Kill()
+					if err != nil {
+						c.Stderr = fmt.Sprintf("Error killing process %d:\r\n%s", pid, err.Error())
+					} else {
+						c.Stdout = fmt.Sprintf("Succesfully killed pid %d", pid)
+					}
+				}
+			}
 		default:
 			c.Stderr = fmt.Sprintf("%s is not a valid NativeCMD type", p.Command)
 		}

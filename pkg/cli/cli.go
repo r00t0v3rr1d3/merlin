@@ -341,12 +341,12 @@ func Shell() {
 					if len(cmd) > 1 {
 						if strings.ToLower(cmd[1]) == "-y" {
 							menuSetMain()
-							MessageChannel <- agentAPI.Kill(shellAgent, cmd)
+							MessageChannel <- agentAPI.Exit(shellAgent, cmd)
 						}
 					} else {
 						if confirm("Are you sure you want to exit the agent?") {
 							menuSetMain()
-							MessageChannel <- agentAPI.Kill(shellAgent, cmd)
+							MessageChannel <- agentAPI.Exit(shellAgent, cmd)
 						}
 					}
 				case "?", "help":
@@ -383,6 +383,8 @@ func Shell() {
 					MessageChannel <- agentAPI.SetPadding(shellAgent, cmd)
 				case "pwd":
 					MessageChannel <- agentAPI.PWD(shellAgent, cmd)
+				case "kill":
+					MessageChannel <- agentAPI.Kill(shellAgent, cmd)
 				case "quit":
 					if len(cmd) > 1 {
 						if strings.ToLower(cmd[1]) == "-y" {
@@ -989,6 +991,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		),
 		readline.PcItem("ja3"),
 		readline.PcItem("killdate"),
+		readline.PcItem("kill"),
 		readline.PcItem("ls"),
 		readline.PcItem("main"),
 		readline.PcItem("maxretry"),
@@ -1158,7 +1161,7 @@ func menuHelpAgent() {
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
 	table.SetBorder(false)
 	table.SetCaption(true, "Agent Help Menu")
-	table.SetHeader([]string{"Command", "Description", "Options"})
+	table.SetHeader([]string{"Command", "Description", "Examples"})
 
 	data := [][]string{
 		{"back", "Return to the main menu", ""},
@@ -1172,12 +1175,13 @@ func menuHelpAgent() {
 		{"info", "Display all information about the agent", ""},
 		{"interact", "Interact with an agent. Alias for Empire users", ""},
 		{"ja3", "TO_BE_COMPLETED", "TO_BE_COMPLETED"},
+		{"kill", "kill a process", "kill <pid>"},
 		{"killdate", "Set agent's killdate", "TO_BE_COMPLETED"},
 		{"ls", "List directory contents", "ls /etc OR ls C:\\\\Users"},
 		{"main", "Return to the main menu", ""},
 		{"maxretry", "Set number of failed check in attempts before the agent exits", "TO_BE_COMPLETED"},
 		{"padding", "TO_BE_COMPLETED", "TO_BE_COMPLETED"},
-		{"pwd", "Display the current working directory", "pwd"},
+		{"pwd", "Display the current working directory", ""},
 		{"quit", "Shutdown and close the server", ""},
 		{"shinject", "Execute shellcode", "self, remote <pid>, RtlCreateUserThread <pid>"},
 		{"sleep", "<min> <max> (in seconds)", "sleep 15 30"},
