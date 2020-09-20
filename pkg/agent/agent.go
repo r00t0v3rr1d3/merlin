@@ -1073,11 +1073,11 @@ func (a *Agent) executeCommand(j messages.CmdPayload) (stdout string, stderr str
 }
 
 func (a *Agent) winExecute(j messages.WinExecute) (stdout string, stderr string) {
-	//if a.Debug {
-	//message("debug", fmt.Sprintf("Received input parameter for winExecute function: %s\n", j))
-	//} else if a.Verbose {
-	//message("success", fmt.Sprintf("Executing windows command %s %s with ppid %n\n", j.Command, j.Args, j.Ppid))
-	//}
+	if a.Debug {
+		message("debug", fmt.Sprintf("Received input parameter for winExecute function: %s %s\n", j.Command, j.Args))
+	} else if a.Verbose {
+		message("success", fmt.Sprintf("Executing windows command %s %s with ppid %d\n", j.Command, j.Args, j.Ppid))
+	}
 
 	stdout, stderr = WinExec(j.Command, j.Args, j.Ppid)
 
