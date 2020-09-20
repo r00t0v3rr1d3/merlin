@@ -78,6 +78,11 @@ func WinExec(command string, args string, ppid int) (stdout string, stderr strin
 	return "", "Windows API is not implemented for this operating system"
 }
 
+// Ps is only a valid function on Windows agents...for now
+func Ps() (stdout string, stderr string) {
+	return "", "Process listing is not implemented for this operating system"
+}
+
 // ExecuteShellcodeSelf executes provided shellcode in the current process
 //lint:ignore SA4009 Function needs to mirror exec_windows.go and inputs must be used
 func ExecuteShellcodeSelf(shellcode []byte) error {

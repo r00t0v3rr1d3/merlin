@@ -26,15 +26,14 @@ import (
 	"net/http"
 	"strings"
 	"testing"
-	"time"
 
 	// 3rd Party
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 
 	// Merlin
 	"github.com/Ne0nd0g/merlin/pkg/core"
 	"github.com/Ne0nd0g/merlin/pkg/messages"
-	"github.com/Ne0nd0g/merlin/test/testServer"
+	testserver "github.com/Ne0nd0g/merlin/test/testServer"
 )
 
 // TestNewHTTPAgent ensure the agent.New function returns a http agent without error
@@ -228,7 +227,8 @@ func TestPSK(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	agent.WaitTime = 5000 * time.Millisecond
+	agent.WaitTimeMin = 15
+	agent.WaitTimeMax = 30
 	k := sha256.Sum256([]byte("wrongPassword"))
 	agent.secret = k[:]
 
@@ -313,7 +313,8 @@ func TestAuthentication(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	agent.WaitTime = 5000 * time.Millisecond
+	agent.WaitTimeMin = 15
+	agent.WaitTimeMax = 30
 
 	//signalling chans for start/end of test
 	setup := make(chan struct{})
@@ -338,7 +339,8 @@ func TestBadAuthentication(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	agent.WaitTime = 5000 * time.Millisecond
+	agent.WaitTimeMin = 15
+	agent.WaitTimeMax = 30
 
 	//signalling chans for start/end of test
 	setup := make(chan struct{})

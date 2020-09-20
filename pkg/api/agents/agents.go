@@ -242,6 +242,15 @@ func LS(agentID uuid.UUID, Args []string) messages.UserMessage {
 	return messages.JobMessage(agentID, job)
 }
 
+// PS is used to print the running processes
+func PS(agentID uuid.UUID, Args []string) messages.UserMessage {
+	job, err := agents.AddJob(agentID, "ps", Args)
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
 // PWD is used to print the Agent's current working directory
 func PWD(agentID uuid.UUID, Args []string) messages.UserMessage {
 	job, err := agents.AddJob(agentID, "pwd", Args)

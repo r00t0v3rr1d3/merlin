@@ -367,12 +367,14 @@ func Shell() {
 							menuSetAgent(i)
 						}
 					}
-				case "ja3":
-					MessageChannel <- agentAPI.SetJA3(shellAgent, cmd)
-				case "killdate":
-					MessageChannel <- agentAPI.SetKillDate(shellAgent, cmd)
 				case "ipconfig", "ifconfig":
 					MessageChannel <- agentAPI.Ifconfig(shellAgent, cmd)
+				case "ja3":
+					MessageChannel <- agentAPI.SetJA3(shellAgent, cmd)
+				case "kill":
+					MessageChannel <- agentAPI.Kill(shellAgent, cmd)
+				case "killdate":
+					MessageChannel <- agentAPI.SetKillDate(shellAgent, cmd)
 				case "ls":
 					MessageChannel <- agentAPI.LS(shellAgent, cmd)
 				case "main":
@@ -381,10 +383,10 @@ func Shell() {
 					MessageChannel <- agentAPI.SetMaxRetry(shellAgent, cmd)
 				case "padding":
 					MessageChannel <- agentAPI.SetPadding(shellAgent, cmd)
+				case "ps":
+					MessageChannel <- agentAPI.PS(shellAgent, cmd)
 				case "pwd":
 					MessageChannel <- agentAPI.PWD(shellAgent, cmd)
-				case "kill":
-					MessageChannel <- agentAPI.Kill(shellAgent, cmd)
 				case "quit":
 					if len(cmd) > 1 {
 						if strings.ToLower(cmd[1]) == "-y" {
@@ -981,21 +983,22 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("cd"),
 		readline.PcItem("download"),
 		readline.PcItem("exec"),
-		readline.PcItem("ifconfig"),
-		readline.PcItem("ipconfig"),
 		readline.PcItem("exit"),
 		readline.PcItem("help"),
+		readline.PcItem("ifconfig"),
 		readline.PcItem("info"),
 		readline.PcItem("interact",
 			readline.PcItemDynamic(agents.GetAgentList()),
 		),
+		readline.PcItem("ipconfig"),
 		readline.PcItem("ja3"),
-		readline.PcItem("killdate"),
 		readline.PcItem("kill"),
+		readline.PcItem("killdate"),
 		readline.PcItem("ls"),
 		readline.PcItem("main"),
 		readline.PcItem("maxretry"),
 		readline.PcItem("padding"),
+		readline.PcItem("ps"),
 		readline.PcItem("pwd"),
 		readline.PcItem("quit"),
 		readline.PcItem("shinject",
@@ -1170,17 +1173,17 @@ func menuHelpAgent() {
 		{"exec", "Execute a command on the agent", "exec ping -c 3 8.8.8.8"},
 		{"exit", "Instruct the agent to die or quit", ""},
 		{"help", "Display this message", ""},
-		{"ipconfig", "List host network information", ""},
-		{"ifconfig", "List host network information", ""},
+		{"ipconfig", "Display network adapter(s) information", ""},
 		{"info", "Display all information about the agent", ""},
 		{"interact", "Interact with an agent. Alias for Empire users", ""},
 		{"ja3", "TO_BE_COMPLETED", "TO_BE_COMPLETED"},
-		{"kill", "kill a process", "kill <pid>"},
+		{"kill", "Kill a process", "kill <pid>"},
 		{"killdate", "Set agent's killdate", "TO_BE_COMPLETED"},
 		{"ls", "List directory contents", "ls /etc OR ls C:\\\\Users"},
 		{"main", "Return to the main menu", ""},
 		{"maxretry", "Set number of failed check in attempts before the agent exits", "TO_BE_COMPLETED"},
 		{"padding", "TO_BE_COMPLETED", "TO_BE_COMPLETED"},
+		{"ps", "Display running processes", ""},
 		{"pwd", "Display the current working directory", ""},
 		{"quit", "Shutdown and close the server", ""},
 		{"shinject", "Execute shellcode", "self, remote <pid>, RtlCreateUserThread <pid>"},

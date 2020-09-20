@@ -643,6 +643,14 @@ func GetMessageForJob(agentID uuid.UUID, job Job) (messages.Base, error) {
 	}
 	m.Padding = core.RandStringBytesMaskImprSrc(Agents[agentID].PaddingMax)
 	switch job.Type {
+	case "cd":
+		m.Type = "NativeCmd"
+		p := messages.NativeCmd{
+			Job:     job.ID,
+			Command: job.Args[0],
+			Args:    strings.Join(job.Args[1:], " "),
+		}
+		m.Payload = p
 	case "cmd":
 		m.Type = "CmdPayload"
 		p := messages.CmdPayload{
@@ -651,36 +659,6 @@ func GetMessageForJob(agentID uuid.UUID, job Job) (messages.Base, error) {
 		}
 		if len(job.Args) > 1 {
 			p.Args = strings.Join(job.Args[1:], " ")
-		}
-		m.Payload = p
-	case "winexec":
-		m.Type = "WinExecute"
-		ppid, _ := strconv.Atoi(job.Args[0]) // We know this is a valid int because it's checked in the api parsing
-		p := messages.WinExecute{
-			Command: job.Args[1],
-			Job:     job.ID,
-			Ppid:    ppid,
-		}
-		if len(job.Args) > 2 {
-			p.Args = strings.Join(job.Args[2:], " ")
-		}
-		m.Payload = p
-	case "shellcode":
-		m.Type = "Shellcode"
-		p := messages.Shellcode{
-			Method: job.Args[0],
-			Job:    job.ID,
-		}
-
-		if p.Method == "self" {
-			p.Bytes = job.Args[1]
-		} else if p.Method == "remote" || p.Method == "rtlcreateuserthread" || p.Method == "userapc" {
-			i, err := strconv.Atoi(job.Args[1])
-			if err != nil {
-				return m, err
-			}
-			p.PID = uint32(i)
-			p.Bytes = job.Args[2]
 		}
 		m.Payload = p
 	case "download":
@@ -693,31 +671,11 @@ func GetMessageForJob(agentID uuid.UUID, job Job) (messages.Base, error) {
 			IsDownload:   false,
 		}
 		m.Payload = p
-	case "initialize":
-		m.Type = "AgentControl"
-		p := messages.AgentControl{
-			Command: job.Type,
-			Job:     job.ID,
-		}
-		m.Payload = p
 	case "exit":
 		m.Type = "AgentControl"
 		p := messages.AgentControl{
 			Command: job.Args[0],
 			Job:     job.ID,
-		}
-		m.Payload = p
-	case "ls":
-		m.Type = "NativeCmd"
-		p := messages.NativeCmd{
-			Job:     job.ID,
-			Command: job.Args[0],
-		}
-
-		if len(job.Args) > 1 {
-			p.Args = job.Args[1]
-		} else {
-			p.Args = "./"
 		}
 		m.Payload = p
 	case "ifconfig":
@@ -726,6 +684,24 @@ func GetMessageForJob(agentID uuid.UUID, job Job) (messages.Base, error) {
 			Job:     job.ID,
 			Command: job.Args[0],
 			Args:    "",
+		}
+		m.Payload = p
+	case "initialize":
+		m.Type = "AgentControl"
+		p := messages.AgentControl{
+			Command: job.Type,
+			Job:     job.ID,
+		}
+		m.Payload = p
+	case "ja3":
+		m.Type = "AgentControl"
+		p := messages.AgentControl{
+			Command: job.Args[0],
+			Job:     job.ID,
+		}
+
+		if len(job.Args) == 2 {
+			p.Args = job.Args[1]
 		}
 		m.Payload = p
 	case "kill":
@@ -746,53 +722,20 @@ func GetMessageForJob(agentID uuid.UUID, job Job) (messages.Base, error) {
 			p.Args = job.Args[1]
 		}
 		m.Payload = p
-	case "cd":
+	case "ls":
 		m.Type = "NativeCmd"
 		p := messages.NativeCmd{
 			Job:     job.ID,
 			Command: job.Args[0],
-			Args:    strings.Join(job.Args[1:], " "),
 		}
-		m.Payload = p
-	case "pwd":
-		m.Type = "NativeCmd"
-		p := messages.NativeCmd{
-			Job:     job.ID,
-			Command: job.Args[0],
-			Args:    "",
+
+		if len(job.Args) > 1 {
+			p.Args = job.Args[1]
+		} else {
+			p.Args = "./"
 		}
 		m.Payload = p
 	case "maxretry":
-		m.Type = "AgentControl"
-		p := messages.AgentControl{
-			Command: job.Args[0],
-			Job:     job.ID,
-		}
-
-		if len(job.Args) == 2 {
-			p.Args = job.Args[1]
-		}
-		m.Payload = p
-	case "padding":
-		m.Type = "AgentControl"
-		p := messages.AgentControl{
-			Command: job.Args[0],
-			Job:     job.ID,
-		}
-
-		if len(job.Args) == 2 {
-			p.Args = job.Args[1]
-		}
-		m.Payload = p
-	case "sleep":
-		m.Type = "AgentControl"
-		p := messages.AgentControl{
-			Command: job.Args[0],
-			Job:     job.ID,
-			Args:    strings.Join(job.Args, " "),
-		}
-		m.Payload = p
-	case "ja3":
 		m.Type = "AgentControl"
 		p := messages.AgentControl{
 			Command: job.Args[0],
@@ -809,6 +752,59 @@ func GetMessageForJob(agentID uuid.UUID, job Job) (messages.Base, error) {
 			Command: job.Type,
 			Job:     job.ID,
 			Args:    job.Args,
+		}
+		m.Payload = p
+	case "padding":
+		m.Type = "AgentControl"
+		p := messages.AgentControl{
+			Command: job.Args[0],
+			Job:     job.ID,
+		}
+
+		if len(job.Args) == 2 {
+			p.Args = job.Args[1]
+		}
+		m.Payload = p
+	case "ps":
+		m.Type = "NativeCmd"
+		p := messages.NativeCmd{
+			Job:     job.ID,
+			Command: job.Args[0],
+			Args:    "",
+		}
+		m.Payload = p
+	case "pwd":
+		m.Type = "NativeCmd"
+		p := messages.NativeCmd{
+			Job:     job.ID,
+			Command: job.Args[0],
+			Args:    "",
+		}
+		m.Payload = p
+	case "shellcode":
+		m.Type = "Shellcode"
+		p := messages.Shellcode{
+			Method: job.Args[0],
+			Job:    job.ID,
+		}
+
+		if p.Method == "self" {
+			p.Bytes = job.Args[1]
+		} else if p.Method == "remote" || p.Method == "rtlcreateuserthread" || p.Method == "userapc" {
+			i, err := strconv.Atoi(job.Args[1])
+			if err != nil {
+				return m, err
+			}
+			p.PID = uint32(i)
+			p.Bytes = job.Args[2]
+		}
+		m.Payload = p
+	case "sleep":
+		m.Type = "AgentControl"
+		p := messages.AgentControl{
+			Command: job.Args[0],
+			Job:     job.ID,
+			Args:    strings.Join(job.Args, " "),
 		}
 		m.Payload = p
 	case "upload":
@@ -835,6 +831,18 @@ func GetMessageForJob(agentID uuid.UUID, job Job) (messages.Base, error) {
 			FileBlob:     base64.StdEncoding.EncodeToString([]byte(uploadFile)),
 			IsDownload:   true, // The agent will be downloading the file provided by the server in the FileBlob field
 			Job:          job.ID,
+		}
+		m.Payload = p
+	case "winexec":
+		m.Type = "WinExecute"
+		ppid, _ := strconv.Atoi(job.Args[0]) // We know this is a valid int because it's checked in the api parsing
+		p := messages.WinExecute{
+			Command: job.Args[1],
+			Job:     job.ID,
+			Ppid:    ppid,
+		}
+		if len(job.Args) > 2 {
+			p.Args = strings.Join(job.Args[2:], " ")
 		}
 		m.Payload = p
 	default:

