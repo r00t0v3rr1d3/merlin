@@ -431,6 +431,8 @@ func Shell() {
 							Error:   false,
 						}
 					}
+				case "touch", "timestomp":
+					MessageChannel <- agentAPI.Touch(shellAgent, cmd)
 				case "upload":
 					MessageChannel <- agentAPI.Upload(shellAgent, cmd)
 				case "winexec":
@@ -1008,6 +1010,8 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		),
 		readline.PcItem("sleep"),
 		readline.PcItem("status"),
+		readline.PcItem("timestomp"),
+		readline.PcItem("touch"),
 		readline.PcItem("upload"),
 		readline.PcItem("winexec"),
 	)
@@ -1189,6 +1193,7 @@ func menuHelpAgent() {
 		{"shinject", "Execute shellcode", "self, remote <pid>, RtlCreateUserThread <pid>"},
 		{"sleep", "<min> <max> (in seconds)", "sleep 15 30"},
 		{"status", "Print the current status of the agent", ""},
+		{"touch", "<source> <destination> (spaces don't work)", "touch C:\\\\oldfile.txt C:\\\\Merlin.exe"},
 		{"upload", "Upload a file to the agent", "upload <local_file> <remote_file>"},
 		{"winexec", "Execute a program using Windows API calls. Does not provide stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"},
 	}

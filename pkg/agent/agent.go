@@ -1011,6 +1011,28 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 					}
 				}
 			}
+		case "touch":
+			ArgsArray := strings.Fields(p.Args)
+			sourcefilename := ArgsArray[1]
+			destinationfilename := ArgsArray[2]
+
+			// get last modified time of source file
+			sourcefile, err1 := os.Stat(sourcefilename)
+
+			if err1 != nil {
+				c.Stderr = fmt.Sprintf("Error retrieving last modified time of: %s\n%s\n", sourcefilename, err1.Error())
+			}
+
+			modifiedtime := sourcefile.ModTime()
+
+			// change both atime and mtime to last modified time of source file
+			err2 := os.Chtimes(destinationfilename, modifiedtime, modifiedtime)
+
+			if err2 != nil {
+				c.Stderr = fmt.Sprintf("Error changing last modified and accessed time of: %s\n%s\n", destinationfilename, err2.Error())
+			} else {
+				c.Stdout = fmt.Sprintf("File: %s\nLast modified and accessed time set to: %s\n", destinationfilename, modifiedtime)
+			}
 		default:
 			c.Stderr = fmt.Sprintf("%s is not a valid NativeCMD type", p.Command)
 		}
