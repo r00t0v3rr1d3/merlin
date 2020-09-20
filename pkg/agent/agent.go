@@ -997,17 +997,17 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 		case "kill":
 			pid, err := strconv.Atoi(p.Args)
 			if err != nil {
-				c.Stderr = fmt.Sprintf("Error parsing the pid: %s\r\n%s", p.Args, err.Error())
+				c.Stderr = fmt.Sprintf("Error parsing PID: %s\r\n%s", p.Args, err.Error())
 			} else {
 				proc, err := os.FindProcess(pid)
 				if err != nil {
-					c.Stderr = fmt.Sprintf("Could not find a process with pid %d\r\n%s", pid, err.Error())
+					c.Stderr = fmt.Sprintf("Could not find a process with PID %d\r\n%s", pid, err.Error())
 				} else {
 					err = proc.Kill()
 					if err != nil {
 						c.Stderr = fmt.Sprintf("Error killing process %d:\r\n%s", pid, err.Error())
 					} else {
-						c.Stdout = fmt.Sprintf("Succesfully killed pid %d", pid)
+						c.Stdout = fmt.Sprintf("Succesfully killed PID %d", pid)
 					}
 				}
 			}
