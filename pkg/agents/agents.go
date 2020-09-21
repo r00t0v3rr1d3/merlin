@@ -812,7 +812,7 @@ func GetMessageForJob(agentID uuid.UUID, job Job) (messages.Base, error) {
 		p := messages.NativeCmd{
 			Job:     job.ID,
 			Command: job.Args[0],
-			Args:    strings.Join(job.Args, " "),
+			Args:    strings.Join(job.Args[1:], " "),
 		}
 		m.Payload = p
 	case "upload":

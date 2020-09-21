@@ -364,7 +364,7 @@ func SetSleep(agentID uuid.UUID, Args []string) messages.UserMessage {
 
 // Touch is used make the destination file's last accessed and last modified times match the source file
 func Touch(agentID uuid.UUID, Args []string) messages.UserMessage {
-	if len(Args) == 3 {
+	if len(Args) >= 3 {
 		Args[0] = "touch"
 		job, err := agents.AddJob(agentID, "touch", Args)
 		if err != nil {

