@@ -363,17 +363,21 @@ func SetSleep(agentID uuid.UUID, Args []string) messages.UserMessage {
 }
 
 // Touch is used make the destination file's last accessed and last modified times match the source file
+// ArgsArray[0] = "touch"
+// ArgsArray[1] = source file
+// ArgsArray[2] = dest file
 func Touch(agentID uuid.UUID, Args []string) messages.UserMessage {
-	if len(Args) >= 3 {
-		Args[0] = "touch"
-		job, err := agents.AddJob(agentID, "touch", Args)
-		if err != nil {
-			return messages.ErrorMessage(err.Error())
-		}
-		return messages.JobMessage(agentID, job)
-	} else {
+	Args[0] = "touch"
+	ArgsArray, err := shellwords.Parse(strings.Join(Args, " "))
+	if err != nil || len(ArgsArray) != 3 {
 		return messages.ErrorMessage(fmt.Sprintf("Incorrect number of arguments provided for the Agent Touch call: %s", Args))
 	}
+
+	job, err := agents.AddJob(agentID, "touch", ArgsArray)
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
 }
 
 // Upload transfers a file from the Merlin Server to the Agent

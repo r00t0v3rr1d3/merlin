@@ -35,6 +35,7 @@ func init() {
 	gob.Register(KeyExchange{})
 	gob.Register(Module{})
 	gob.Register(NativeCmd{})
+	gob.Register(TouchFile{})
 	gob.Register(Shellcode{})
 	gob.Register(SysInfo{})
 }
@@ -137,6 +138,14 @@ type NativeCmd struct {
 	Job     string `json:"job"`
 	Command string `json:"command"`
 	Args    string `json:"args,omitempty"`
+}
+
+// TouchFile is a simple job like NativeCmd but can't have space-separated args
+type TouchFile struct {
+	Job     string `json:"job"`
+	Command string `json:"command"`
+	SrcFile string `json:"srcfile,omitempty"`
+	DstFile string `json:"dstfile,omitempty"`
 }
 
 // KeyExchange is a JSON payload used to exchange public keys for encryption

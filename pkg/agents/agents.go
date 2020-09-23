@@ -808,11 +808,12 @@ func GetMessageForJob(agentID uuid.UUID, job Job) (messages.Base, error) {
 		}
 		m.Payload = p
 	case "touch":
-		m.Type = "NativeCmd"
-		p := messages.NativeCmd{
+		m.Type = "TouchFile"
+		p := messages.TouchFile{
 			Job:     job.ID,
 			Command: job.Args[0],
-			Args:    strings.Join(job.Args[1:], " "),
+			SrcFile: job.Args[1],
+			DstFile: job.Args[2],
 		}
 		m.Payload = p
 	case "upload":

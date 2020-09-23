@@ -139,9 +139,7 @@ func Shell() {
 						Time:    time.Now().UTC(),
 						Error:   false,
 					}
-				case "help":
-					menuHelpMain()
-				case "?":
+				case "help", "?":
 					menuHelpMain()
 				case "quit":
 					if len(cmd) > 1 {
