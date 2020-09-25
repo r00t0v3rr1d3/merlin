@@ -1317,7 +1317,6 @@ func filterInput(r rune) (rune, bool) {
 // confirm reads in a string and returns true if the string is y or yes but does not provide the prompt question
 func confirm(question string) bool {
 	reader := bufio.NewReader(os.Stdin)
-	//fmt.Print(color.RedString(fmt.Sprintf("%s [yes/NO]: ", question)))
 	MessageChannel <- messages.UserMessage{
 		Level:   messages.Plain,
 		Message: color.RedString(fmt.Sprintf("%s [Yes/No]: ", question)),
