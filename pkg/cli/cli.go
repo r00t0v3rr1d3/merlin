@@ -130,9 +130,10 @@ func Shell() {
 					}
 				case "banner":
 					m := "\n"
-					m += color.BlueString(banner.MerlinBanner1)
-					m += color.BlueString("\r\n\t\t   Version: %s", merlin.Version)
-					m += color.BlueString("\r\n\t\t   Build: %s\n", merlin.Build)
+					m += color.WhiteString(banner.MerlinBanner2)
+					m += color.WhiteString("\r\n\t\t   Version: %s", merlin.Version)
+					m += color.WhiteString("\r\n\t\t   Build: %s", merlin.Build)
+					m += color.WhiteString("\r\n\t\t   Codename: Gandalf\n")
 					MessageChannel <- messages.UserMessage{
 						Level:   messages.Plain,
 						Message: m,

@@ -26,7 +26,7 @@ import (
 	"github.com/fatih/color"
 
 	// Merlin
-	"github.com/Ne0nd0g/merlin/pkg"
+	merlin "github.com/Ne0nd0g/merlin/pkg"
 	"github.com/Ne0nd0g/merlin/pkg/banner"
 	"github.com/Ne0nd0g/merlin/pkg/cli"
 	"github.com/Ne0nd0g/merlin/pkg/logging"
@@ -51,9 +51,10 @@ func main() {
 	}
 	flag.Parse()
 
-	color.Blue(banner.MerlinBanner1)
-	color.Blue("\t\t   Version: %s", merlin.Version)
-	color.Blue("\t\t   Build: %s", build)
+	color.White(banner.MerlinBanner2)
+	color.White("\t\t   Version: %s", merlin.Version)
+	color.White("\t\t   Build: %s", build)
+	color.White("\t\t   Codename: Gandalf")
 
 	// Start Merlin Command Line Interface
 	cli.Shell()
