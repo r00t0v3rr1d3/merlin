@@ -171,7 +171,7 @@ func Shell() {
 					menuAgent([]string{"list"})
 				case "set":
 					if len(cmd) > 2 {
-						switch cmd[1] {
+						switch strings.ToLower(cmd[1]) {
 						case "verbose":
 							if strings.ToLower(cmd[2]) == "true" {
 								core.Verbose = true

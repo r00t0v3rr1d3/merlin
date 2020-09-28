@@ -235,7 +235,7 @@ func (a *Agent) Run() error {
 				if a.Verbose {
 					message("note", "Checking in...")
 				}
-				go a.statusCheckIn()
+				a.statusCheckIn()
 			} else {
 				a.initial = a.initialCheckIn()
 			}
@@ -245,6 +245,7 @@ func (a *Agent) Run() error {
 		} else {
 			return fmt.Errorf("agent kill date has been exceeded: %s", time.Unix(a.KillDate, 0).UTC().Format(time.RFC3339))
 		}
+
 		var totalWaitTime time.Duration
 		if a.WaitTimeMin != a.WaitTimeMax {
 			rand.Seed(time.Now().UnixNano())
@@ -884,6 +885,7 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 			if a.Verbose {
 				message("note", fmt.Sprintf("Setting agent sleep time to %s - %s seconds", ArgsArray[1], ArgsArray[2]))
 			}
+
 			tmin, err := strconv.ParseInt(string(ArgsArray[1]), 10, 64)
 			if err != nil {
 				c.Stderr = fmt.Sprintf("Could not parse WaitTimeMin as an integer:\r\n%s", err.Error())
@@ -894,6 +896,7 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 				c.Stderr = fmt.Sprintf("Could not parse WaitTimeMax as an integer:\r\n%s", err2.Error())
 				break
 			}
+
 			if tmin > 0 {
 				a.WaitTimeMin = tmin
 			} else {
@@ -1594,7 +1597,7 @@ func (a *Agent) getJWT() (string, error) {
 	return agentJWT, nil
 }
 
-// getAgentInfoMessage is used to place of the information about an agent and it's configuration into a message and return it
+// getAgentInfoMessage is used to place of the information about an agent and its configuration into a message and return it
 func (a *Agent) getAgentInfoMessage() messages.Base {
 	sysInfoMessage := messages.SysInfo{
 		Platform:     a.Platform,
