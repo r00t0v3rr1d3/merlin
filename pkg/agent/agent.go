@@ -75,6 +75,7 @@ type merlinClient interface {
 // Agent is a structure for agent objects. It is not exported to force the use of the New() function
 type Agent struct {
 	ID            uuid.UUID       // ID is a Universally Unique Identifier per agent
+	Note          string          // Actual agents don't track the note, but this is a placeholder because the struct is copied
 	Platform      string          // Platform is the operating system platform the agent is running on (i.e. windows)
 	Architecture  string          // Architecture is the operating system architecture the agent is running on (i.e. amd64)
 	UserName      string          // UserName is the username that the agent is running as

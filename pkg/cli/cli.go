@@ -380,6 +380,27 @@ func Shell() {
 					menuSetMain()
 				case "maxretry":
 					MessageChannel <- agentAPI.SetMaxRetry(shellAgent, cmd)
+				case "note":
+					newNote := ""
+					if len(cmd) > 1 {
+						newNote = strings.Join(cmd[1:], " ")
+					}
+					err := agents.SetNote(shellAgent, newNote)
+					if err == nil {
+						MessageChannel <- messages.UserMessage{
+							Level:   messages.Success,
+							Message: fmt.Sprintf("note set: %s", strings.Join(cmd[1:], " ")),
+							Time:    time.Now().UTC(),
+							Error:   true,
+						}
+					} else {
+						MessageChannel <- messages.UserMessage{
+							Level:   messages.Warn,
+							Message: fmt.Sprintf("Error setting note: %s", err.Error()),
+							Time:    time.Now().UTC(),
+							Error:   true,
+						}
+					}
 				case "padding":
 					MessageChannel <- agentAPI.SetPadding(shellAgent, cmd)
 				case "ps":
@@ -486,7 +507,7 @@ func menuAgent(cmd []string) {
 	switch cmd[0] {
 	case "list":
 		table := tablewriter.NewWriter(os.Stdout)
-		table.SetHeader([]string{"Agent GUID", "Platform", "Host", "Transport", "Status", "User", "Process"})
+		table.SetHeader([]string{"Agent GUID", "Note", "Platform", "Host", "Transport", "Status", "User", "Process"})
 		table.SetAlignment(tablewriter.ALIGN_CENTER)
 		for k, v := range agents.Agents {
 			// Convert proto (i.e. h2 or hq) to user friendly string
@@ -512,7 +533,7 @@ func menuAgent(cmd []string) {
 			} else {
 				proc = v.Process[strings.LastIndex(v.Process, "/")+1:]
 			}
-			table.Append([]string{k.String(), v.Platform + "/" + v.Architecture,
+			table.Append([]string{k.String(), v.Note, v.Platform + "/" + v.Architecture,
 				v.HostName, proto, agents.GetAgentStatus(k), v.UserName,
 				fmt.Sprintf("%s(%d)", proc, v.Pid)})
 		}
@@ -998,6 +1019,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("ls"),
 		readline.PcItem("main"),
 		readline.PcItem("maxretry"),
+		readline.PcItem("note"),
 		readline.PcItem("padding"),
 		readline.PcItem("ps"),
 		readline.PcItem("pwd"),
@@ -1185,6 +1207,7 @@ func menuHelpAgent() {
 		{"ls", "List directory contents", "ls /etc OR ls C:\\\\Users"},
 		{"main", "Return to the main menu", ""},
 		{"maxretry", "Set number of failed check in attempts before the agent exits", "maxretry 30"},
+		{"note", "Set a custom note for this agent", "note Help This callback dead"},
 		{"padding", "Set maximum number of random bytes to pad messages", "padding 4096"},
 		{"ps", "Display running processes", ""},
 		{"pwd", "Display the current working directory", ""},

@@ -56,6 +56,7 @@ var Agents = make(map[uuid.UUID]*agent)
 
 type agent struct {
 	ID               uuid.UUID
+	Note             string // Shorthand for cli to reference this agent
 	Platform         string
 	Architecture     string
 	UserName         string
@@ -532,6 +533,7 @@ func ShowInfo(agentID uuid.UUID) {
 
 	data := [][]string{
 		{"Status", GetAgentStatus(agentID)},
+		{"Note", Agents[agentID].Note},
 		{"ID", Agents[agentID].ID.String()},
 		{"Platform", Agents[agentID].Platform},
 		{"Architecture", Agents[agentID].Architecture},
@@ -1108,7 +1110,16 @@ func GetLifetime(agentID uuid.UUID) (time.Duration, error) {
 	}
 
 	return time.Duration(lifetime) * time.Second, nil
+}
 
+// Sets an agent note
+func SetNote(agentID uuid.UUID, value string) error {
+	if isAgent(agentID) {
+		Agents[agentID].Note = value
+		return nil
+	} else {
+		return fmt.Errorf("No agent with ID %s was found", agentID)
+	}
 }
 
 // Job is a structure for holding data for single task assigned to a single agent
