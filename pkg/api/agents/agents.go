@@ -261,6 +261,21 @@ func PWD(agentID uuid.UUID, Args []string) messages.UserMessage {
 	return messages.JobMessage(agentID, job)
 }
 
+// SecureDelete is used to delete, potentially large files, with random data
+// ArgsArray[0] = "sdelete"
+// ArgsArray[1] = target file
+func SecureDelete(agentID uuid.UUID, Args []string) messages.UserMessage {
+	ArgsArray, err := shellwords.Parse(strings.Join(Args, " "))
+	if err != nil || len(ArgsArray) != 2 {
+		return messages.ErrorMessage(fmt.Sprintf("Incorrect number of arguments provided for the Agent SecureDelete call: %s", Args))
+	}
+	job, err := agents.AddJob(agentID, "sdelete", ArgsArray)
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
 // SetJA3 is used to change the Agent's JA3 signature
 func SetJA3(agentID uuid.UUID, Args []string) messages.UserMessage {
 	if len(Args) > 1 {

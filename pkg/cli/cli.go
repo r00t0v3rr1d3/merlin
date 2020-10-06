@@ -389,7 +389,7 @@ func Shell() {
 					if err == nil {
 						MessageChannel <- messages.UserMessage{
 							Level:   messages.Success,
-							Message: fmt.Sprintf("note set: %s", strings.Join(cmd[1:], " ")),
+							Message: fmt.Sprintf("Note set to: %s", strings.Join(cmd[1:], " ")),
 							Time:    time.Now().UTC(),
 							Error:   true,
 						}
@@ -416,6 +416,8 @@ func Shell() {
 					if confirm("Are you sure you want to exit the server?") {
 						exit()
 					}
+				case "sdelete":
+					MessageChannel <- agentAPI.SecureDelete(shellAgent, cmd)
 				case "shinject":
 					MessageChannel <- agentAPI.ExecuteShellcode(shellAgent, cmd)
 				case "sleep":
@@ -1024,6 +1026,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("ps"),
 		readline.PcItem("pwd"),
 		readline.PcItem("quit"),
+		readline.PcItem("sdelete"),
 		readline.PcItem("shinject",
 			readline.PcItem("self"),
 			readline.PcItem("remote"),
@@ -1212,6 +1215,7 @@ func menuHelpAgent() {
 		{"ps", "Display running processes", ""},
 		{"pwd", "Display the current working directory", ""},
 		{"quit", "Shutdown and close the server", ""},
+		{"sdelete", "Secure delete a file", "sdelete C:\\\\Merlin.exe"},
 		{"shinject", "Execute shellcode", "self, remote <pid>, RtlCreateUserThread <pid>"},
 		{"sleep", "<min> <max> (in seconds)", "sleep 15 30"},
 		{"status", "Print the current status of the agent", ""},
