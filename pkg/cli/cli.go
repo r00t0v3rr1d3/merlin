@@ -332,6 +332,23 @@ func Shell() {
 					menuSetMain()
 				case "cd":
 					MessageChannel <- agentAPI.CD(shellAgent, cmd)
+				case "clear":
+					err := agents.ClearJobs(shellAgent)
+					if err == nil {
+						MessageChannel <- messages.UserMessage{
+							Level:   messages.Success,
+							Message: fmt.Sprintf("Cleared all jobs"),
+							Time:    time.Now().UTC(),
+							Error:   true,
+						}
+					} else {
+						MessageChannel <- messages.UserMessage{
+							Level:   messages.Warn,
+							Message: fmt.Sprintf("Error clearing jobs: %s", err.Error()),
+							Time:    time.Now().UTC(),
+							Error:   true,
+						}
+					}
 				case "download":
 					MessageChannel <- agentAPI.Download(shellAgent, cmd)
 				case "exec":
@@ -370,6 +387,23 @@ func Shell() {
 					MessageChannel <- agentAPI.Ifconfig(shellAgent, cmd)
 				case "ja3":
 					MessageChannel <- agentAPI.SetJA3(shellAgent, cmd)
+				case "jobs":
+					jobs, err := agents.ListJobs(shellAgent)
+					if err == nil {
+						MessageChannel <- messages.UserMessage{
+							Level:   messages.Success,
+							Message: fmt.Sprintf("Active jobs:\n%s", strings.Join(jobs, "\n")),
+							Time:    time.Now().UTC(),
+							Error:   true,
+						}
+					} else {
+						MessageChannel <- messages.UserMessage{
+							Level:   messages.Warn,
+							Message: fmt.Sprintf("Error retrieving jobs: %s", err.Error()),
+							Time:    time.Now().UTC(),
+							Error:   true,
+						}
+					}
 				case "kill":
 					MessageChannel <- agentAPI.Kill(shellAgent, cmd)
 				case "killdate":
@@ -1005,6 +1039,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 	var agent = readline.NewPrefixCompleter(
 		readline.PcItem("back"),
 		readline.PcItem("cd"),
+		readline.PcItem("clear"),
 		readline.PcItem("download"),
 		readline.PcItem("exec"),
 		readline.PcItem("exit"),
@@ -1018,6 +1053,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("ja3"),
 		readline.PcItem("kill"),
 		readline.PcItem("killdate"),
+		readline.PcItem("jobs"),
 		readline.PcItem("ls"),
 		readline.PcItem("main"),
 		readline.PcItem("maxretry"),
@@ -1197,6 +1233,7 @@ func menuHelpAgent() {
 	data := [][]string{
 		{"back", "Return to the main menu", ""},
 		{"cd", "Change directories", "cd ../../ OR cd c:\\\\Users"},
+		{"clear", "Clear all queued jobs", ""},
 		{"download", "Download a file from the agent", "download <remote_file>"},
 		{"exec", "Execute a command on the agent", "exec ping -c 3 8.8.8.8"},
 		{"exit", "Instruct the agent to die or quit", ""},
@@ -1205,6 +1242,7 @@ func menuHelpAgent() {
 		{"info", "Display all information about the agent", ""},
 		{"interact", "Interact with an agent. Alias for Empire users", ""},
 		{"ja3", "Change agent's TLS fingerprint", "github.com/Ne0nd0g/ja3transport"},
+		{"jobs", "List current jobs", ""},
 		{"kill", "Kill a process", "kill <pid>"},
 		{"killdate", "Set agent's killdate (UNIX epoch timestamp)", "killdate 1609480800"},
 		{"ls", "List directory contents", "ls /etc OR ls C:\\\\Users"},

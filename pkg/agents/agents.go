@@ -520,6 +520,53 @@ func GetAgentList() func(string) []string {
 	}
 }
 
+func ClearJobs(agentID uuid.UUID) error {
+	_, ok := Agents[agentID]
+	if !ok {
+		return errors.New("Invalid agent ID")
+	}
+L:
+	for {
+		select {
+		case <-Agents[agentID].channel:
+			continue
+		default:
+			break L
+		}
+	}
+	return nil
+}
+
+// Lists the currently queued jobs for an agent
+func ListJobs(agentID uuid.UUID) ([]string, error) {
+	_, ok := Agents[agentID]
+
+	if !ok {
+		return nil, errors.New("Invalid agent ID")
+	}
+
+	var out []string
+	//Anything we pull out of the queue, we need to put back
+	var readJobs [][]Job
+	// Keep pulling data from agent channel until there's nothing
+L:
+	for {
+		select {
+		case jobs := <-Agents[agentID].channel:
+			for _, j := range jobs {
+				out = append(out, j.Type+" "+strings.Join(j.Args, " "))
+			}
+			readJobs = append(readJobs, jobs)
+		default:
+			break L
+		}
+	}
+	for _, jobs := range readJobs {
+		Agents[agentID].channel <- jobs
+	}
+	return out, nil
+}
+
 // ShowInfo lists all of the agent's structure value in a table
 func ShowInfo(agentID uuid.UUID) {
 
@@ -706,6 +753,8 @@ func GetMessageForJob(agentID uuid.UUID, job Job) (messages.Base, error) {
 			p.Args = job.Args[1]
 		}
 		m.Payload = p
+	case "jobs":
+
 	case "kill":
 		m.Type = "NativeCmd"
 		p := messages.NativeCmd{
