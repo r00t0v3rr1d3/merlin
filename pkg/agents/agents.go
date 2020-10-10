@@ -753,8 +753,6 @@ func GetMessageForJob(agentID uuid.UUID, job Job) (messages.Base, error) {
 			p.Args = job.Args[1]
 		}
 		m.Payload = p
-	case "jobs":
-
 	case "kill":
 		m.Type = "NativeCmd"
 		p := messages.NativeCmd{

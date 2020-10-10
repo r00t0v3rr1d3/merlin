@@ -332,7 +332,7 @@ func Shell() {
 					menuSetMain()
 				case "cd":
 					MessageChannel <- agentAPI.CD(shellAgent, cmd)
-				case "clear":
+				case "clear", "c":
 					err := agents.ClearJobs(shellAgent)
 					if err == nil {
 						MessageChannel <- messages.UserMessage{
