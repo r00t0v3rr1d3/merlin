@@ -427,7 +427,7 @@ func (ctx *HTTPContext) AgentHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Remove the agent from the server after successfully sending the kill message
 		if returnMessage.Type == "AgentControl" {
-			if returnMessage.Payload.(messages.AgentControl).Command == "kill" {
+			if returnMessage.Payload.(messages.AgentControl).Command == "exit" {
 				err := agents.RemoveAgent(agentID)
 				if err != nil {
 					message("warn", err.Error())

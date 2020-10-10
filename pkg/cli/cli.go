@@ -73,7 +73,7 @@ func Shell() {
 	getUserMessages()
 
 	p, err := readline.NewEx(&readline.Config{
-		Prompt:              "\033[31mMerlin»\033[0m ",
+		Prompt:              "\033[31mGandalf»\033[0m ",
 		HistoryFile:         "/tmp/readline.tmp",
 		AutoComplete:        shellCompleter,
 		InterruptPrompt:     "^C",
@@ -160,7 +160,7 @@ func Shell() {
 				case "listeners":
 					shellMenuContext = "listenersmain"
 					prompt.Config.AutoComplete = getCompleter("listenersmain")
-					prompt.SetPrompt("\033[31mMerlin[\033[32mlisteners\033[31m]»\033[0m ")
+					prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m]»\033[0m ")
 				case "remove":
 					if len(cmd) > 1 {
 						i := []string{"remove"}
@@ -337,14 +337,14 @@ func Shell() {
 					if err == nil {
 						MessageChannel <- messages.UserMessage{
 							Level:   messages.Success,
-							Message: fmt.Sprintf("Cleared all jobs"),
+							Message: fmt.Sprintf("Cleared all queued commands"),
 							Time:    time.Now().UTC(),
 							Error:   true,
 						}
 					} else {
 						MessageChannel <- messages.UserMessage{
 							Level:   messages.Warn,
-							Message: fmt.Sprintf("Error clearing jobs: %s", err.Error()),
+							Message: fmt.Sprintf("Error clearing queued commands: %s", err.Error()),
 							Time:    time.Now().UTC(),
 							Error:   true,
 						}
@@ -392,14 +392,14 @@ func Shell() {
 					if err == nil {
 						MessageChannel <- messages.UserMessage{
 							Level:   messages.Success,
-							Message: fmt.Sprintf("Active jobs:\n%s", strings.Join(jobs, "\n")),
+							Message: fmt.Sprintf("Queued commands:\n%s", strings.Join(jobs, "\n")),
 							Time:    time.Now().UTC(),
 							Error:   true,
 						}
 					} else {
 						MessageChannel <- messages.UserMessage{
 							Level:   messages.Warn,
-							Message: fmt.Sprintf("Error retrieving jobs: %s", err.Error()),
+							Message: fmt.Sprintf("Error retrieving queued commands: %s", err.Error()),
 							Time:    time.Now().UTC(),
 							Error:   true,
 						}
@@ -450,6 +450,8 @@ func Shell() {
 					if confirm("Are you sure you want to exit the server?") {
 						exit()
 					}
+				case "sessions":
+					menuAgent([]string{"list"})
 				case "sdelete":
 					MessageChannel <- agentAPI.SecureDelete(shellAgent, cmd)
 				case "shinject":
@@ -629,7 +631,7 @@ func menuSetAgent(agentID uuid.UUID) {
 		if agentID == agents.Agents[k].ID {
 			shellAgent = agentID
 			prompt.Config.AutoComplete = getCompleter("agent")
-			prompt.SetPrompt("\033[31mMerlin[\033[32magent\033[31m][\033[33m" + shellAgent.String() + "\033[31m]»\033[0m ")
+			prompt.SetPrompt("\033[31mGandalf[\033[32magent\033[31m][\033[33m" + shellAgent.String() + "\033[31m]»\033[0m ")
 			shellMenuContext = "agent"
 		}
 	}
@@ -641,7 +643,7 @@ func menuListener(cmd []string) {
 	case "back":
 		shellMenuContext = "listenersmain"
 		prompt.Config.AutoComplete = getCompleter("listenersmain")
-		prompt.SetPrompt("\033[31mMerlin[\033[32mlisteners\033[31m]»\033[0m ")
+		prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m]»\033[0m ")
 	case "delete":
 		if confirm(fmt.Sprintf("Are you sure you want to delete the %s listener?", shellListener.name)) {
 			um := listenerAPI.Remove(shellListener.name)
@@ -650,7 +652,7 @@ func menuListener(cmd []string) {
 				shellListenerOptions = nil
 				shellMenuContext = "listenersmain"
 				prompt.Config.AutoComplete = getCompleter("listenersmain")
-				prompt.SetPrompt("\033[31mMerlin[\033[32mlisteners\033[31m]»\033[0m ")
+				prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m]»\033[0m ")
 			} else {
 				MessageChannel <- um
 			}
@@ -699,7 +701,7 @@ func menuListener(cmd []string) {
 			MessageChannel <- um
 			break
 		}
-		prompt.SetPrompt("\033[31mMerlin[\033[32mlisteners\033[31m][\033[33m" + options["Name"] + "\033[31m]»\033[0m ")
+		prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m][\033[33m" + options["Name"] + "\033[31m]»\033[0m ")
 	case "set":
 		MessageChannel <- listenerAPI.SetOption(shellListener.id, cmd)
 	case "start":
@@ -748,7 +750,7 @@ func menuListeners(cmd []string) {
 				shellListenerOptions = nil
 				shellMenuContext = "listenersmain"
 				prompt.Config.AutoComplete = getCompleter("listenersmain")
-				prompt.SetPrompt("\033[31mMerlin[\033[32mlisteners\033[31m]»\033[0m ")
+				prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m]»\033[0m ")
 			}
 		}
 	case "help":
@@ -812,7 +814,7 @@ func menuListeners(cmd []string) {
 			}
 			shellMenuContext = "listener"
 			prompt.Config.AutoComplete = getCompleter("listener")
-			prompt.SetPrompt("\033[31mMerlin[\033[32mlisteners\033[31m][\033[33m" + name + "\033[31m]»\033[0m ")
+			prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m][\033[33m" + name + "\033[31m]»\033[0m ")
 		} else {
 			MessageChannel <- messages.UserMessage{
 				Level:   messages.Note,
@@ -859,7 +861,7 @@ func menuListeners(cmd []string) {
 					shellListenerOptions["Protocol"] = strings.ToLower(cmd[1])
 					shellMenuContext = "listenersetup"
 					prompt.Config.AutoComplete = getCompleter("listenersetup")
-					prompt.SetPrompt("\033[31mMerlin[\033[32mlisteners\033[31m][\033[33m" + strings.ToLower(cmd[1]) + "\033[31m]»\033[0m ")
+					prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m][\033[33m" + strings.ToLower(cmd[1]) + "\033[31m]»\033[0m ")
 				}
 			}
 		}
@@ -879,7 +881,7 @@ func menuListenerSetup(cmd []string) {
 	case "back":
 		shellMenuContext = "listenersmain"
 		prompt.Config.AutoComplete = getCompleter("listenersmain")
-		prompt.SetPrompt("\033[31mMerlin[\033[32mlisteners\033[31m]»\033[0m ")
+		prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m]»\033[0m ")
 	case "quit":
 		if len(cmd) > 1 {
 			if strings.ToLower(cmd[1]) == "-y" {
@@ -947,7 +949,7 @@ func menuListenerSetup(cmd []string) {
 		}
 		shellMenuContext = "listener"
 		prompt.Config.AutoComplete = getCompleter("listener")
-		prompt.SetPrompt("\033[31mMerlin[\033[32mlisteners\033[31m][\033[33m" + options["Name"] + "\033[31m]»\033[0m ")
+		prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m][\033[33m" + options["Name"] + "\033[31m]»\033[0m ")
 	case "stop":
 		MessageChannel <- listenerAPI.Stop(shellListener.name)
 	default:
@@ -971,7 +973,7 @@ func menuSetModule(cmd string) {
 		if m.Name != "" {
 			shellModule = m
 			prompt.Config.AutoComplete = getCompleter("module")
-			prompt.SetPrompt("\033[31mMerlin[\033[32mmodule\033[31m][\033[33m" + shellModule.Name + "\033[31m]»\033[0m ")
+			prompt.SetPrompt("\033[31mGandalf[\033[32mmodule\033[31m][\033[33m" + shellModule.Name + "\033[31m]»\033[0m ")
 			shellMenuContext = "module"
 		}
 	}
@@ -979,7 +981,7 @@ func menuSetModule(cmd string) {
 
 func menuSetMain() {
 	prompt.Config.AutoComplete = getCompleter("main")
-	prompt.SetPrompt("\033[31mMerlin»\033[0m ")
+	prompt.SetPrompt("\033[31mGandalf»\033[0m ")
 	shellMenuContext = "main"
 }
 
@@ -1062,6 +1064,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("ps"),
 		readline.PcItem("pwd"),
 		readline.PcItem("quit"),
+		readline.PcItem("sessions"),
 		readline.PcItem("sdelete"),
 		readline.PcItem("shinject",
 			readline.PcItem("self"),
@@ -1174,7 +1177,7 @@ func menuHelpMain() {
 		{"interact", "Interact with an agent. Alias for Empire users", ""},
 		{"quit", "Exit and close the Merlin server", ""},
 		{"remove", "Remove or delete a DEAD agent from the server"},
-		{"sessions", "List all agents session information. Alias for MSF users", ""},
+		{"sessions", "List all agents session information.", ""},
 		{"use", "Use a function of Merlin", "module"},
 		{"version", "Print the Merlin server version", ""},
 	}
@@ -1233,7 +1236,7 @@ func menuHelpAgent() {
 	data := [][]string{
 		{"back", "Return to the main menu", ""},
 		{"cd", "Change directories", "cd ../../ OR cd c:\\\\Users"},
-		{"clear", "Clear all queued jobs", ""},
+		{"clear", "Clear all queued commands", ""},
 		{"download", "Download a file from the agent", "download <remote_file>"},
 		{"exec", "Execute a command on the agent", "exec ping -c 3 8.8.8.8"},
 		{"exit", "Instruct the agent to die or quit", ""},
@@ -1242,7 +1245,7 @@ func menuHelpAgent() {
 		{"info", "Display all information about the agent", ""},
 		{"interact", "Interact with an agent. Alias for Empire users", ""},
 		{"ja3", "Change agent's TLS fingerprint", "github.com/Ne0nd0g/ja3transport"},
-		{"jobs", "List current jobs", ""},
+		{"jobs", "List queued commands", ""},
 		{"kill", "Kill a process", "kill <pid>"},
 		{"killdate", "Set agent's killdate (UNIX epoch timestamp)", "killdate 1609480800"},
 		{"ls", "List directory contents", "ls /etc OR ls C:\\\\Users"},
@@ -1253,6 +1256,7 @@ func menuHelpAgent() {
 		{"ps", "Display running processes", ""},
 		{"pwd", "Display the current working directory", ""},
 		{"quit", "Shutdown and close the server", ""},
+		{"sessions", "List all agents session information.", ""},
 		{"sdelete", "Secure delete a file", "sdelete C:\\\\Merlin.exe"},
 		{"shinject", "Execute shellcode", "self, remote <pid>, RtlCreateUserThread <pid>"},
 		{"sleep", "<min> <max> (in seconds)", "sleep 15 30"},
