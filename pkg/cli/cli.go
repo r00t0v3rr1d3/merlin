@@ -367,6 +367,10 @@ func Shell() {
 					}
 				case "?", "help":
 					menuHelpAgent()
+				case "inactivemultiplier":
+					MessageChannel <- agentAPI.SetInactiveMultiplier(shellAgent, cmd)
+				case "inactivethreshold":
+					MessageChannel <- agentAPI.SetInactiveThreshold(shellAgent, cmd)
 				case "info":
 					agents.ShowInfo(shellAgent)
 				case "interact":
@@ -1047,6 +1051,8 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("exit"),
 		readline.PcItem("help"),
 		readline.PcItem("ifconfig"),
+		readline.PcItem("inactivemultiplier"),
+		readline.PcItem("inactivethreshold"),
 		readline.PcItem("info"),
 		readline.PcItem("interact",
 			readline.PcItemDynamic(agents.GetAgentList()),
@@ -1174,7 +1180,7 @@ func menuHelpMain() {
 		{"agent", "Interact with agents or list agents", "interact, list"},
 		{"banner", "Print the Merlin banner", ""},
 		{"listeners", "Move to the listeners menu", ""},
-		{"interact", "Interact with an agent. Alias for Empire users", ""},
+		{"interact", "Interact with an agent", ""},
 		{"quit", "Exit and close the Merlin server", ""},
 		{"remove", "Remove or delete a DEAD agent from the server"},
 		{"sessions", "List all agents session information.", ""},
@@ -1241,9 +1247,11 @@ func menuHelpAgent() {
 		{"exec", "Execute a command on the agent", "exec ping -c 3 8.8.8.8"},
 		{"exit", "Instruct the agent to die or quit", ""},
 		{"help", "Display this message", ""},
-		{"ipconfig", "Display network adapter(s) information", ""},
+		{"inactivemultiplier", "Multiply sleep values by this number each time threshold is reached", "inactivemultiplier 10"},
+		{"inactivethreshold", "Go inactive if operator is idle for this many check ins", "inactivethreshold 3"},
 		{"info", "Display all information about the agent", ""},
-		{"interact", "Interact with an agent. Alias for Empire users", ""},
+		{"interact", "Interact with an agent", ""},
+		{"ipconfig", "Display network adapter(s) information", ""},
 		{"ja3", "Change agent's TLS fingerprint", "github.com/Ne0nd0g/ja3transport"},
 		{"jobs", "List queued commands", ""},
 		{"kill", "Kill a process", "kill <pid>"},

@@ -55,36 +55,40 @@ import (
 var Agents = make(map[uuid.UUID]*agent)
 
 type agent struct {
-	ID               uuid.UUID
-	Note             string // Shorthand for cli to reference this agent
-	Platform         string
-	Architecture     string
-	UserName         string
-	UserGUID         string
-	HostName         string
-	Ips              []string
-	Pid              int
-	Process          string
-	agentLog         *os.File
-	channel          chan []Job
-	InitialCheckIn   time.Time
-	StatusCheckIn    time.Time
-	Version          string
-	Build            string
-	WaitTimeMin      int64
-	WaitTimeMax      int64
-	PaddingMax       int
-	MaxRetry         int
-	FailedCheckin    int
-	Proto            string
-	KillDate         int64
-	RSAKeys          *rsa.PrivateKey                // RSA Private/Public key pair; Private key used to decrypt messages
-	PublicKey        rsa.PublicKey                  // Public key used to encrypt messages
-	secret           []byte                         // secret is used to perform symmetric encryption operations
-	OPAQUEServerAuth gopaque.ServerAuth             // OPAQUE Server Authentication information used to derive shared secret
-	OPAQUEServerReg  gopaque.ServerRegister         // OPAQUE server registration information
-	OPAQUERecord     gopaque.ServerRegisterComplete // Holds the OPAQUE kU, EnvU, PrivS, PubU
-	JA3              string                         // The JA3 signature applied to the agent's TLS client
+	ID                 uuid.UUID
+	Note               string // Shorthand for cli to reference this agent
+	Platform           string
+	Architecture       string
+	UserName           string
+	UserGUID           string
+	HostName           string
+	Ips                []string
+	Pid                int
+	Process            string
+	agentLog           *os.File
+	channel            chan []Job
+	InitialCheckIn     time.Time
+	StatusCheckIn      time.Time
+	Version            string
+	Build              string
+	WaitTimeMin        int64
+	WaitTimeMax        int64
+	ActiveMin          int64
+	ActiveMax          int64
+	InactiveMultiplier int64
+	InactiveThreshold  int
+	PaddingMax         int
+	MaxRetry           int
+	FailedCheckin      int
+	Proto              string
+	KillDate           int64
+	RSAKeys            *rsa.PrivateKey                // RSA Private/Public key pair; Private key used to decrypt messages
+	PublicKey          rsa.PublicKey                  // Public key used to encrypt messages
+	secret             []byte                         // secret is used to perform symmetric encryption operations
+	OPAQUEServerAuth   gopaque.ServerAuth             // OPAQUE Server Authentication information used to derive shared secret
+	OPAQUEServerReg    gopaque.ServerRegister         // OPAQUE server registration information
+	OPAQUERecord       gopaque.ServerRegisterComplete // Holds the OPAQUE kU, EnvU, PrivS, PubU
+	JA3                string                         // The JA3 signature applied to the agent's TLS client
 }
 
 // KeyExchange is used to exchange public keys between the server and agent
@@ -465,6 +469,8 @@ func UpdateInfo(m messages.Base) error {
 	Log(m.ID, fmt.Sprintf("\tAgent Build: %s ", p.Build))
 	Log(m.ID, fmt.Sprintf("\tAgent waitTime: %d ", p.WaitTimeMin))
 	Log(m.ID, fmt.Sprintf("\tAgent waitTime: %d ", p.WaitTimeMax))
+	Log(m.ID, fmt.Sprintf("\tAgent InactiveMultiplier: %d ", p.InactiveMultiplier))
+	Log(m.ID, fmt.Sprintf("\tAgent InactiveThreshold: %d ", p.InactiveThreshold))
 	Log(m.ID, fmt.Sprintf("\tAgent paddingMax: %d ", p.PaddingMax))
 	Log(m.ID, fmt.Sprintf("\tAgent maxRetry: %d ", p.MaxRetry))
 	Log(m.ID, fmt.Sprintf("\tAgent failedCheckin: %d ", p.FailedCheckin))
@@ -476,6 +482,10 @@ func UpdateInfo(m messages.Base) error {
 	Agents[m.ID].Build = p.Build
 	Agents[m.ID].WaitTimeMin = p.WaitTimeMin
 	Agents[m.ID].WaitTimeMax = p.WaitTimeMax
+	Agents[m.ID].ActiveMax = p.ActiveMax
+	Agents[m.ID].ActiveMin = p.ActiveMin
+	Agents[m.ID].InactiveMultiplier = p.InactiveMultiplier
+	Agents[m.ID].InactiveThreshold = p.InactiveThreshold
 	Agents[m.ID].PaddingMax = p.PaddingMax
 	Agents[m.ID].MaxRetry = p.MaxRetry
 	Agents[m.ID].FailedCheckin = p.FailedCheckin
@@ -596,6 +606,10 @@ func ShowInfo(agentID uuid.UUID) {
 		{"Agent Build", Agents[agentID].Build},
 		{"Agent Wait Time Min", strconv.FormatInt(Agents[agentID].WaitTimeMin, 10)},
 		{"Agent Wait Time Max", strconv.FormatInt(Agents[agentID].WaitTimeMax, 10)},
+		{"Agent Active Time Min", strconv.FormatInt(Agents[agentID].ActiveMin, 10)},
+		{"Agent Active Time Max", strconv.FormatInt(Agents[agentID].ActiveMax, 10)},
+		{"Agent Inactive Multiplier", strconv.FormatInt(Agents[agentID].InactiveMultiplier, 10)},
+		{"Agent Inactive Threshold", strconv.Itoa(Agents[agentID].InactiveThreshold)},
 		{"Agent Message Padding Max", strconv.Itoa(Agents[agentID].PaddingMax)},
 		{"Agent Max Retries", strconv.Itoa(Agents[agentID].MaxRetry)},
 		{"Agent Failed Check In", strconv.Itoa(Agents[agentID].FailedCheckin)},
@@ -733,6 +747,28 @@ func GetMessageForJob(agentID uuid.UUID, job Job) (messages.Base, error) {
 			Job:     job.ID,
 			Command: job.Args[0],
 			Args:    "",
+		}
+		m.Payload = p
+	case "inactivemultiplier":
+		m.Type = "AgentControl"
+		p := messages.AgentControl{
+			Command: job.Args[0],
+			Job:     job.ID,
+		}
+
+		if len(job.Args) == 2 {
+			p.Args = job.Args[1]
+		}
+		m.Payload = p
+	case "inactivethreshold":
+		m.Type = "AgentControl"
+		p := messages.AgentControl{
+			Command: job.Args[0],
+			Job:     job.ID,
+		}
+
+		if len(job.Args) == 2 {
+			p.Args = job.Args[1]
 		}
 		m.Payload = p
 	case "initialize":

