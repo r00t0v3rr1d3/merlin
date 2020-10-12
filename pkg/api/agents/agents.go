@@ -320,6 +320,25 @@ func SetInactiveThreshold(agentID uuid.UUID, Args []string) messages.UserMessage
 	}
 }
 
+// Tell agents to adjust their BatchCommands setting
+// Args[0] = "batchcommands"
+// Args[1] = "true" | "false"
+func SetBatchCommands(agentID uuid.UUID, Args []string) messages.UserMessage {
+	if len(Args) == 2 {
+		_, err := strconv.ParseBool(Args[1])
+		if err != nil {
+			return messages.ErrorMessage(err.Error())
+		}
+
+		job, err := agents.AddJob(agentID, "batchcommands", Args)
+		if err != nil {
+			return messages.ErrorMessage(err.Error())
+		}
+		return messages.JobMessage(agentID, job)
+	}
+	return messages.ErrorMessage(fmt.Sprintf("Incorrect number of args provided: %s", Args))
+}
+
 // SetJA3 is used to change the Agent's JA3 signature
 func SetJA3(agentID uuid.UUID, Args []string) messages.UserMessage {
 	if len(Args) > 1 {

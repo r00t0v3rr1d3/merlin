@@ -330,6 +330,8 @@ func Shell() {
 				switch cmd[0] {
 				case "back":
 					menuSetMain()
+				case "batchcommands":
+					MessageChannel <- agentAPI.SetBatchCommands(shellAgent, cmd)
 				case "cd":
 					MessageChannel <- agentAPI.CD(shellAgent, cmd)
 				case "clear", "c":
@@ -1044,6 +1046,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 	// Agent Menu
 	var agent = readline.NewPrefixCompleter(
 		readline.PcItem("back"),
+		readline.PcItem("batchcommands"),
 		readline.PcItem("cd"),
 		readline.PcItem("clear"),
 		readline.PcItem("download"),
@@ -1241,6 +1244,7 @@ func menuHelpAgent() {
 
 	data := [][]string{
 		{"back", "Return to the main menu", ""},
+		{"batchcommands", "Tell an agent to run all queued jobs on checkin", ""},
 		{"cd", "Change directories", "cd ../../ OR cd c:\\\\Users"},
 		{"clear", "Clear all queued commands", ""},
 		{"download", "Download a file from the agent", "download <remote_file>"},

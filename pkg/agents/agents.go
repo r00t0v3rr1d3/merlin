@@ -89,6 +89,7 @@ type agent struct {
 	OPAQUEServerReg    gopaque.ServerRegister         // OPAQUE server registration information
 	OPAQUERecord       gopaque.ServerRegisterComplete // Holds the OPAQUE kU, EnvU, PrivS, PubU
 	JA3                string                         // The JA3 signature applied to the agent's TLS client
+	BatchCommands      bool
 }
 
 // KeyExchange is used to exchange public keys between the server and agent
@@ -404,7 +405,7 @@ func StatusCheckIn(m messages.Base) (messages.Base, error) {
 			Created: time.Now(),
 			Status:  "created",
 		}
-		m, mErr := GetMessageForJob(m.ID, job)
+		m, mErr := GetMessageForJob(m.ID, job, false)
 		return m, mErr
 	}
 
@@ -427,7 +428,7 @@ func StatusCheckIn(m messages.Base) (messages.Base, error) {
 			message("debug", fmt.Sprintf("Agent command type: %s", job[0].Type))
 		}
 
-		m, mErr := GetMessageForJob(m.ID, job[0])
+		m, mErr := GetMessageForJob(m.ID, job[0], len(Agents[m.ID].channel) >= 1)
 		return m, mErr
 	}
 	returnMessage := messages.Base{
@@ -477,6 +478,7 @@ func UpdateInfo(m messages.Base) error {
 	Log(m.ID, fmt.Sprintf("\tAgent proto: %s ", p.Proto))
 	Log(m.ID, fmt.Sprintf("\tAgent KillDate: %s", time.Unix(p.KillDate, 0).UTC().Format(time.RFC3339)))
 	Log(m.ID, fmt.Sprintf("\tAgent JA3 signature: %s", p.JA3))
+	Log(m.ID, fmt.Sprintf("\tAgent BatchCommands: %s", p.BatchCommands))
 
 	Agents[m.ID].Version = p.Version
 	Agents[m.ID].Build = p.Build
@@ -492,6 +494,7 @@ func UpdateInfo(m messages.Base) error {
 	Agents[m.ID].Proto = p.Proto
 	Agents[m.ID].KillDate = p.KillDate
 	Agents[m.ID].JA3 = p.JA3
+	Agents[m.ID].BatchCommands = p.BatchCommands
 
 	Agents[m.ID].Architecture = p.SysInfo.Architecture
 	Agents[m.ID].HostName = p.SysInfo.HostName
@@ -564,7 +567,7 @@ L:
 		select {
 		case jobs := <-Agents[agentID].channel:
 			for _, j := range jobs {
-				out = append(out, j.Type+" "+strings.Join(j.Args, " "))
+				out = append(out, strings.Join(j.Args, " "))
 			}
 			readJobs = append(readJobs, jobs)
 		default:
@@ -616,6 +619,7 @@ func ShowInfo(agentID uuid.UUID) {
 		{"Agent Kill Date", time.Unix(Agents[agentID].KillDate, 0).UTC().Format(time.RFC3339)},
 		{"Agent Communication Protocol", Agents[agentID].Proto},
 		{"Agent JA3 TLS Client Signature", Agents[agentID].JA3},
+		{"Agent Batch Commands", strconv.FormatBool(Agents[agentID].BatchCommands)},
 	}
 	table.AppendBulk(data)
 	fmt.Println()
@@ -696,10 +700,11 @@ func AddJob(agentID uuid.UUID, jobType string, jobArgs []string) (string, error)
 }
 
 // GetMessageForJob returns a Message Base structure for the provided job type
-func GetMessageForJob(agentID uuid.UUID, job Job) (messages.Base, error) {
+func GetMessageForJob(agentID uuid.UUID, job Job, moreJobs bool) (messages.Base, error) {
 	m := messages.Base{
-		Version: 1.0,
-		ID:      agentID,
+		Version:  1.0,
+		ID:       agentID,
+		MoreJobs: moreJobs,
 	}
 	if !isAgent(agentID) {
 		return m, fmt.Errorf("%s is not a valid agent", agentID.String())
@@ -795,6 +800,16 @@ func GetMessageForJob(agentID uuid.UUID, job Job) (messages.Base, error) {
 			Job:     job.ID,
 			Command: job.Args[0],
 			Args:    job.Args[1],
+		}
+		m.Payload = p
+	case "batchcommands":
+		m.Type = "AgentControl"
+		p := messages.AgentControl{
+			Command: job.Args[0],
+			Job:     job.ID,
+		}
+		if len(job.Args) == 2 {
+			p.Args = job.Args[1]
 		}
 		m.Payload = p
 	case "killdate":

@@ -42,12 +42,13 @@ func init() {
 
 // Base is the base JSON Object for HTTP POST payloads
 type Base struct {
-	Version float32     `json:"version"`
-	ID      uuid.UUID   `json:"id"`
-	Type    string      `json:"type"`
-	Payload interface{} `json:"payload,omitempty"`
-	Padding string      `json:"padding"`
-	Token   string      `json:"token,omitempty"`
+	Version  float32     `json:"version"`
+	ID       uuid.UUID   `json:"id"`
+	Type     string      `json:"type"`
+	Payload  interface{} `json:"payload,omitempty"`
+	Padding  string      `json:"padding"`
+	Token    string      `json:"token,omitempty"`
+	MoreJobs bool        `json:"morejobs"`
 }
 
 // FileTransfer is the JSON payload to transfer files between the server and agent
@@ -118,6 +119,7 @@ type AgentInfo struct {
 	SysInfo            SysInfo `json:"sysinfo,omitempty"`
 	KillDate           int64   `json:"killdate,omitempty"`
 	JA3                string  `json:"ja3,omitempty"`
+	BatchCommands      bool    `json:"batchcommands,omitempty"`
 }
 
 // Shellcode is a JSON payload containing shellcode and the method for execution
