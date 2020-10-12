@@ -551,7 +551,8 @@ func menuAgent(cmd []string) {
 	switch cmd[0] {
 	case "list":
 		table := tablewriter.NewWriter(os.Stdout)
-		table.SetHeader([]string{"Agent GUID", "Note", "Platform", "Host", "Transport", "Status", "User", "Process"})
+		table.SetHeader([]string{"Agent GUID", "Note", "Platform", "Host", "Transport", "Status",
+			"User", "Process", "Last checkin"})
 		table.SetAlignment(tablewriter.ALIGN_CENTER)
 		for k, v := range agents.Agents {
 			// Convert proto (i.e. h2 or hq) to user friendly string
@@ -577,9 +578,15 @@ func menuAgent(cmd []string) {
 			} else {
 				proc = v.Process[strings.LastIndex(v.Process, "/")+1:]
 			}
+
+			lastTime := time.Since(v.StatusCheckIn) // int64 nanosecond
+			lastTimeStr := fmt.Sprintf("%d:%d:%d ago",
+				int(lastTime.Hours()),
+				int(lastTime.Minutes()),
+				int(lastTime.Seconds()))
 			table.Append([]string{k.String(), v.Note, v.Platform + "/" + v.Architecture,
 				v.HostName, proto, agents.GetAgentStatus(k), v.UserName,
-				fmt.Sprintf("%s(%d)", proc, v.Pid)})
+				fmt.Sprintf("%s(%d)", proc, v.Pid), lastTimeStr})
 		}
 		fmt.Println()
 		table.Render()

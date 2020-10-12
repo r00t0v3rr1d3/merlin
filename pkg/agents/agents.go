@@ -28,6 +28,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math"
 	"os"
 	"path"
 	"path/filepath"
@@ -589,12 +590,18 @@ func ShowInfo(agentID uuid.UUID) {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"SYSTEM INFO", "", "IMPLANT CONFIG", ""})
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
 
-	data := [][]string{
+	// Separate into two mini-tables that we'll combine when we print
+	implantInfo := [][]string{
 		{"Status", GetAgentStatus(agentID)},
 		{"Note", Agents[agentID].Note},
 		{"ID", Agents[agentID].ID.String()},
+		{"Initial Check In", Agents[agentID].InitialCheckIn.Format(time.RFC3339)},
+		{"Last Check In", Agents[agentID].StatusCheckIn.Format(time.RFC3339)},
+		{"Agent Version", Agents[agentID].Version},
+		{"Agent Build", Agents[agentID].Build},
 		{"Platform", Agents[agentID].Platform},
 		{"Architecture", Agents[agentID].Architecture},
 		{"UserName", Agents[agentID].UserName},
@@ -602,25 +609,38 @@ func ShowInfo(agentID uuid.UUID) {
 		{"Hostname", Agents[agentID].HostName},
 		{"Process ID", strconv.Itoa(Agents[agentID].Pid)},
 		{"Process Name", Agents[agentID].Process},
-		{"IP", fmt.Sprintf("%v", Agents[agentID].Ips)},
-		{"Initial Check In", Agents[agentID].InitialCheckIn.Format(time.RFC3339)},
-		{"Last Check In", Agents[agentID].StatusCheckIn.Format(time.RFC3339)},
-		{"Agent Version", Agents[agentID].Version},
-		{"Agent Build", Agents[agentID].Build},
-		{"Agent Wait Time Min", strconv.FormatInt(Agents[agentID].WaitTimeMin, 10)},
-		{"Agent Wait Time Max", strconv.FormatInt(Agents[agentID].WaitTimeMax, 10)},
-		{"Agent Active Time Min", strconv.FormatInt(Agents[agentID].ActiveMin, 10)},
-		{"Agent Active Time Max", strconv.FormatInt(Agents[agentID].ActiveMax, 10)},
-		{"Agent Inactive Multiplier", strconv.FormatInt(Agents[agentID].InactiveMultiplier, 10)},
-		{"Agent Inactive Threshold", strconv.Itoa(Agents[agentID].InactiveThreshold)},
-		{"Agent Message Padding Max", strconv.Itoa(Agents[agentID].PaddingMax)},
-		{"Agent Max Retries", strconv.Itoa(Agents[agentID].MaxRetry)},
-		{"Agent Failed Check In", strconv.Itoa(Agents[agentID].FailedCheckin)},
-		{"Agent Kill Date", time.Unix(Agents[agentID].KillDate, 0).UTC().Format(time.RFC3339)},
-		{"Agent Communication Protocol", Agents[agentID].Proto},
-		{"Agent JA3 TLS Client Signature", Agents[agentID].JA3},
-		{"Agent Batch Commands", strconv.FormatBool(Agents[agentID].BatchCommands)},
+		{"IP", fmt.Sprintf("%s", strings.Join(Agents[agentID].Ips, "\n"))},
 	}
+	configInfo := [][]string{
+		{"Batch Commands", strconv.FormatBool(Agents[agentID].BatchCommands)},
+		{"Wait Time Min", strconv.FormatInt(Agents[agentID].WaitTimeMin, 10)},
+		{"Wait Time Max", strconv.FormatInt(Agents[agentID].WaitTimeMax, 10)},
+		{"Active Time Min", strconv.FormatInt(Agents[agentID].ActiveMin, 10)},
+		{"Active Time Max", strconv.FormatInt(Agents[agentID].ActiveMax, 10)},
+		{"Inactive Multiplier", strconv.FormatInt(Agents[agentID].InactiveMultiplier, 10)},
+		{"Inactive Threshold", strconv.Itoa(Agents[agentID].InactiveThreshold)},
+		{"Message Padding Max", strconv.Itoa(Agents[agentID].PaddingMax)},
+		{"Max Retries", strconv.Itoa(Agents[agentID].MaxRetry)},
+		{"Failed Check In", strconv.Itoa(Agents[agentID].FailedCheckin)},
+		{"Kill Date", time.Unix(Agents[agentID].KillDate, 0).UTC().Format(time.RFC3339)},
+		{"Communication Protocol", Agents[agentID].Proto},
+		{"JA3 TLS Client Signature", Agents[agentID].JA3},
+	}
+
+	tblHeight := int(math.Max(float64(len(implantInfo)), float64(len(configInfo))))
+	data := make([][]string, tblHeight)
+	for i := 0; i < tblHeight; i++ {
+		data[i] = make([]string, 4)
+	}
+	for i := 0; i < len(implantInfo); i++ {
+		data[i][0] = implantInfo[i][0]
+		data[i][1] = implantInfo[i][1]
+	}
+	for i := 0; i < len(configInfo); i++ {
+		data[i][2] = configInfo[i][0]
+		data[i][3] = configInfo[i][1]
+	}
+
 	table.AppendBulk(data)
 	fmt.Println()
 	table.Render()
