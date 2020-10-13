@@ -55,6 +55,10 @@ import (
 // Agents contains all of the instantiated agent object that are accessed by other modules
 var Agents = make(map[uuid.UUID]*agent)
 
+// Allows you to queue jobs for agents that may not be registered yet
+// Each uuid can have multiple []string{jobType, jobArgs...}
+var queuedJobs = make(map[uuid.UUID][][]string)
+
 type agent struct {
 	ID                 uuid.UUID
 	Note               string // Shorthand for cli to reference this agent
@@ -200,6 +204,18 @@ func OPAQUERegistrationInit(m messages.Base, opaqueServerKey kyber.Scalar) (mess
 
 	// Add agent to global map
 	Agents[m.ID] = &agent
+
+	// If we had any queued jobs, add them now
+	jobs, ok := queuedJobs[m.ID]
+	if ok {
+		for _, job := range jobs {
+			_, err := AddJob(m.ID, job[0], job[1:])
+			if err != nil {
+				return returnMessage, err
+			}
+		}
+		delete(queuedJobs, m.ID)
+	}
 
 	Log(m.ID, "Received agent OPAQUE register initialization message")
 
@@ -534,6 +550,20 @@ func GetAgentList() func(string) []string {
 	}
 }
 
+func ClearQueue() {
+	queuedJobs = make(map[uuid.UUID][][]string)
+}
+
+func ListQueue() string {
+	out := ""
+	for k, _ := range queuedJobs {
+		for j, _ := range queuedJobs[k] {
+			out += fmt.Sprintf("%s: %s\n", k, j)
+		}
+	}
+	return out
+}
+
 func ClearJobs(agentID uuid.UUID) error {
 	_, ok := Agents[agentID]
 	if !ok {
@@ -716,7 +746,15 @@ func AddJob(agentID uuid.UUID, jobType string, jobArgs []string) (string, error)
 			job.Args))
 		return job.ID, nil
 	}
-	return "", errors.New("invalid agent ID")
+	// Agent wasn't found, queue this bad boy up
+	_, ok := queuedJobs[agentID]
+	jobDetails := append([]string{jobType}, jobArgs...)
+	if ok {
+		queuedJobs[agentID] = append(queuedJobs[agentID], jobDetails)
+	} else {
+		queuedJobs[agentID] = [][]string{jobDetails}
+	}
+	return fmt.Sprintf("Queued job for %s", agentID.String()), nil
 }
 
 // GetMessageForJob returns a Message Base structure for the provided job type
