@@ -548,7 +548,9 @@ func Shell() {
 				exit()
 			}
 		} else if err == io.EOF {
-			exit()
+			if confirm("Are you sure you want to exit the server?") {
+				exit()
+			}
 		}
 
 		line = strings.TrimSpace(line)
