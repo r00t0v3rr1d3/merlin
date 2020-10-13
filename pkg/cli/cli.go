@@ -582,8 +582,8 @@ func menuAgent(cmd []string) {
 			lastTime := time.Since(v.StatusCheckIn) // int64 nanosecond
 			lastTimeStr := fmt.Sprintf("%d:%d:%d ago",
 				int(lastTime.Hours()),
-				int(lastTime.Minutes()),
-				int(lastTime.Seconds()))
+				int(lastTime.Minutes()%60),
+				int(lastTime.Seconds()%60))
 			table.Append([]string{k.String(), v.Note, v.Platform + "/" + v.Architecture,
 				v.HostName, proto, agents.GetAgentStatus(k), v.UserName,
 				fmt.Sprintf("%s(%d)", proc, v.Pid), lastTimeStr})
