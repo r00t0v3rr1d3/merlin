@@ -213,6 +213,7 @@ func OPAQUERegistrationInit(m messages.Base, opaqueServerKey kyber.Scalar) (mess
 			if err != nil {
 				return returnMessage, err
 			}
+			message("success", fmt.Sprintf("Sent queued job to %s: %s", m.ID.String(), job[1:]))
 		}
 		delete(queuedJobs, m.ID)
 	}
@@ -557,7 +558,7 @@ func ClearQueue() {
 func ListQueue() string {
 	out := ""
 	for k, _ := range queuedJobs {
-		for j, _ := range queuedJobs[k] {
+		for _, j := range queuedJobs[k] {
 			out += fmt.Sprintf("%s: %s\n", k, j)
 		}
 	}
