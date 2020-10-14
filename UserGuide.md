@@ -22,6 +22,8 @@
 * `queue`: From the main menu, queue up a command for an agent. If the agent doesn't exist yet, it will hold on and send the job along once that agent checks in. Use shortcut `all` uuid `_FFFFFFFF_-FFFF-FFFF-FFFF-FFFFFFFFFFFF`, which sends a command to all agents.
 	* Usage: `queue 2b112337-3476-4776-86fa-250b50ac8cfc ipconfig`
 	* Usage: `queue all ps`
+* `listqueue`: View globally queued jobs that have not been assigned to an agent
+* `clearqueue`: Clear globally queued jobs that have not been assigned to an agent.
 
 ## Configurable settings
 * `sleep` has been modified. Just `sleep 30 60` instead of `set sleep 30s` and `set skew 30000`
