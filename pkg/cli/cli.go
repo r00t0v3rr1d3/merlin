@@ -360,7 +360,7 @@ func handleAgentShell(cmd []string, curAgent uuid.UUID) {
 			}
 		}
 	case "?", "help":
-		menuHelpAgent()
+		menuHelpAgent(agents.Agents[curAgent].Platform)
 	case "inactivemultiplier":
 		MessageChannel <- agentAPI.SetInactiveMultiplier(curAgent, cmd)
 	case "inactivethreshold":
@@ -704,7 +704,11 @@ func menuSetAgent(agentID uuid.UUID) {
 	for k := range agents.Agents {
 		if agentID == agents.Agents[k].ID {
 			shellAgent = agentID
-			prompt.Config.AutoComplete = getCompleter("agent")
+			if agents.Agents[k].Platform == "windows" {
+				prompt.Config.AutoComplete = getCompleter("agent-windows")
+			} else {
+				prompt.Config.AutoComplete = getCompleter("agent-linux")
+			}
 			prompt.SetPrompt("\033[31mGandalf[\033[32magent\033[31m][\033[33m" + shellAgent.String() + "\033[31m]»\033[0m ")
 			shellMenuContext = "agent"
 		}
@@ -1116,8 +1120,51 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		),
 	)
 
-	// Agent Menu
-	var agent = readline.NewPrefixCompleter(
+	// Agent Non-Windows Menu
+	var agentL = readline.NewPrefixCompleter(
+		readline.PcItem("back"),
+		readline.PcItem("batchcommands"),
+		readline.PcItem("cd"),
+		readline.PcItem("clear"),
+		readline.PcItem("download"),
+		readline.PcItem("exec"),
+		readline.PcItem("exit"),
+		readline.PcItem("help"),
+		readline.PcItem("ifconfig"),
+		readline.PcItem("inactivemultiplier"),
+		readline.PcItem("inactivethreshold"),
+		readline.PcItem("info"),
+		readline.PcItem("interact",
+			readline.PcItemDynamic(agents.GetAgentList()),
+		),
+		readline.PcItem("ipconfig"),
+		readline.PcItem("ja3"),
+		readline.PcItem("kill"),
+		readline.PcItem("killdate"),
+		readline.PcItem("jobs"),
+		readline.PcItem("ls"),
+		readline.PcItem("main"),
+		readline.PcItem("maxretry"),
+		readline.PcItem("note"),
+		readline.PcItem("padding"),
+		readline.PcItem("pwd"),
+		readline.PcItem("quit"),
+		readline.PcItem("sessions"),
+		readline.PcItem("sdelete"),
+		readline.PcItem("shinject",
+			readline.PcItem("self"),
+			readline.PcItem("remote"),
+			readline.PcItem("RtlCreateUserThread"),
+		),
+		readline.PcItem("sleep"),
+		readline.PcItem("status"),
+		readline.PcItem("timestomp"),
+		readline.PcItem("touch"),
+		readline.PcItem("upload"),
+	)
+
+	// Agent Windows Menu
+	var agentW = readline.NewPrefixCompleter(
 		readline.PcItem("back"),
 		readline.PcItem("batchcommands"),
 		readline.PcItem("cd"),
@@ -1222,8 +1269,10 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 	)
 
 	switch completer {
-	case "agent":
-		return agent
+	case "agent-nix":
+		return agentL
+	case "agent-windows":
+		return agentW
 	case "listener":
 		return listener
 	case "listenersmain":
@@ -1311,7 +1360,7 @@ func menuHelpModule() {
 }
 
 // The help menu while in the agent menu
-func menuHelpAgent() {
+func menuHelpAgent(platform string) {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
 	table.SetBorder(false)
@@ -1342,7 +1391,6 @@ func menuHelpAgent() {
 		{"maxretry", "Set number of failed check in attempts before the agent exits", "maxretry 30"},
 		{"note", "Set a custom note for this agent", "note Help This callback dead"},
 		{"padding", "Set maximum number of random bytes to pad messages", "padding 4096"},
-		{"ps", "Display running processes", ""},
 		{"pwd", "Display the current working directory", ""},
 		{"quit", "Shutdown and close the server", ""},
 		{"sessions", "List all agents session information.", ""},
@@ -1352,7 +1400,13 @@ func menuHelpAgent() {
 		{"status", "Print the current status of the agent", ""},
 		{"touch", "<source> <destination>", "touch \"C:\\\\old file.txt\" C:\\\\Merlin.exe"},
 		{"upload", "Upload a file to the agent", "upload <local_file> <remote_file>"},
-		{"winexec", "Execute a program using Windows API calls. Does not provide stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"},
+	}
+
+	// ps 23
+	// winexec 33
+	if platform == "windows" {
+		data = append(data[:23], append([][]string{{"ps", "Display running processes", ""}}, data[23:]...)...)
+		data = append(data[:33], append([][]string{{"winexec", "Execute a program using Windows API calls. Does not provide stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"}}, data[33:]...)...)
 	}
 
 	table.AppendBulk(data)

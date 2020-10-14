@@ -48,4 +48,5 @@
 * Replaced `execute-shellcode` with `shinject`
 * Replaced `kill` with `exit` to cause an agent to kill itself
 * A sweet banner
+* The list of available commands will now have different options for windows/non-windows hosts. 
 
