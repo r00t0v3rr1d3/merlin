@@ -707,7 +707,7 @@ func menuSetAgent(agentID uuid.UUID) {
 			if agents.Agents[k].Platform == "windows" {
 				prompt.Config.AutoComplete = getCompleter("agent-windows")
 			} else {
-				prompt.Config.AutoComplete = getCompleter("agent-linux")
+				prompt.Config.AutoComplete = getCompleter("agent-nix")
 			}
 			prompt.SetPrompt("\033[31mGandalf[\033[32magent\033[31m][\033[33m" + shellAgent.String() + "\033[31m]»\033[0m ")
 			shellMenuContext = "agent"
