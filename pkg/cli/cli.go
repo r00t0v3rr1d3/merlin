@@ -124,7 +124,7 @@ func handleMainShell(cmd []string) {
 				handleAgentShell(newCmd, newID)
 			}
 		}
-	case "listqueue":
+	case "jobs":
 		jobs := agents.ListQueue()
 		MessageChannel <- messages.UserMessage{
 			Level:   messages.Plain,
@@ -132,7 +132,7 @@ func handleMainShell(cmd []string) {
 			Time:    time.Now().UTC(),
 			Error:   false,
 		}
-	case "clearqueue":
+	case "clear":
 		agents.ClearQueue()
 		MessageChannel <- messages.UserMessage{
 			Level:   messages.Plain,
@@ -1074,13 +1074,13 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 			),
 		),
 		readline.PcItem("banner"),
-		readline.PcItem("clearqueue"),
+		readline.PcItem("clear"),
 		readline.PcItem("help"),
 		readline.PcItem("interact",
 			readline.PcItemDynamic(agents.GetAgentList()),
 		),
 		readline.PcItem("listeners"),
-		readline.PcItem("listqueue"),
+		readline.PcItem("jobs"),
 		readline.PcItem("queue",
 			readline.PcItemDynamic(agents.GetAgentList()),
 		),
@@ -1304,11 +1304,11 @@ func menuHelpMain() {
 	data := [][]string{
 		{"agent", "Interact with agents or list agents", "interact, list"},
 		{"banner", "Print the Merlin banner", ""},
-		{"clearqueue", "Clear all queued commands that have not been sent to an agent", ""},
-		{"listqueue", "List all unassigned jobs", ""},
+		{"clear", "Clear all queued commands that have not been sent to an agent", ""},
+		{"jobs", "List all queued commands to unassigned agents", ""},
 		{"listeners", "Move to the listeners menu", ""},
 		{"interact", "Interact with an agent", ""},
-		{"queue", "Manually send a job to a client (that may not be registered yet)", "queue 2b112337-3476-4776-86fa-250b50ac8cfc ipconfig"},
+		{"queue", "Manually send a command to a client (that may not be registered yet)", "queue 2b112337-3476-4776-86fa-250b50ac8cfc sleep 300 600"},
 		{"quit", "Exit and close the Merlin server", ""},
 		{"remove", "Remove or delete a DEAD agent from the server"},
 		{"sessions", "List all agents session information.", ""},
@@ -1385,7 +1385,6 @@ func menuHelpAgent(platform string) {
 		{"jobs", "List queued commands", ""},
 		{"kill", "Kill a process", "kill <pid>"},
 		{"killdate", "Set agent's killdate (UNIX epoch timestamp)", "killdate 1609480800"},
-		{"listqueue", "Lists all jobs that have yet to be sent to an agent", ""},
 		{"ls", "List directory contents", "ls /etc OR ls C:\\\\Users"},
 		{"main", "Return to the main menu", ""},
 		{"maxretry", "Set number of failed check in attempts before the agent exits", "maxretry 30"},

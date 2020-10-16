@@ -44,9 +44,9 @@
 * Implemented `ps` functionality
 * Implemented `touch/timestomp` functionality
 * Implemented `ipconfig/ifconfig` functionality
+* Implemented process killing functionality with `kill`
+* Replaced original `kill` with `exit` to cause an agent to kill itself
 * Replaced `cmd` and `shell` with `exec`
 * Replaced `execute-shellcode` with `shinject`
-* Replaced `kill` with `exit` to cause an agent to kill itself
 * A sweet banner
 * The list of available commands will now have different options for windows/non-windows hosts. 
-

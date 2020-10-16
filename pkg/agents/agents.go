@@ -496,7 +496,7 @@ func UpdateInfo(m messages.Base) error {
 	Log(m.ID, fmt.Sprintf("\tAgent proto: %s ", p.Proto))
 	Log(m.ID, fmt.Sprintf("\tAgent KillDate: %s", time.Unix(p.KillDate, 0).UTC().Format(time.RFC3339)))
 	Log(m.ID, fmt.Sprintf("\tAgent JA3 signature: %s", p.JA3))
-	Log(m.ID, fmt.Sprintf("\tAgent BatchCommands: %s", p.BatchCommands))
+	Log(m.ID, fmt.Sprintf("\tAgent BatchCommands: %t", p.BatchCommands))
 
 	Agents[m.ID].Version = p.Version
 	Agents[m.ID].Build = p.Build
@@ -755,7 +755,7 @@ func AddJob(agentID uuid.UUID, jobType string, jobArgs []string) (string, error)
 	} else {
 		queuedJobs[agentID] = [][]string{jobDetails}
 	}
-	return fmt.Sprintf("Queued job for %s", agentID.String()), nil
+	return fmt.Sprintf(""), nil
 }
 
 // GetMessageForJob returns a Message Base structure for the provided job type
