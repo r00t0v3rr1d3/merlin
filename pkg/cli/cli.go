@@ -433,6 +433,8 @@ func handleAgentShell(cmd []string, curAgent uuid.UUID) {
 				Error:   true,
 			}
 		}
+	case "nslookup":
+		MessageChannel <- agentAPI.Nslookup(curAgent, cmd)
 	case "padding":
 		MessageChannel <- agentAPI.SetPadding(curAgent, cmd)
 	case "ps":
@@ -1146,6 +1148,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("main"),
 		readline.PcItem("maxretry"),
 		readline.PcItem("note"),
+		readline.PcItem("nslookup"),
 		readline.PcItem("padding"),
 		readline.PcItem("pwd"),
 		readline.PcItem("quit"),
@@ -1189,6 +1192,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("main"),
 		readline.PcItem("maxretry"),
 		readline.PcItem("note"),
+		readline.PcItem("nslookup"),
 		readline.PcItem("padding"),
 		readline.PcItem("ps"),
 		readline.PcItem("pwd"),
@@ -1389,6 +1393,7 @@ func menuHelpAgent(platform string) {
 		{"main", "Return to the main menu", ""},
 		{"maxretry", "Set number of failed check in attempts before the agent exits", "maxretry 30"},
 		{"note", "Set a custom note for this agent", "note Help This callback dead"},
+		{"nslookup", "Perform lookup of hostname or IP address", "nslookup 8.8.8.8"},
 		{"padding", "Set maximum number of random bytes to pad messages", "padding 4096"},
 		{"pwd", "Display the current working directory", ""},
 		{"quit", "Shutdown and close the server", ""},

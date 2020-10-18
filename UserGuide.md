@@ -16,6 +16,7 @@
 * `sdelete`: securely delete a file.
 	* Usage: `sdelete <filepath>`
 * `ipconfig`, `ifconfig`: Get more detailed information on a host's network adapters.
+* `nslookup`: Perform lookup of hostname or IP address according to target system default resolver.
 ### Agent information
 * `jobs`: List an agent's currently queued jobs
 * `clear`, `c`: Clear queued jobs for an agent
@@ -44,6 +45,7 @@
 * Implemented `ps` functionality
 * Implemented `touch/timestomp` functionality
 * Implemented `ipconfig/ifconfig` functionality
+* Implemented `nslookup` functionality
 * Implemented process killing functionality with `kill`
 * Replaced original `kill` with `exit` to cause an agent to kill itself
 * Replaced `cmd` and `shell` with `exec`

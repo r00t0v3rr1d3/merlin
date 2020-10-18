@@ -243,6 +243,21 @@ func LS(agentID uuid.UUID, Args []string) messages.UserMessage {
 	return messages.JobMessage(agentID, job)
 }
 
+// Nslookup performs lookup of hostname or IP address according to target system default resolver
+// Args[0] = "nslookup"
+// Args[1] = query (string of either IP or hostname)
+func Nslookup(agentID uuid.UUID, Args []string) messages.UserMessage {
+	ArgsArray, err := shellwords.Parse(strings.Join(Args, " "))
+	if len(ArgsArray) != 2 {
+		return messages.ErrorMessage(fmt.Sprintf("Incorrect number of arguments provided for the Agent Nslookup call: %s", Args))
+	}
+	job, err := agents.AddJob(agentID, "nslookup", Args)
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
 // PS is used to print the running processes
 func PS(agentID uuid.UUID, Args []string) messages.UserMessage {
 	job, err := agents.AddJob(agentID, "ps", Args)

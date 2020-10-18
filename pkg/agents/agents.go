@@ -913,6 +913,14 @@ func GetMessageForJob(agentID uuid.UUID, job Job, moreJobs bool) (messages.Base,
 			Args:    job.Args,
 		}
 		m.Payload = p
+	case "nslookup":
+		m.Type = "NativeCmd"
+		p := messages.NativeCmd{
+			Job:     job.ID,
+			Command: job.Args[0],
+			Args:    job.Args[1],
+		}
+		m.Payload = p
 	case "padding":
 		m.Type = "AgentControl"
 		p := messages.AgentControl{
