@@ -412,6 +412,8 @@ func handleAgentShell(cmd []string, curAgent uuid.UUID) {
 		menuSetMain()
 	case "maxretry":
 		MessageChannel <- agentAPI.SetMaxRetry(curAgent, cmd)
+	case "netstat":
+		MessageChannel <- agentAPI.Netstat(curAgent, cmd)
 	case "note":
 		newNote := ""
 		if len(cmd) > 1 {
@@ -1193,6 +1195,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("ls"),
 		readline.PcItem("main"),
 		readline.PcItem("maxretry"),
+		readline.PcItem("netstat"),
 		readline.PcItem("note"),
 		readline.PcItem("nslookup"),
 		readline.PcItem("padding"),
@@ -1409,14 +1412,15 @@ func menuHelpAgent(platform string) {
 		{"upload", "Upload a file to the agent", "upload <local_file> <remote_file>"},
 	}
 
-	// ps 23
-	// uptime 33
-	// winexec 34
+	// netstat 20
+	// ps 24
+	// uptime 34
+	// winexec 35
 	if platform == "windows" {
-		data = append(data[:23], append([][]string{{"ps", "Display running processes", ""}}, data[23:]...)...)
-		//data = append(data[:33], append([][]string{{"winexec", "Execute a program using Windows API calls. Does not provide stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"}}, data[33:]...)...)
-		data = append(data[:33], append([][]string{{"uptime", "Print system uptime", ""}}, data[33:]...)...)
-		data = append(data[:34], append([][]string{{"winexec", "Execute a program using Windows API calls. Does not provide stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"}}, data[34:]...)...)
+		data = append(data[:20], append([][]string{{"netstat", "Display network connections", "netstat -p tcp"}}, data[20:]...)...)
+		data = append(data[:24], append([][]string{{"ps", "Display running processes", ""}}, data[24:]...)...)
+		data = append(data[:34], append([][]string{{"uptime", "Print system uptime", ""}}, data[34:]...)...)
+		data = append(data[:35], append([][]string{{"winexec", "Execute a program using Windows API calls. Does not provide stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"}}, data[35:]...)...)
 	}
 
 	table.AppendBulk(data)

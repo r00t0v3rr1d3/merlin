@@ -18,6 +18,7 @@
 * `ipconfig`, `ifconfig`: Get more detailed information on a host's network adapters.
 * `nslookup`: Perform lookup of hostname or IP address according to target system default resolver.
 * `uptime`: Print the target system's uptime for Windows agents
+* `netstat`: Display network connection for Windows agents (tcp, tcp6, udp, udp6)
 ### Agent information
 * `jobs`: List an agent's currently queued jobs
 * `clear`, `c`: Clear queued jobs for an agent
@@ -47,6 +48,7 @@
 * Implemented `uptime` functionality for Windows agents
 * Implemented `touch/timestomp` functionality
 * Implemented `ipconfig/ifconfig` functionality
+* Implemented `netstat` functionality
 * Implemented `nslookup` functionality
 * Implemented process killing functionality with `kill`
 * Replaced original `kill` with `exit` to cause an agent to kill itself

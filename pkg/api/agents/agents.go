@@ -243,6 +243,15 @@ func LS(agentID uuid.UUID, Args []string) messages.UserMessage {
 	return messages.JobMessage(agentID, job)
 }
 
+// Netstat is used to print network connections on the target system
+func Netstat(agentID uuid.UUID, Args []string) messages.UserMessage {
+	job, err := agents.AddJob(agentID, "netstat", Args)
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
 // Nslookup performs lookup of hostname or IP address according to target system default resolver
 // Args[0] = "nslookup"
 // Args[1] = query (string of either IP or hostname)

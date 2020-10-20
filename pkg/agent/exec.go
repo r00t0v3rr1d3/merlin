@@ -78,6 +78,11 @@ func WinExec(command string, args string, ppid int) (stdout string, stderr strin
 	return "", "Windows API is not implemented for this operating system"
 }
 
+// Netstat is only a valid function on Windows agents...for now
+func Netstat() (stdout string, stderr string) {
+	return "", "Netstat is not implemented for this operating system"
+}
+
 // Ps is only a valid function on Windows agents...for now
 func Ps() (stdout string, stderr string) {
 	return "", "Process listing is not implemented for this operating system"

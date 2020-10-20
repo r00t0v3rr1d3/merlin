@@ -1072,6 +1072,8 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 					c.Stdout = fmt.Sprintf("Changed working directory to %s", path)
 				}
 			}
+		case "netstat":
+			c.Stdout, c.Stderr = a.netstat()
 		case "nslookup":
 			var query = p.Args
 			var response []string
@@ -1156,10 +1158,8 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 				c.Stderr = fmt.Sprintf("Error deleting file: %s\r\n%s", p.Args, err.Error())
 			}
 			c.Stdout = fmt.Sprintf("Securely deleted file: %s\n", p.Args)
-
 		case "ifconfig", "ipconfig":
 			c.Stdout, c.Stderr = a.ifconfig()
-
 		case "uptime":
 			c.Stdout, c.Stderr = a.uptime()
 		case "kill":
@@ -1302,6 +1302,28 @@ func (a *Agent) ps() (stdout string, stderr string) {
 	if a.Verbose {
 		if stderr != "" {
 			message("warn", fmt.Sprintf("There was an error executing ps"))
+			message("success", stdout)
+			message("warn", fmt.Sprintf("Error: %s", stderr))
+
+		} else {
+			message("success", stdout)
+		}
+	}
+	return stdout, stderr
+}
+
+func (a *Agent) netstat() (stdout string, stderr string) {
+	if a.Debug {
+		message("debug", fmt.Sprintf("Running netstat function"))
+	} else if a.Verbose {
+		message("success", fmt.Sprintf("Executing netstat function"))
+	}
+
+	stdout, stderr = Netstat()
+
+	if a.Verbose {
+		if stderr != "" {
+			message("warn", fmt.Sprintf("There was an error executing netstat"))
 			message("success", stdout)
 			message("warn", fmt.Sprintf("Error: %s", stderr))
 
