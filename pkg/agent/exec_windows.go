@@ -29,6 +29,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"syscall"
+	"time"
 	"unsafe"
 
 	// Sub Repositories
@@ -479,7 +480,6 @@ func processes() ([]Process, error) {
 }
 
 func Ps() (stdout string, stderr string) {
-	//stdout += fmt.Sprintf("%s\n", iface.Name)
 	processList, err := processes()
 	if err != nil {
 		stderr += fmt.Sprintf("ps.Processes() failed\n")
@@ -493,6 +493,21 @@ func Ps() (stdout string, stderr string) {
 		stdout += fmt.Sprintf("%d\t%d\t%s\t%s\n", process.Pid(), process.PPid(), process.Executable(), process.Owner())
 	}
 	return stdout, ""
+}
+
+func Uptime() (stdout string, stderr string) {
+	var kernel32DLL = syscall.MustLoadDLL("kernel32")
+	var procGetTickCount64 = kernel32DLL.MustFindProc("GetTickCount64")
+	r1, _, e1 := syscall.Syscall(procGetTickCount64.Addr(), 0, 0, 0, 0)
+
+	if e1 != 0 {
+		stderr += fmt.Sprintf("Uptime failed\n")
+		stderr += fmt.Sprintf("%s\n", e1.Error())
+		return "", stderr
+	} else {
+		stdout += fmt.Sprintf("System uptime: %s\n", (time.Duration(r1) * time.Millisecond))
+		return stdout, ""
+	}
 }
 
 // ExecuteShellcodeSelf executes provided shellcode in the current process

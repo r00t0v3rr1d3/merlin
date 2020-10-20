@@ -493,6 +493,8 @@ func handleAgentShell(cmd []string, curAgent uuid.UUID) {
 		MessageChannel <- agentAPI.Touch(curAgent, cmd)
 	case "upload":
 		MessageChannel <- agentAPI.Upload(curAgent, cmd)
+	case "uptime":
+		MessageChannel <- agentAPI.Uptime(curAgent, cmd)
 	case "winexec":
 		MessageChannel <- agentAPI.WinExec(curAgent, cmd)
 	default:
@@ -1209,6 +1211,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("timestomp"),
 		readline.PcItem("touch"),
 		readline.PcItem("upload"),
+		readline.PcItem("uptime"),
 		readline.PcItem("winexec"),
 	)
 
@@ -1407,10 +1410,13 @@ func menuHelpAgent(platform string) {
 	}
 
 	// ps 23
-	// winexec 33
+	// uptime 33
+	// winexec 34
 	if platform == "windows" {
 		data = append(data[:23], append([][]string{{"ps", "Display running processes", ""}}, data[23:]...)...)
-		data = append(data[:33], append([][]string{{"winexec", "Execute a program using Windows API calls. Does not provide stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"}}, data[33:]...)...)
+		//data = append(data[:33], append([][]string{{"winexec", "Execute a program using Windows API calls. Does not provide stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"}}, data[33:]...)...)
+		data = append(data[:33], append([][]string{{"uptime", "Print system uptime", ""}}, data[33:]...)...)
+		data = append(data[:34], append([][]string{{"winexec", "Execute a program using Windows API calls. Does not provide stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"}}, data[34:]...)...)
 	}
 
 	table.AppendBulk(data)

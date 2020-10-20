@@ -83,6 +83,11 @@ func Ps() (stdout string, stderr string) {
 	return "", "Process listing is not implemented for this operating system"
 }
 
+// Uptime is only a valid function on Windows agents...for now
+func Uptime() (stdout string, stderr string) {
+	return "", "Uptime is not implemented for this operating system"
+}
+
 // ExecuteShellcodeSelf executes provided shellcode in the current process
 //lint:ignore SA4009 Function needs to mirror exec_windows.go and inputs must be used
 func ExecuteShellcodeSelf(shellcode []byte) error {

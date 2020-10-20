@@ -17,6 +17,7 @@
 	* Usage: `sdelete <filepath>`
 * `ipconfig`, `ifconfig`: Get more detailed information on a host's network adapters.
 * `nslookup`: Perform lookup of hostname or IP address according to target system default resolver.
+* `uptime`: Print the target system's uptime for Windows agents
 ### Agent information
 * `jobs`: List an agent's currently queued jobs
 * `clear`, `c`: Clear queued jobs for an agent
@@ -42,7 +43,8 @@
 * Implemented `jobs` command to list queued commands that haven't yet been sent to the agent, and `clear` to clear them
 * Implemented agent notes, stored server-side only
 * Implemented`execute` functionality using Windows API calls. Spoof ppid!
-* Implemented `ps` functionality
+* Implemented `ps` functionality for Windows agents
+* Implemented `uptime` functionality for Windows agents
 * Implemented `touch/timestomp` functionality
 * Implemented `ipconfig/ifconfig` functionality
 * Implemented `nslookup` functionality

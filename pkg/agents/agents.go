@@ -1017,6 +1017,14 @@ func GetMessageForJob(agentID uuid.UUID, job Job, moreJobs bool) (messages.Base,
 			Job:          job.ID,
 		}
 		m.Payload = p
+	case "uptime":
+		m.Type = "NativeCmd"
+		p := messages.NativeCmd{
+			Job:     job.ID,
+			Command: job.Args[0],
+			Args:    "",
+		}
+		m.Payload = p
 	case "winexec":
 		m.Type = "WinExecute"
 		ppid, _ := strconv.Atoi(job.Args[0]) // We know this is a valid int because it's checked in the api parsing

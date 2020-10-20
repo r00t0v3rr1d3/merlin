@@ -498,3 +498,12 @@ func Upload(agentID uuid.UUID, Args []string) messages.UserMessage {
 	}
 	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent Upload call: %s", Args))
 }
+
+// Uptime is used to print the amount of time the target system has been online
+func Uptime(agentID uuid.UUID, Args []string) messages.UserMessage {
+	job, err := agents.AddJob(agentID, "uptime", Args)
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
