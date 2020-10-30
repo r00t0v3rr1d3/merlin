@@ -919,7 +919,7 @@ func GetMessageForJob(agentID uuid.UUID, job Job, moreJobs bool) (messages.Base,
 			p := messages.NativeCmd{
 				Job:     job.ID,
 				Command: job.Args[0],
-				Args:    job.Args[1],
+				Args:    job.Args[2],
 			}
 			m.Payload = p
 		} else {
@@ -930,7 +930,6 @@ func GetMessageForJob(agentID uuid.UUID, job Job, moreJobs bool) (messages.Base,
 			}
 			m.Payload = p
 		}
-
 	case "nslookup":
 		m.Type = "NativeCmd"
 		p := messages.NativeCmd{

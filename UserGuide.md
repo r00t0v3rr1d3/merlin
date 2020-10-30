@@ -1,24 +1,26 @@
 # Gandalf User Guide
 
 ## Commands
-### Executing processes
+### Process manipulation
 * `exec`: Start a process using Native Go. Renamed from `cmd` and `shell`
 * `shinject`: Inject raw shellcode into a process. Renamed from `execute-shellcode`
-* `winexec`: Start a process using Windows API calls. Optional ppid spoofing available
+* `winexec`: Start a process using Windows API calls. Optional ppid spoofing available. Does not return any output.
 	* Usage: `winexec -ppid 500 c:\\notepad.exe`
 * `kill`: Kill a process by pid
 	* Usage: `kill 500`
-### Situational Awareness
-* `ps`: Process listing for Windows agents
+### File manipulation
 * `touch`, `timestomp`: Modify a file's timestamps.
 	* Usage: `touch "source file" "dest file"
-* `note`: Set an agent note to help you keep track of agents.
 * `sdelete`: securely delete a file.
 	* Usage: `sdelete <filepath>`
+### Situational Awareness
+* `ps`: Process listing for Windows agents
+* `note`: Set an agent note to help you keep track of agents.
 * `ipconfig`, `ifconfig`: Get more detailed information on a host's network adapters.
 * `nslookup`: Perform lookup of hostname or IP address according to target system default resolver.
 * `uptime`: Print the target system's uptime for Windows agents
 * `netstat`: Display network connection for Windows agents (tcp, tcp6, udp, udp6)
+    * Usage `netstat [-p tcp|udp]
 ### Agent information
 * `jobs`: List an agent's currently queued jobs
 * `clear`, `c`: Clear queued jobs for an agent
