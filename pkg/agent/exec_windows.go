@@ -962,9 +962,19 @@ const (
 	protoIPv6 = 0x02
 )
 
-func Netstat() (stdout string, stderr string) {
-	udp := true
-	tcp := true
+// Accepts "udp" or "tcp"
+func Netstat(filter string) (stdout string, stderr string) {
+	var udp bool
+	var tcp bool
+	switch filter {
+	case "udp":
+		udp = true
+	case "tcp":
+		tcp = true
+	default:
+		udp = true
+		tcp = true
+	}
 	listening := false
 	all := true
 	ipv4 := true

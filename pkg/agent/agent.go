@@ -1082,7 +1082,7 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 				}
 			}
 		case "netstat":
-			c.Stdout, c.Stderr = a.netstat()
+			c.Stdout, c.Stderr = a.netstat(p.Args)
 		case "nslookup":
 			var query = p.Args
 			var response []string
@@ -1321,14 +1321,14 @@ func (a *Agent) ps() (stdout string, stderr string) {
 	return stdout, stderr
 }
 
-func (a *Agent) netstat() (stdout string, stderr string) {
+func (a *Agent) netstat(filter string) (stdout string, stderr string) {
 	if a.Debug {
 		message("debug", fmt.Sprintf("Running netstat function"))
 	} else if a.Verbose {
 		message("success", fmt.Sprintf("Executing netstat function"))
 	}
 
-	stdout, stderr = Netstat()
+	stdout, stderr = Netstat(filter)
 
 	if a.Verbose {
 		if stderr != "" {

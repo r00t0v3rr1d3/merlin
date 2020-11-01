@@ -244,8 +244,18 @@ func LS(agentID uuid.UUID, Args []string) messages.UserMessage {
 }
 
 // Netstat is used to print network connections on the target system
+// Supports a "-p tcp" or "-p udp"
+// Args[0] = "netstat"
+// Args[1] = (optional) "-p"
+// Args[2] = (optional) "tcp" or "udp"
 func Netstat(agentID uuid.UUID, Args []string) messages.UserMessage {
 	job, err := agents.AddJob(agentID, "netstat", Args)
+	if len(Args) > 1 {
+		if Args[1] != "-p" || (Args[2] != "tcp" && Args[2] != "udp") {
+			return messages.ErrorMessage(fmt.Sprintf("Incorrect arguments: %s", Args))
+		}
+		return messages.JobMessage(agentID, job)
+	}
 	if err != nil {
 		return messages.ErrorMessage(err.Error())
 	}
