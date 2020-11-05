@@ -439,6 +439,8 @@ func handleAgentShell(cmd []string, curAgent uuid.UUID) {
 		MessageChannel <- agentAPI.Nslookup(curAgent, cmd)
 	case "padding":
 		MessageChannel <- agentAPI.SetPadding(curAgent, cmd)
+	case "pipes":
+		MessageChannel <- agentAPI.Pipes(curAgent, cmd)
 	case "ps":
 		MessageChannel <- agentAPI.PS(curAgent, cmd)
 	case "pwd":
@@ -1199,6 +1201,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("note"),
 		readline.PcItem("nslookup"),
 		readline.PcItem("padding"),
+		readline.PcItem("pipes"),
 		readline.PcItem("ps"),
 		readline.PcItem("pwd"),
 		readline.PcItem("quit"),
@@ -1413,14 +1416,16 @@ func menuHelpAgent(platform string) {
 	}
 
 	// netstat 20
-	// ps 24
-	// uptime 34
-	// winexec 35
+	// pipes 24
+	// ps 25
+	// uptime 35
+	// winexec 36
 	if platform == "windows" {
 		data = append(data[:20], append([][]string{{"netstat", "Display network connections", "netstat -p tcp"}}, data[20:]...)...)
-		data = append(data[:24], append([][]string{{"ps", "Display running processes", ""}}, data[24:]...)...)
-		data = append(data[:34], append([][]string{{"uptime", "Print system uptime", ""}}, data[34:]...)...)
-		data = append(data[:35], append([][]string{{"winexec", "Execute a program using Windows API calls. Does not provide stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"}}, data[35:]...)...)
+		data = append(data[:24], append([][]string{{"pipes", "List named pipes", ""}}, data[24:]...)...)
+		data = append(data[:25], append([][]string{{"ps", "Display running processes", ""}}, data[25:]...)...)
+		data = append(data[:35], append([][]string{{"uptime", "Print system uptime", ""}}, data[35:]...)...)
+		data = append(data[:36], append([][]string{{"winexec", "Execute a program using Windows API calls. Does not provide stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"}}, data[36:]...)...)
 	}
 
 	table.AppendBulk(data)

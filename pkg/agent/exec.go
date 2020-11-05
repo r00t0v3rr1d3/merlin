@@ -83,6 +83,11 @@ func Netstat(filter string) (stdout string, stderr string) {
 	return "", "Netstat is not implemented for this operating system"
 }
 
+// Pipes is only a valid function on Windows agents
+func Pipes() (stdout string, stderr string) {
+	return "", "Listing named pipes is not implemented for this operating system"
+}
+
 // Ps is only a valid function on Windows agents...for now
 func Ps() (stdout string, stderr string) {
 	return "", "Process listing is not implemented for this operating system"

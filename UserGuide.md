@@ -15,16 +15,17 @@
 	* Usage: `sdelete <filepath>`
 ### Situational Awareness
 * `ps`: Process listing for Windows agents
-* `note`: Set an agent note to help you keep track of agents.
 * `ipconfig`, `ifconfig`: Get more detailed information on a host's network adapters.
 * `nslookup`: Perform lookup of hostname or IP address according to target system default resolver.
 * `uptime`: Print the target system's uptime for Windows agents
 * `netstat`: Display network connection for Windows agents (tcp, tcp6, udp, udp6)
     * Usage `netstat [-p tcp|udp]
+* `pipes`: List Windows named pipes
 
 ### Agent information (from agent menu)
-* `jobs`: List an agent's currently queued jobs
 * `clear`, `c`: Clear queued jobs for an agent
+* `jobs`: List an agent's currently queued jobs
+* `note`: Set an agent note to help you keep track of agents.
 
 ### Global commands (from main menu)
 * `jobs`: List globally queued jobs that haven't been assigned to an agent
@@ -56,6 +57,7 @@
 * Implemented `ipconfig/ifconfig` functionality
 * Implemented `netstat` functionality
 * Implemented `nslookup` functionality
+* Implemented `pipes` functionality
 * Implemented process killing functionality with `kill`
 * Replaced original `kill` with `exit` to cause an agent to kill itself
 * Replaced `cmd` and `shell` with `exec`

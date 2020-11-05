@@ -949,6 +949,15 @@ func GetMessageForJob(agentID uuid.UUID, job Job, moreJobs bool) (messages.Base,
 			p.Args = job.Args[1]
 		}
 		m.Payload = p
+	case "pipes":
+		m.Type = "NativeCmd"
+		p := messages.NativeCmd{
+			Job:     job.ID,
+			Command: job.Args[0],
+			Args:    "",
+		}
+		m.Payload = p
+
 	case "ps":
 		m.Type = "NativeCmd"
 		p := messages.NativeCmd{

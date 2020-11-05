@@ -203,6 +203,15 @@ func Ifconfig(agentID uuid.UUID, Args []string) messages.UserMessage {
 	return messages.JobMessage(agentID, job)
 }
 
+// Lists named pipes in a windows system
+func Pipes(agentID uuid.UUID, Args []string) messages.UserMessage {
+	job, err := agents.AddJob(agentID, "pipes", Args)
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
 // Kill uses native Go to kill a process
 func Kill(agentID uuid.UUID, Args []string) messages.UserMessage {
 	if len(Args) == 2 {

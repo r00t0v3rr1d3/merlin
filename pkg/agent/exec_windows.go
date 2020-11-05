@@ -78,6 +78,9 @@ const (
 
 	// PROC_THREAD_ATTRIBUTE_PARENT_PROCESS is a Windows API constant to denote the Parent Pid attribute
 	PROC_THREAD_ATTRIBUTE_PARENT_PROCESS = 0x00020000
+
+	// The path for windows named pipes
+	pipePrefix = `\\.\pipe\`
 )
 
 // Part of the Windows Struct used to spoof parent pid
@@ -1280,6 +1283,48 @@ func Ps() (stdout string, stderr string) {
 }
 
 //END PS CODE
+
+// Print out the comments of \\.\pipe\*
+// Ripped straight out of the Wireguard implementation: conn_windows.go
+func Pipes() (stdout string, stderr string) {
+	var (
+		data windows.Win32finddata
+	)
+
+	// Thanks @zx2c4 for the tips on the appropriate Windows APIs here:
+	// https://א.cc/dHGpnhxX/c.
+	h, err := windows.FindFirstFile(
+		// Append * to find all named pipes.
+		windows.StringToUTF16Ptr(pipePrefix+"*"),
+		&data,
+	)
+	if err != nil {
+		return "", err.Error()
+	}
+
+	// FindClose is used to close file search handles instead of the typical
+	// CloseHandle used elsewhere, see:
+	// https://docs.microsoft.com/en-us/windows/desktop/api/fileapi/nf-fileapi-findclose.
+	defer windows.FindClose(h)
+
+	// Check the first file's name for a match, but also keep searching for
+	// WireGuard named pipes until no more files can be iterated.
+	stdout = "Named pipes:\n"
+	for {
+		name := windows.UTF16ToString(data.FileName[:])
+		stdout += pipePrefix + name + "\n"
+
+		if err := windows.FindNextFile(h, &data); err != nil {
+			if err == windows.ERROR_NO_MORE_FILES {
+				break
+			}
+
+			return "", err.Error()
+		}
+	}
+
+	return stdout, ""
+}
 
 func Uptime() (stdout string, stderr string) {
 	var kernel32DLL = syscall.MustLoadDLL("kernel32")
