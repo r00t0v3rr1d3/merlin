@@ -438,6 +438,11 @@ func (a *Agent) statusCheckIn() {
 		return
 	}
 
+	// If the server indicated there were more jobs in the queue to be executed, will run those too
+	if a.BatchCommands && m.MoreJobs {
+		a.statusCheckIn()
+	}
+
 	// Used when the message was ServerOK, no further processing is needed
 	if m.Type == "" {
 		//Agent successfully checked in, but no tasks were queued
@@ -474,10 +479,6 @@ func (a *Agent) statusCheckIn() {
 		return
 	}
 
-	// If the server indicated there were more jobs in the queue to be executed, will run those too
-	if a.BatchCommands && m.Type == "CmdResults" && m.MoreJobs {
-		a.statusCheckIn()
-	}
 }
 
 // getClient returns a HTTP client for the passed in protocol (i.e. h2 or http3)
@@ -1042,7 +1043,9 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 		default:
 			c.Stderr = fmt.Sprintf("%s is not a valid AgentControl message type.", p.Command)
 		}
-		return a.getAgentInfoMessage(), nil
+		ainfo := a.getAgentInfoMessage()
+		ainfo.MoreJobs = m.MoreJobs
+		return ainfo, nil
 	case "Shellcode":
 		if a.Verbose {
 			message("note", "Received Execute shellcode command")

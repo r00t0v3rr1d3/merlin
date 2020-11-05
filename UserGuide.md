@@ -1,6 +1,6 @@
 # Gandalf User Guide
 
-## Commands
+## New Commands
 ### Process manipulation
 * `exec`: Start a process using Native Go. Renamed from `cmd` and `shell`
 * `shinject`: Inject raw shellcode into a process. Renamed from `execute-shellcode`
@@ -21,18 +21,22 @@
 * `uptime`: Print the target system's uptime for Windows agents
 * `netstat`: Display network connection for Windows agents (tcp, tcp6, udp, udp6)
     * Usage `netstat [-p tcp|udp]
-### Agent information
+
+### Agent information (from agent menu)
 * `jobs`: List an agent's currently queued jobs
 * `clear`, `c`: Clear queued jobs for an agent
+
+### Global commands (from main menu)
+* `jobs`: List globally queued jobs that haven't been assigned to an agent
+* `clear`, `c`: Clear globally queued jobs 
 * `queue`: From the main menu, queue up a command for an agent. If the agent doesn't exist yet, it will hold on and send the job along once that agent checks in. Use shortcut `all` uuid `_FFFFFFFF_-FFFF-FFFF-FFFF-FFFFFFFFFFFF`, which sends a command to all agents.
 	* Usage: `queue 2b112337-3476-4776-86fa-250b50ac8cfc ipconfig`
 	* Usage: `queue all ps`
-* `listqueue`: View globally queued jobs that have not been assigned to an agent
-* `clearqueue`: Clear globally queued jobs that have not been assigned to an agent.
 
 ## Configurable settings
 * `sleep` has been modified. Just `sleep 30 60` instead of `set sleep 30s` and `set skew 30000`
 * `batchcommands` will tell an agent to keep pulling down jobs until its queue is empty. Default Merlin gets one job per checkin
+    * This tells the agent to immediately pull down another job before going to sleep. It does *not* deliver multiple job payloads in a single message. This choice was to avoid deviating too hard from stock Merlin behavior and code
 * `inactivethreshold`: When this many checkins are missed, multiplies sleep times by `inactivemultiplier`
 * `inactivemultiplier`: The scaling factor for sleep backoff functionality
 
