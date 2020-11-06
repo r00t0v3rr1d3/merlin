@@ -284,6 +284,7 @@ func (a *Agent) initialCheckIn() bool {
 	errOPAQUEReg := a.opaqueRegister()
 	if errOPAQUEReg != nil {
 		a.FailedCheckin++
+		inactiveCheckin(a)
 		if a.Verbose {
 			message("warn", errOPAQUEReg.Error())
 			message("note", fmt.Sprintf("%d out of %d total failed checkins", a.FailedCheckin, a.MaxRetry))
@@ -295,6 +296,7 @@ func (a *Agent) initialCheckIn() bool {
 	errOPAQUEAuth := a.opaqueAuthenticate()
 	if errOPAQUEAuth != nil {
 		a.FailedCheckin++
+		inactiveCheckin(a)
 		if a.Verbose {
 			message("warn", errOPAQUEAuth.Error())
 			message("note", fmt.Sprintf("%d out of %d total failed checkins", a.FailedCheckin, a.MaxRetry))
@@ -306,6 +308,7 @@ func (a *Agent) initialCheckIn() bool {
 	infoResponse, errAgentInfo := a.sendMessage("POST", a.getAgentInfoMessage())
 	if errAgentInfo != nil {
 		a.FailedCheckin++
+		inactiveCheckin(a)
 		if a.Verbose {
 			message("warn", errAgentInfo.Error())
 			message("note", fmt.Sprintf("%d out of %d total failed checkins", a.FailedCheckin, a.MaxRetry))
@@ -370,6 +373,7 @@ func (a *Agent) statusCheckIn() {
 
 	if reqErr != nil {
 		a.FailedCheckin++
+		inactiveCheckin(a)
 		if a.Verbose {
 			message("warn", reqErr.Error())
 			message("note", fmt.Sprintf("%d out of %d total failed checkins", a.FailedCheckin, a.MaxRetry))
@@ -479,6 +483,15 @@ func (a *Agent) statusCheckIn() {
 		return
 	}
 
+}
+
+func inactiveCheckin(a *Agent) {
+	a.InactiveCount++
+	if a.InactiveCount == a.InactiveThreshold {
+		a.InactiveCount = 0
+		a.WaitTimeMin *= a.InactiveMultiplier
+		a.WaitTimeMax *= a.InactiveMultiplier
+	}
 }
 
 // getClient returns a HTTP client for the passed in protocol (i.e. h2 or http3)
