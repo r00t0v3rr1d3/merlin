@@ -449,7 +449,7 @@ func (a *Agent) statusCheckIn() {
 		a.InactiveCount++
 		if a.InactiveCount == a.InactiveThreshold {
 			a.InactiveCount = 0
-			//Should only happen if orphaned agents checks in and isn't interacted with
+			//Should only happen if an orphaned agent checks in and isn't interacted with
 			if a.WaitTimeMin < a.ActiveMin {
 				a.WaitTimeMin = a.ActiveMin
 				a.WaitTimeMax = a.ActiveMax
