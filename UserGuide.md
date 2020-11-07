@@ -45,9 +45,10 @@
 * Baby-proofed the server - mashing keys shouldn't kill your server and you should get an exit confirm prompt
 * Commands no longer run asynchronously in agents; settings changes (e.g. sleep time) now take effect immediately
 * Agents will now (by default) pull down commands from the server until there are none left, instead of one per checkin.
-* Sleep backoff functionality: If agents miss several checkins, they will automatically increase their sleep times.
+* Sleep backoff functionality: If agents miss several checkins, they will automatically increase their sleep times. Sleep times will also be increased if no commands are issued after several checkins.
 * Unified syntax for updating agent settings to something rational
 * Removed ability to run arbitrary commands from the server
+* Increased JWT window to ensure agents run on systems with incorrect system clocks should still work
 * Implemented `jobs` command to list queued commands that haven't yet been sent to the agent, and `clear` to clear them
 * Implemented agent notes, stored server-side only
 * Implemented`execute` functionality using Windows API calls. Spoof ppid!

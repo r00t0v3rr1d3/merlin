@@ -1077,9 +1077,9 @@ func GetAgentStatus(agentID uuid.UUID) string {
 		return fmt.Sprintf("%s is not a valid agent", agentID.String())
 	}
 	dur := time.Duration(Agents[agentID].WaitTimeMax) * time.Second
-	if Agents[agentID].StatusCheckIn.Add(dur).After(time.Now()) {
+	if Agents[agentID].StatusCheckIn.Add(dur * 3).After(time.Now()) { // little extra wiggle room
 		status = "Active"
-	} else if Agents[agentID].StatusCheckIn.Add(dur * time.Duration(Agents[agentID].MaxRetry+1)).After(time.Now()) { // +1 to account for skew
+	} else if Agents[agentID].StatusCheckIn.Add(dur * 6).After(time.Now()) {
 		status = "Delayed"
 	} else {
 		status = "Dead"
