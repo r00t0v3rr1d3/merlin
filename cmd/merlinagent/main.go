@@ -67,8 +67,6 @@ func main() {
 		}
 		os.Exit(1)
 	}
-	a.WaitTimeMin = 15
-	a.WaitTimeMax = 30
 	errRun := a.Run()
 	if errRun != nil {
 		if *verbose {

