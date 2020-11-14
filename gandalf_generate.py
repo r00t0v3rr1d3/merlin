@@ -1,6 +1,6 @@
 #Python 2. The ONLY python.
 
-DEFAULT_TEMPLATE = "merlinAgentTemplate-Windows-x64.exe"
+DEFAULT_TEMPLATE = "gandalfAgentTemplate-Windows-x64.exe"
 DEFAULT_URL = "https://127.0.0.1"
 DEFAULT_PROTO = "h2"
 DEFAULT_PSK = "gandalf"
@@ -15,7 +15,7 @@ DEFAULT_PROXY = ""
 DEFAULT_JA3 = ""
 DEFAULT_HOSTHEADER = ""
 DEFAULT_KILLDATE = "0"
-DEFAULT_OUTPUT = "merlinAgentPatched-Windows-x64.exe"
+DEFAULT_OUTPUT = "gandalfAgentPatched-Windows-x64.exe"
 
 print "\nPress enter for default values (shown as [value] to the left of the prompt)"
 
