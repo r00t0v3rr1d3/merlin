@@ -1202,47 +1202,47 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 
 			if err != nil {
 				c.Stderr = fmt.Sprintf("Error determining file size: %s\r\n%s", p.Args, err.Error())
-				panic(err)
-			}
+			} else {
 
-			// calculate the new slice size
-			// based on how large our target file is
-			var fileSize int64 = fileInfo.Size()
-			const fileChunk = 1 * (1 << 20) //1MB Chunks
+				// calculate the new slice size
+				// based on how large our target file is
+				var fileSize int64 = fileInfo.Size()
+				const fileChunk = 1 * (1 << 20) //1MB Chunks
 
-			// calculate total number of parts the file will be chunked into
-			totalPartsNum := uint64(math.Ceil(float64(fileSize) / float64(fileChunk)))
+				// calculate total number of parts the file will be chunked into
+				totalPartsNum := uint64(math.Ceil(float64(fileSize) / float64(fileChunk)))
 
-			lastPosition := 0
+				lastPosition := 0
 
-			for i := uint64(0); i < totalPartsNum; i++ {
-				partSize := int(math.Min(fileChunk, float64(fileSize-int64(i*fileChunk))))
-				partZeroBytes := make([]byte, partSize)
+				for i := uint64(0); i < totalPartsNum; i++ {
+					partSize := int(math.Min(fileChunk, float64(fileSize-int64(i*fileChunk))))
+					partZeroBytes := make([]byte, partSize)
 
-				// fill out the part with zero value
-				copy(partZeroBytes[:], "0")
+					// fill out the part with zero value
+					copy(partZeroBytes[:], "0")
 
-				// over write every byte in the chunk with 0
-				n, err := file.WriteAt([]byte(partZeroBytes), int64(lastPosition))
+					// over write every byte in the chunk with 0
+					n, err := file.WriteAt([]byte(partZeroBytes), int64(lastPosition))
 
-				if err != nil {
-					c.Stderr = fmt.Sprintf("Error over writing file: %s\r\n%s", p.Args, err.Error())
+					if err != nil {
+						c.Stderr = fmt.Sprintf("Error over writing file: %s\r\n%s", p.Args, err.Error())
+					}
+
+					c.Stdout = fmt.Sprintf("Wiped %v bytes.\n", n)
+
+					// update last written position
+					lastPosition = lastPosition + partSize
 				}
 
-				c.Stdout = fmt.Sprintf("Wiped %v bytes.\n", n)
+				file.Close()
 
-				// update last written position
-				lastPosition = lastPosition + partSize
+				// finally remove/delete our file
+				err = os.Remove(targetFile)
+				if err != nil {
+					c.Stderr = fmt.Sprintf("Error deleting file: %s\r\n%s", p.Args, err.Error())
+				}
+				c.Stdout = fmt.Sprintf("Securely deleted file: %s\n", p.Args)
 			}
-
-			file.Close()
-
-			// finally remove/delete our file
-			err = os.Remove(targetFile)
-			if err != nil {
-				c.Stderr = fmt.Sprintf("Error deleting file: %s\r\n%s", p.Args, err.Error())
-			}
-			c.Stdout = fmt.Sprintf("Securely deleted file: %s\n", p.Args)
 		case "ifconfig", "ipconfig":
 			c.Stdout, c.Stderr = a.ifconfig()
 		case "uptime":
