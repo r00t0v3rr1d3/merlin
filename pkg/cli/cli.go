@@ -198,7 +198,7 @@ func handleMainShell(cmd []string) {
 	case "version":
 		MessageChannel <- messages.UserMessage{
 			Level:   messages.Plain,
-			Message: color.BlueString("Merlin version: %s\n", merlin.Version),
+			Message: color.BlueString("Gandalf version: %s\n", merlin.Version),
 			Time:    time.Now().UTC(),
 			Error:   false,
 		}
@@ -1299,7 +1299,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 func menuHelpMain() {
 	MessageChannel <- messages.UserMessage{
 		Level:   messages.Plain,
-		Message: color.YellowString("Merlin C2 Server (version %s)\n", merlin.Version),
+		Message: color.YellowString("Gandalf C2 Server (version %s)\n", merlin.Version),
 		Time:    time.Now().UTC(),
 		Error:   false,
 	}
@@ -1311,17 +1311,17 @@ func menuHelpMain() {
 
 	data := [][]string{
 		{"agent", "Interact with agents or list agents", "interact, list"},
-		{"banner", "Print the Merlin banner", ""},
+		{"banner", "Print the Gandalf banner", ""},
 		{"clear", "Clear all queued commands that have not been sent to an agent", ""},
 		{"jobs", "List all queued commands to unassigned agents", ""},
 		{"listeners", "Move to the listeners menu", ""},
 		{"interact", "Interact with an agent", ""},
 		{"queue", "Manually send a command to a client (that may not be registered yet)", "queue 2b112337-3476-4776-86fa-250b50ac8cfc sleep 300 600"},
-		{"quit", "Exit and close the Merlin server", ""},
+		{"quit", "Exit and close the Gandalf server", ""},
 		{"remove", "Remove or delete a DEAD agent from the server"},
 		{"sessions", "List all agents session information.", ""},
-		{"use", "Use a function of Merlin", "module"},
-		{"version", "Print the Merlin server version", ""},
+		{"use", "Use a function of Gandalf", "module"},
+		{"version", "Print the Gandalf server version", ""},
 	}
 
 	table.AppendBulk(data)
@@ -1402,10 +1402,10 @@ func menuHelpAgent(platform string) {
 		{"pwd", "Display the current working directory", ""},
 		{"quit", "Shutdown and close the server", ""},
 		{"sessions", "List all agents session information.", ""},
-		{"sdelete", "Secure delete a file", "sdelete C:\\\\Merlin.exe"},
+		{"sdelete", "Secure delete a file", "sdelete C:\\\\Gandalf.exe"},
 		{"sleep", "<min> <max> (in seconds)", "sleep 15 30"},
 		{"status", "Print the current status of the agent", ""},
-		{"touch", "<source> <destination>", "touch \"C:\\\\old file.txt\" C:\\\\Merlin.exe"},
+		{"touch", "<source> <destination>", "touch \"C:\\\\old file.txt\" C:\\\\Gandalf.exe"},
 		{"upload", "Upload a file to the agent", "upload <local_file> <remote_file>"},
 	}
 
@@ -1575,7 +1575,7 @@ func confirm(question string) bool {
 // exit will prompt the user to confirm if they want to exit
 func exit() {
 	color.Red("[!]Quitting...")
-	logging.Server("Shutting down Merlin due to user input")
+	logging.Server("Shutting down Gandalf due to user input")
 	os.Exit(0)
 }
 

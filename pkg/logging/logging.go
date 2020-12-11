@@ -36,30 +36,30 @@ var serverLog *os.File
 func init() {
 
 	// Server Logging
-	if _, err := os.Stat(filepath.Join(core.CurrentDir, "data", "log", "merlinServerLog.txt")); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(core.CurrentDir, "data", "log", "gandalfServerLog.txt")); os.IsNotExist(err) {
 		errM := os.MkdirAll(filepath.Join(core.CurrentDir, "data", "log"), 0750)
 		if errM != nil {
-			message("warn", "there was an error creating the log directory")
+			message("warn", "There was an error creating the log directory")
 		}
-		serverLog, errC := os.Create(filepath.Join(core.CurrentDir, "data", "log", "merlinServerLog.txt"))
+		serverLog, errC := os.Create(filepath.Join(core.CurrentDir, "data", "log", "gandalfServerLog.txt"))
 		if errC != nil {
-			message("warn", "there was an error creating the merlinServerLog.txt file")
+			message("warn", "There was an error creating the gandalfServerLog.txt file")
 			return
 		}
 		// Change the file's permissions
 		errChmod := os.Chmod(serverLog.Name(), 0600)
 		if errChmod != nil {
-			message("warn", fmt.Sprintf("there was an error changing the file permissions for the agent log:\r\n%s", errChmod.Error()))
+			message("warn", fmt.Sprintf("There was an error changing the file permissions for the agent log:\r\n%s", errChmod.Error()))
 		}
 		if core.Debug {
-			message("debug", fmt.Sprintf("Created server log file at: %s\\data\\log\\merlinServerLog.txt", core.CurrentDir))
+			message("debug", fmt.Sprintf("Created server log file at: %s\\data\\log\\gandalfServerLog.txt", core.CurrentDir))
 		}
 	}
 
 	var errLog error
-	serverLog, errLog = os.OpenFile(filepath.Join(core.CurrentDir, "data", "log", "merlinServerLog.txt"), os.O_APPEND|os.O_WRONLY, 0600)
+	serverLog, errLog = os.OpenFile(filepath.Join(core.CurrentDir, "data", "log", "gandalfServerLog.txt"), os.O_APPEND|os.O_WRONLY, 0600)
 	if errLog != nil {
-		message("warn", "there was an error with the Merlin Server log file")
+		message("warn", "There was an error with the Gandalf Server log file")
 		message("warn", errLog.Error())
 	}
 }
@@ -68,7 +68,7 @@ func init() {
 func Server(logMessage string) {
 	_, err := serverLog.WriteString(fmt.Sprintf("[%s]%s\r\n", time.Now().UTC().Format(time.RFC3339), logMessage))
 	if err != nil {
-		message("warn", "there was an error writing to the Merlin Server log file")
+		message("warn", "There was an error writing to the Gandalf Server log file")
 		message("warn", err.Error())
 	}
 }
