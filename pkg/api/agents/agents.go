@@ -129,7 +129,7 @@ func Download(agentID uuid.UUID, Args []string) messages.UserMessage {
 }
 
 // ExecuteShellcode calls the corresponding shellcode module to create a job that executes the provided shellcode
-// Args[0] = "execute-shellcode
+// Args[0] = "execute-shellcode"
 // Args[1] = Shellcode execution method [self, remote, retlcreateuserthread, userapc]
 func ExecuteShellcode(agentID uuid.UUID, Args []string) messages.UserMessage {
 	if len(Args) > 2 {
@@ -145,7 +145,7 @@ func ExecuteShellcode(agentID uuid.UUID, Args []string) messages.UserMessage {
 				options["pid"] = Args[2]
 				options["shellcode"] = strings.Join(Args[3:], " ")
 			} else {
-				return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent ExecuteShellcode (remote) call: %s", Args))
+				return messages.ErrorMessage(fmt.Sprintf("Not enough arguments provided for the Agent shinject (remote) call: %s", Args))
 			}
 		case "rtlcreateuserthread":
 			if len(Args) > 3 {
@@ -153,7 +153,7 @@ func ExecuteShellcode(agentID uuid.UUID, Args []string) messages.UserMessage {
 				options["pid"] = Args[2]
 				options["shellcode"] = strings.Join(Args[3:], " ")
 			} else {
-				return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent ExecuteShellcode (rtlcreateuserthread) call: %s", Args))
+				return messages.ErrorMessage(fmt.Sprintf("Not enough arguments provided for the Agent shinject (rtlcreateuserthread) call: %s", Args))
 			}
 		case "userapc":
 			if len(Args) > 3 {
@@ -161,25 +161,25 @@ func ExecuteShellcode(agentID uuid.UUID, Args []string) messages.UserMessage {
 				options["pid"] = Args[2]
 				options["shellcode"] = strings.Join(Args[3:], " ")
 			} else {
-				return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent ExecuteShellcode (userapc) call: %s", Args))
+				return messages.ErrorMessage(fmt.Sprintf("Not enough arguments provided for the Agent shinject (userapc) call: %s", Args))
 			}
 		default:
-			return messages.ErrorMessage(fmt.Sprintf("invalide ExecuteShellcode method: %s", Args[1]))
+			return messages.ErrorMessage(fmt.Sprintf("Invalid shinject method: %s", Args[1]))
 		}
 		if len(options) > 0 {
 			sh, errSh := shellcode.Parse(options)
 			if errSh != nil {
-				m := fmt.Sprintf("there was an error parsing the shellcode:\r\n%s", errSh.Error())
+				m := fmt.Sprintf("There was an error parsing the shellcode:\r\n%s", errSh.Error())
 				return messages.ErrorMessage(m)
 			}
-			job, err := agents.AddJob(agentID, sh[0], sh[1:])
+			job, err := agents.AddJob(agentID, "shellcode", sh[1:])
 			if err != nil {
 				return messages.ErrorMessage(err.Error())
 			}
 			return messages.JobMessage(agentID, job)
 		}
 	}
-	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent ExecuteShellcode call: %s", Args))
+	return messages.ErrorMessage(fmt.Sprintf("Not enough arguments provided for the shinject call: %s", Args))
 }
 
 // Exit instructs the agent to quit running

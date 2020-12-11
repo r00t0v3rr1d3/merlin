@@ -1119,7 +1119,7 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 		return ainfo, nil
 	case "Shellcode":
 		if a.Verbose {
-			message("note", "Received Execute shellcode command")
+			message("note", "Received shinject command")
 		}
 
 		s := m.Payload.(messages.Shellcode)
@@ -1128,7 +1128,7 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 		e = a.executeShellcode(s) // Execution method determined in function
 
 		if e != nil {
-			c.Stderr = fmt.Sprintf("there was an error with the shellcode module:\r\n%s", e.Error())
+			c.Stderr = fmt.Sprintf("There was an error with the shellcode module:\r\n%s", e.Error())
 		} else {
 			c.Stdout = "Shellcode module executed without errors"
 		}
@@ -1467,7 +1467,7 @@ func (a *Agent) uptime() (stdout string, stderr string) {
 func (a *Agent) executeShellcode(shellcode messages.Shellcode) error {
 
 	if a.Debug {
-		message("debug", fmt.Sprintf("Received input parameter for executeShellcode function: %v", shellcode))
+		message("debug", fmt.Sprintf("Received input parameter for shinject function: %v", shellcode))
 	}
 
 	shellcodeBytes, errDecode := base64.StdEncoding.DecodeString(shellcode.Bytes)
@@ -1481,7 +1481,7 @@ func (a *Agent) executeShellcode(shellcode messages.Shellcode) error {
 	}
 
 	if a.Verbose {
-		message("info", fmt.Sprintf("Shelcode execution method: %s", shellcode.Method))
+		message("info", fmt.Sprintf("Shellcode execution method: %s", shellcode.Method))
 	}
 	if a.Debug {
 		message("info", fmt.Sprintf("Executing shellcode %s", shellcodeBytes))
@@ -1543,7 +1543,7 @@ func (a *Agent) executeShellcode(shellcode messages.Shellcode) error {
 		if a.Verbose {
 			message("warn", fmt.Sprintf("Invalid shellcode execution method: %s", shellcode.Method))
 		}
-		return fmt.Errorf("invalid shellcode execution method %s", shellcode.Method)
+		return fmt.Errorf("Invalid shellcode execution method %s", shellcode.Method)
 	}
 }
 

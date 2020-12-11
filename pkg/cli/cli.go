@@ -1160,11 +1160,6 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("quit"),
 		readline.PcItem("sessions"),
 		readline.PcItem("sdelete"),
-		readline.PcItem("shinject",
-			readline.PcItem("self"),
-			readline.PcItem("remote"),
-			readline.PcItem("RtlCreateUserThread"),
-		),
 		readline.PcItem("sleep"),
 		readline.PcItem("status"),
 		readline.PcItem("timestomp"),
@@ -1408,7 +1403,6 @@ func menuHelpAgent(platform string) {
 		{"quit", "Shutdown and close the server", ""},
 		{"sessions", "List all agents session information.", ""},
 		{"sdelete", "Secure delete a file", "sdelete C:\\\\Merlin.exe"},
-		{"shinject", "Execute shellcode", "self, remote <pid>, RtlCreateUserThread <pid>"},
 		{"sleep", "<min> <max> (in seconds)", "sleep 15 30"},
 		{"status", "Print the current status of the agent", ""},
 		{"touch", "<source> <destination>", "touch \"C:\\\\old file.txt\" C:\\\\Merlin.exe"},
@@ -1418,12 +1412,14 @@ func menuHelpAgent(platform string) {
 	// netstat 20
 	// pipes 24
 	// ps 25
+	// shinject 30
 	// uptime 35
 	// winexec 36
 	if platform == "windows" {
 		data = append(data[:20], append([][]string{{"netstat", "Display network connections", "netstat -p tcp"}}, data[20:]...)...)
 		data = append(data[:24], append([][]string{{"pipes", "List named pipes", ""}}, data[24:]...)...)
 		data = append(data[:25], append([][]string{{"ps", "Display running processes", ""}}, data[25:]...)...)
+		data = append(data[:30], append([][]string{{"shinject", "Inject shellcode", "shinject <self, remote <pid>, or RtlCreateUserThread <pid>> </path/to/shellcode.raw>"}}, data[30:]...)...)
 		data = append(data[:35], append([][]string{{"uptime", "Print system uptime", ""}}, data[35:]...)...)
 		data = append(data[:36], append([][]string{{"winexec", "Execute a program using Windows API calls. Does not provide stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"}}, data[36:]...)...)
 	}
