@@ -67,18 +67,18 @@ func GetJWT(agentID uuid.UUID, key []byte) (string, error) {
 
 	// This is for when the server hasn't received an AgentInfo struct and doesn't know the agent's lifetime yet or sleep is set to zero
 	if lifetime == 0 {
-		lifetime = time.Second * 30
+		lifetime = time.Second * 86400
 	}
 
-	thepast, _ := time.Parse(time.RFC3339, "2000-01-01T00:00:00.00Z")
-	thefuture, _ := time.Parse(time.RFC3339, "31337-05-04T13:37:00.00Z")
+	//thepast, _ := time.Parse(time.RFC3339, "2000-01-01T00:00:00.00Z")
+	//thefuture, _ := time.Parse(time.RFC3339, "31337-05-04T13:37:00.00Z")
 
 	// TODO Add in the rest of the JWT claim info
 	cl := jwt.Claims{
 		ID:        agentID.String(),
-		NotBefore: jwt.NewNumericDate(thepast),
+		NotBefore: jwt.NewNumericDate(time.Now().Add(-lifetime)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		Expiry:    jwt.NewNumericDate(thefuture),
+		Expiry:    jwt.NewNumericDate(time.Now().Add(lifetime)),
 	}
 
 	agentJWT, err := jwt.SignedAndEncrypted(signer, encrypter).Claims(cl).CompactSerialize()
