@@ -38,9 +38,14 @@ import (
 	// Merlin
 	"github.com/Ne0nd0g/merlin/pkg/agents"
 	"github.com/Ne0nd0g/merlin/pkg/core"
+
+	// Merlin Modules
+	"github.com/Ne0nd0g/merlin/pkg/modules/donut"
 	"github.com/Ne0nd0g/merlin/pkg/modules/minidump"
+	"github.com/Ne0nd0g/merlin/pkg/modules/sharpgen"
 	"github.com/Ne0nd0g/merlin/pkg/modules/shellcode"
 	"github.com/Ne0nd0g/merlin/pkg/modules/srdi"
+	"github.com/Ne0nd0g/merlin/pkg/modules/winapi/createprocess"
 )
 
 // Module is a structure containing the base information or template for modules
@@ -361,8 +366,14 @@ func getExtendedCommand(m *Module) ([]string, error) {
 	var extendedCommand []string
 	var err error
 	switch strings.ToLower(m.Name) {
+	case "createprocess":
+		extendedCommand, err = createprocess.Parse(m.getMapFromOptions())
+	case "donut":
+		extendedCommand, err = donut.Parse(m.getMapFromOptions())
 	case "minidump":
 		extendedCommand, err = minidump.Parse(m.getMapFromOptions())
+	case "sharpgen":
+		extendedCommand, err = sharpgen.Parse(m.getMapFromOptions())
 	case "shellcodeinjection":
 		extendedCommand, err = shellcode.Parse(m.getMapFromOptions())
 	case "srdi":

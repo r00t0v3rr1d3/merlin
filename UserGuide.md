@@ -10,9 +10,9 @@
 	* Usage: `kill 500`
 ### File manipulation
 * `touch`, `timestomp`: Modify a file's timestamps.
-	* Usage: `touch "source file" "dest file"
+	* Usage: `touch "/source file.txt" "/destfile.txt"
 * `sdelete`: securely delete a file.
-	* Usage: `sdelete <filepath>`
+	* Usage: `sdelete "/path/to the file.txt"`
 ### Situational Awareness
 * `ps`: Process listing for Windows agents
 * `ipconfig`, `ifconfig`: Get more detailed information on a host's network adapters.

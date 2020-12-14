@@ -32,6 +32,7 @@ import (
 	// 3rd Party
 	"github.com/chzyer/readline"
 	"github.com/fatih/color"
+	"github.com/mattn/go-shellwords"
 	"github.com/olekukonko/tablewriter"
 	uuid "github.com/satori/go.uuid"
 
@@ -345,6 +346,12 @@ func handleAgentShell(cmd []string, curAgent uuid.UUID) {
 		}
 	case "download":
 		MessageChannel <- agentAPI.Download(curAgent, cmd)
+	case "execute-assembly":
+		go func() { MessageChannel <- agentAPI.ExecuteAssembly(shellAgent, cmd) }()
+	case "execute-pe":
+		go func() { MessageChannel <- agentAPI.ExecutePE(shellAgent, cmd) }()
+	case "execute-shellcode":
+		MessageChannel <- agentAPI.ExecuteShellcode(shellAgent, cmd)
 	case "exec":
 		MessageChannel <- agentAPI.CMD(curAgent, cmd)
 	case "exit":
@@ -462,6 +469,8 @@ func handleAgentShell(cmd []string, curAgent uuid.UUID) {
 		MessageChannel <- agentAPI.ExecuteShellcode(curAgent, cmd)
 	case "sleep":
 		MessageChannel <- agentAPI.SetSleep(curAgent, cmd)
+	case "sharpgen":
+		go func() { MessageChannel <- agentAPI.SharpGen(shellAgent, cmd) }()
 	case "status":
 		status := agents.GetAgentStatus(curAgent)
 		if status == "Active" {
@@ -562,7 +571,16 @@ func Shell() {
 		}
 
 		line = strings.TrimSpace(line)
-		cmd := strings.Fields(line)
+		//cmd := strings.Fields(line)
+		cmd, err := shellwords.Parse(line)
+		if err != nil {
+			MessageChannel <- messages.UserMessage{
+				Level:   messages.Warn,
+				Message: fmt.Sprintf("error parsing command line arguments:\r\n%s", err),
+				Time:    time.Now().UTC(),
+				Error:   false,
+			}
+		}
 
 		if len(cmd) > 0 {
 			switch shellMenuContext {
@@ -765,6 +783,7 @@ func menuListener(cmd []string) {
 			MessageChannel <- statusMessage
 			break
 		}
+		shellListener.status = listenerAPI.GetListenerStatus(shellListener.id).Message
 		if options != nil {
 			table := tablewriter.NewWriter(os.Stdout)
 			table.SetHeader([]string{"Name", "Value"})
@@ -1027,6 +1046,7 @@ func menuListenerSetup(cmd []string) {
 
 		shellListener = listener{id: id, name: shellListenerOptions["Name"]}
 		startMessage := listenerAPI.Start(shellListener.name)
+		shellListener.status = listenerAPI.GetListenerStatus(id).Message
 		MessageChannel <- startMessage
 		um, options := listenerAPI.GetListenerConfiguredOptions(shellListener.id)
 		if um.Error {
@@ -1129,6 +1149,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 	)
 
 	// Agent Non-Windows Menu
+
 	var agentL = readline.NewPrefixCompleter(
 		readline.PcItem("back"),
 		readline.PcItem("batchcommands"),
@@ -1175,6 +1196,13 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("clear"),
 		readline.PcItem("download"),
 		readline.PcItem("exec"),
+		readline.PcItem("execute-assembly"),
+		readline.PcItem("execute-pe"),
+		readline.PcItem("execute-shellcode",
+			readline.PcItem("self"),
+			readline.PcItem("remote"),
+			readline.PcItem("RtlCreateUserThread"),
+		),
 		readline.PcItem("exit"),
 		readline.PcItem("help"),
 		readline.PcItem("ifconfig"),
@@ -1208,6 +1236,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 			readline.PcItem("RtlCreateUserThread"),
 		),
 		readline.PcItem("sleep"),
+		readline.PcItem("sharpgen"),
 		readline.PcItem("status"),
 		readline.PcItem("timestomp"),
 		readline.PcItem("touch"),
@@ -1369,6 +1398,7 @@ func menuHelpModule() {
 
 // The help menu while in the agent menu
 func menuHelpAgent(platform string) {
+	fmt.Println("*******", platform)
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
 	table.SetBorder(false)
@@ -1409,19 +1439,17 @@ func menuHelpAgent(platform string) {
 		{"upload", "Upload a file to the agent", "upload <local_file> <remote_file>"},
 	}
 
-	// netstat 20
-	// pipes 24
-	// ps 25
-	// shinject 30
-	// uptime 35
-	// winexec 36
 	if platform == "windows" {
-		data = append(data[:20], append([][]string{{"netstat", "Display network connections", "netstat -p tcp"}}, data[20:]...)...)
-		data = append(data[:24], append([][]string{{"pipes", "List named pipes", ""}}, data[24:]...)...)
-		data = append(data[:25], append([][]string{{"ps", "Display running processes", ""}}, data[25:]...)...)
-		data = append(data[:30], append([][]string{{"shinject", "Inject shellcode", "shinject <self, remote <pid>, or RtlCreateUserThread <pid>> </path/to/shellcode.raw>"}}, data[30:]...)...)
-		data = append(data[:35], append([][]string{{"uptime", "Print system uptime", ""}}, data[35:]...)...)
-		data = append(data[:36], append([][]string{{"winexec", "Execute a program using Windows API calls. Does not provide stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"}}, data[36:]...)...)
+		data = append(data[:6], append([][]string{{"execute-assembly", "Execute a .NET 4.0 assembly", "execute-assembly <assembly path> [<assembly args>, <spawnto path>, <spawnto args>]"}}, data[6:]...)...)
+		data = append(data[:7], append([][]string{{"execute-pe", "Execute a Windows PE (EXE)", "execute-pe <pe path> [<pe args>, <spawnto path>, <spawnto args>]"}}, data[7:]...)...)
+		data = append(data[:8], append([][]string{{"execute-shellcode", "Execute shellcode", "self, remote <pid>, RtlCreateUserThread <pid>"}}, data[8:]...)...)
+		data = append(data[:23], append([][]string{{"netstat", "Display network connections", "netstat -p tcp"}}, data[23:]...)...)
+		data = append(data[:27], append([][]string{{"pipes", "List named pipes", ""}}, data[27:]...)...)
+		data = append(data[:28], append([][]string{{"ps", "Display running processes", ""}}, data[28:]...)...)
+		data = append(data[:33], append([][]string{{"sharpgen", "Use SharpGen to compile and execute a .NET assembly", "sharpgen <code> [<spawnto path>, <spawnto args>]"}}, data[33:]...)...)
+		data = append(data[:34], append([][]string{{"shinject", "Inject shellcode", "shinject <self, remote <pid>, or RtlCreateUserThread <pid>> </path/to/shellcode.raw>"}}, data[34:]...)...)
+		data = append(data[:38], append([][]string{{"uptime", "Print system uptime", ""}}, data[38:]...)...)
+		data = append(data[:39], append([][]string{{"winexec", "Execute a program using Windows API calls. Does not provide stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"}}, data[39:]...)...)
 	}
 
 	table.AppendBulk(data)

