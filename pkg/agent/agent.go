@@ -71,6 +71,13 @@ type merlinClient interface {
 	Post(url, contentType string, body io.Reader) (resp *http.Response, err error)
 }
 
+type jobOutput struct {
+	JobMsg messages.Base
+	JobErr error
+}
+
+var jobs = make(chan jobOutput)
+
 //TODO this is a duplicate with agents/agents.go, centralize
 
 // Agent is a structure for agent objects. It is not exported to force the use of the New() function
@@ -426,8 +433,10 @@ func (a *Agent) statusCheckIn() {
 		Type:    "StatusCheckIn",
 		Padding: core.RandStringBytesMaskImprSrc(a.PaddingMax),
 	}
+	var j messages.Base
+	var reqErr error
 
-	j, reqErr := a.sendMessage("POST", statusMessage)
+	j, reqErr = a.sendMessage("POST", statusMessage)
 
 	if reqErr != nil {
 		a.FailedCheckin++
@@ -490,9 +499,27 @@ func (a *Agent) statusCheckIn() {
 		message("debug", fmt.Sprintf("Message Payload: %s", j.Payload))
 	}
 
-	// handle message
-	m, err := a.messageHandler(j)
+	var m messages.Base
+	var err error
 
+	go func() {
+		jobmsg, joberr := a.messageHandler(j)
+		jobs <- jobOutput{jobmsg, joberr}
+	}()
+	// AgentControl messages need to come back immediately
+	if j.Type == "AgentControl" {
+		j := <-jobs
+		m = j.JobMsg
+		err = j.JobErr
+
+		_, errR := a.sendMessage("POST", m)
+		if errR != nil {
+			if a.Verbose {
+				message("warn", errR.Error())
+			}
+			return
+		}
+	}
 	if err != nil {
 		if a.Verbose {
 			message("warn", err.Error())
@@ -500,14 +527,8 @@ func (a *Agent) statusCheckIn() {
 		return
 	}
 
-	// If the server indicated there were more jobs in the queue to be executed, will run those too
-	if a.BatchCommands && m.MoreJobs {
-		a.statusCheckIn()
-	}
-
-	// Used when the message was ServerOK, no further processing is needed
-	if m.Type == "" {
-		//Agent successfully checked in, but no tasks were queued
+	//Agent successfully checked in, but no tasks were queued
+	if j.Type == "ServerOk" {
 		a.InactiveCount++
 		if a.InactiveCount == a.InactiveThreshold {
 			a.InactiveCount = 0
@@ -521,7 +542,6 @@ func (a *Agent) statusCheckIn() {
 			}
 			a.sendMessage("POST", a.getAgentInfoMessage())
 		}
-		return
 	}
 
 	//Agent successfully checked in and there is a task to perform
@@ -532,15 +552,28 @@ func (a *Agent) statusCheckIn() {
 		a.sendMessage("POST", a.getAgentInfoMessage())
 	}
 
-	_, errR := a.sendMessage("POST", m)
-
-	if errR != nil {
-		if a.Verbose {
-			message("warn", errR.Error())
+	// If any previous jobs finished, return their output to the server
+L:
+	for {
+		select {
+		case jobOut := <-jobs:
+			if jobOut.JobErr != nil {
+				message("warn", jobOut.JobErr.Error())
+			} else {
+				_, err := a.sendMessage("POST", jobOut.JobMsg)
+				if err != nil && a.Verbose && jobOut.JobMsg.Type != "" {
+					message("warn", err.Error())
+				}
+			}
+		default:
+			break L
 		}
-		return
 	}
 
+	// If the server indicated there were more jobs in the queue to be executed, will run those too
+	if a.BatchCommands && j.MoreJobs {
+		a.statusCheckIn()
+	}
 }
 
 func inactiveCheckin(a *Agent) {
@@ -1132,7 +1165,6 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 			c.Stderr = fmt.Sprintf("%s is not a valid AgentControl message type.", p.Command)
 		}
 		ainfo := a.getAgentInfoMessage()
-		ainfo.MoreJobs = m.MoreJobs
 		return ainfo, nil
 	case "Shellcode":
 		if a.Verbose {
@@ -1313,7 +1345,6 @@ func (a *Agent) messageHandler(m messages.Base) (messages.Base, error) {
 
 	returnMessage.Type = "CmdResults"
 	returnMessage.Payload = c
-	returnMessage.MoreJobs = m.MoreJobs
 	if a.Debug {
 		message("debug", "Leaving agent.messageHandler function without error")
 	}

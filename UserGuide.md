@@ -44,7 +44,7 @@
 ## Changelog from stock Merlin
 * Baby-proofed the server - mashing keys shouldn't kill your server and you should get an exit confirm prompt
 * Commands no longer run asynchronously in agents; settings changes (e.g. sleep time) now take effect immediately
-* Agents will now (by default) pull down commands from the server until there are none left, instead of one per checkin. Batch commands will be run in order, but results/output comes in reverse order.
+* Agents will now (by default) pull down commands from the server until there are none left, instead of one per checkin. Agent Control commands (sleep, inactivemultiplier, etc) will be set synchronously, but other commands will be async and arrive at the next checkin.
 * Sleep backoff functionality: If agents miss several checkins, they will automatically increase their sleep times. Sleep times will also be increased if no commands are issued after several checkins.
 * Unified syntax for updating agent settings to something rational
 * Removed ability to run arbitrary commands from the server
