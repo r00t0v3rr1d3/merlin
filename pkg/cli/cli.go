@@ -469,8 +469,6 @@ func handleAgentShell(cmd []string, curAgent uuid.UUID) {
 		MessageChannel <- agentAPI.ExecuteShellcode(curAgent, cmd)
 	case "sleep":
 		MessageChannel <- agentAPI.SetSleep(curAgent, cmd)
-	case "sharpgen":
-		go func() { MessageChannel <- agentAPI.SharpGen(shellAgent, cmd) }()
 	case "status":
 		status := agents.GetAgentStatus(curAgent)
 		if status == "Active" {
@@ -1236,7 +1234,6 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 			readline.PcItem("RtlCreateUserThread"),
 		),
 		readline.PcItem("sleep"),
-		readline.PcItem("sharpgen"),
 		readline.PcItem("status"),
 		readline.PcItem("timestomp"),
 		readline.PcItem("touch"),
@@ -1446,10 +1443,9 @@ func menuHelpAgent(platform string) {
 		data = append(data[:23], append([][]string{{"netstat", "Display network connections", "netstat -p tcp"}}, data[23:]...)...)
 		data = append(data[:27], append([][]string{{"pipes", "List named pipes", ""}}, data[27:]...)...)
 		data = append(data[:28], append([][]string{{"ps", "Display running processes", ""}}, data[28:]...)...)
-		data = append(data[:33], append([][]string{{"sharpgen", "Use SharpGen to compile and execute a .NET assembly", "sharpgen <code> [<spawnto path>, <spawnto args>]"}}, data[33:]...)...)
-		data = append(data[:34], append([][]string{{"shinject", "Inject shellcode", "shinject <self, remote <pid>, or RtlCreateUserThread <pid>> </path/to/shellcode.raw>"}}, data[34:]...)...)
-		data = append(data[:38], append([][]string{{"uptime", "Print system uptime", ""}}, data[38:]...)...)
-		data = append(data[:39], append([][]string{{"winexec", "Execute a program using Windows API calls. Does not provide stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"}}, data[39:]...)...)
+		data = append(data[:33], append([][]string{{"shinject", "Inject shellcode", "shinject <self, remote <pid>, or RtlCreateUserThread <pid>> </path/to/shellcode.raw>"}}, data[33:]...)...)
+		data = append(data[:37], append([][]string{{"uptime", "Print system uptime", ""}}, data[37:]...)...)
+		data = append(data[:38], append([][]string{{"winexec", "Execute a program using Windows API calls. Does not provide stdout. Parent spoofing optional.", "winexec [-ppid 500] ping -c 3 8.8.8.8"}}, data[38:]...)...)
 	}
 
 	table.AppendBulk(data)
