@@ -542,14 +542,14 @@ func (a *Agent) statusCheckIn() {
 			}
 			a.sendMessage("POST", a.getAgentInfoMessage())
 		}
-	}
-
-	//Agent successfully checked in and there is a task to perform
-	a.InactiveCount = 0
-	if a.WaitTimeMin != a.ActiveMin {
-		a.WaitTimeMin = a.ActiveMin
-		a.WaitTimeMax = a.ActiveMax
-		a.sendMessage("POST", a.getAgentInfoMessage())
+	} else {
+		//Agent successfully checked in and there is a task to perform
+		a.InactiveCount = 0
+		if a.WaitTimeMin != a.ActiveMin {
+			a.WaitTimeMin = a.ActiveMin
+			a.WaitTimeMax = a.ActiveMax
+			a.sendMessage("POST", a.getAgentInfoMessage())
+		}
 	}
 
 	// If any previous jobs finished, return their output to the server
@@ -559,9 +559,9 @@ L:
 		case jobOut := <-jobs:
 			if jobOut.JobErr != nil {
 				message("warn", jobOut.JobErr.Error())
-			} else {
+			} else if jobOut.JobMsg.Type != "" {
 				_, err := a.sendMessage("POST", jobOut.JobMsg)
-				if err != nil && a.Verbose && jobOut.JobMsg.Type != "" {
+				if err != nil && a.Verbose {
 					message("warn", err.Error())
 				}
 			}
