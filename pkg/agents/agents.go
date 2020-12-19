@@ -1184,7 +1184,7 @@ func newAgent(agentID uuid.UUID) (agent, error) {
 	agent.agentLog = f
 	agent.InitialCheckIn = time.Now().UTC()
 	agent.StatusCheckIn = time.Now().UTC()
-	agent.channel = make(chan []Job, 10)
+	agent.channel = make(chan []Job, 50)
 
 	_, errAgentLog := agent.agentLog.WriteString(fmt.Sprintf("[%s]%s\r\n", time.Now().UTC().Format(time.RFC3339), "Instantiated agent"))
 	if errAgentLog != nil {

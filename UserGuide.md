@@ -49,6 +49,7 @@
 * Unified syntax for updating agent settings to something rational
 * Removed ability to run arbitrary commands from the server
 * Increased JWT window to ensure agents run on systems with incorrect system clocks should still work
+* Increased maximum number of queued commands from 10 to 50
 * Implemented `jobs` command to list queued commands that haven't yet been sent to the agent, and `clear` to clear them
 * Implemented agent notes, stored server-side only
 * Implemented`execute` functionality using Windows API calls. Spoof ppid!

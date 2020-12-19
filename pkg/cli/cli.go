@@ -346,9 +346,9 @@ func handleAgentShell(cmd []string, curAgent uuid.UUID) {
 		}
 	case "download":
 		MessageChannel <- agentAPI.Download(curAgent, cmd)
-	case "execute-assembly":
+	case "execute-assembly", "assembly":
 		go func() { MessageChannel <- agentAPI.ExecuteAssembly(shellAgent, cmd) }()
-	case "execute-pe":
+	case "execute-pe", "pe":
 		go func() { MessageChannel <- agentAPI.ExecutePE(shellAgent, cmd) }()
 	case "execute-shellcode":
 		MessageChannel <- agentAPI.ExecuteShellcode(shellAgent, cmd)
@@ -1188,6 +1188,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 
 	// Agent Windows Menu
 	var agentW = readline.NewPrefixCompleter(
+		readline.PcItem("assembly"),
 		readline.PcItem("back"),
 		readline.PcItem("batchcommands"),
 		readline.PcItem("cd"),
@@ -1222,6 +1223,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("note"),
 		readline.PcItem("nslookup"),
 		readline.PcItem("padding"),
+		readline.PcItem("pe"),
 		readline.PcItem("pipes"),
 		readline.PcItem("ps"),
 		readline.PcItem("pwd"),
