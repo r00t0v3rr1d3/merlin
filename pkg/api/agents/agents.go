@@ -407,6 +407,22 @@ func Kill(agentID uuid.UUID, Args []string) messages.UserMessage {
 		}
 		return messages.JobMessage(agentID, job)
 	}
+	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent Exit call: %s", Args))
+}
+
+func KillProcess(agentID uuid.UUID, Args []string) messages.UserMessage {
+	if len(Args) == 2 {
+		pid, err := strconv.Atoi(Args[1])
+		if err != nil || pid < 0 {
+			return messages.ErrorMessage(fmt.Sprintf("Invalid PID provided: %s\n", Args[1]))
+		}
+		args := []string{Args[1]}
+		job, err := jobs.Add(agentID, "killprocess", args)
+		if err != nil {
+			return messages.ErrorMessage(err.Error())
+		}
+		return messages.JobMessage(agentID, job)
+	}
 	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent Kill call: %s", Args))
 }
 

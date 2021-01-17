@@ -58,6 +58,23 @@ func Native(cmd jobs.Command) jobs.Results {
 				results.Stdout = fmt.Sprintf("Changed working directory to %s", path)
 			}
 		}
+	case "killprocess":
+		targetpid, err := strconv.Atoi(cmd.Args[0])
+		if err != nil || targetpid < 0 {
+			results.Stderr = fmt.Sprintf("Invalid PID: %d\r\n", targetpid)
+			break
+		}
+		proc, err := os.FindProcess(targetpid)
+		if err != nil { // On linux, always returns a process. Don't worry, the Kill() will fail
+			results.Stderr = fmt.Sprintf("Could not find a process with pid %d\r\n%s", targetpid, err.Error())
+			break
+		}
+		err = proc.Kill()
+		if err != nil {
+			results.Stderr = fmt.Sprintf("Error killing pid %d\r\n%s", targetpid, err.Error())
+			break
+		}
+		results.Stdout = fmt.Sprintf("Successfully killed pid %d\n", targetpid)
 	case "pwd":
 		dir, err := os.Getwd()
 		if err != nil {

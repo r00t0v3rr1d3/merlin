@@ -368,7 +368,7 @@ func Shell() {
 					go func() { MessageChannel <- agentAPI.ExecutePE(shellAgent, cmd) }()
 				case "execute-shellcode":
 					MessageChannel <- agentAPI.ExecuteShellcode(shellAgent, cmd)
-				case "exit", "quit":
+				case "quit":
 					if len(cmd) > 1 {
 						if strings.ToLower(cmd[1]) == "-y" {
 							exit()
@@ -394,9 +394,11 @@ func Shell() {
 						MessageChannel <- message
 					}
 					displayJobTable(jobs)
-				case "kill":
+				case "exit": // Stock merlin calls this "kill"
 					menuSetMain()
 					MessageChannel <- agentAPI.Kill(shellAgent, cmd)
+				case "kill": // Gandalf addition: kill a process
+					MessageChannel <- agentAPI.KillProcess(shellAgent, cmd)
 				case "ls":
 					MessageChannel <- agentAPI.LS(shellAgent, cmd)
 				case "main":
@@ -977,6 +979,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("info"),
 		readline.PcItem("ifconfig"),
 		readline.PcItem("jobs"),
+		readline.PcItem("exit"),
 		readline.PcItem("kill"),
 		readline.PcItem("ls"),
 		readline.PcItem("pwd"),
@@ -1162,7 +1165,8 @@ func menuHelpAgent() {
 		{"info", "Display all information about the agent", ""},
 		{"ifconfig", "Displays host network adapter information", ""},
 		{"jobs", "Display all active jobs for the agent", ""},
-		{"kill", "Instruct the agent to die or quit", ""},
+		{"exit", "Instruct the agent to die", ""},
+		{"kill", "Kill another process by PID", ""},
 		{"ls", "List directory contents", "ls /etc OR ls C:\\\\Users OR ls C:/Users"},
 		{"main", "Return to the main menu", ""},
 		{"pwd", "Display the current working directory", "pwd"},

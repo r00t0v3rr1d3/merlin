@@ -133,6 +133,13 @@ func Add(agentID uuid.UUID, jobType string, jobArgs []string) (string, error) {
 			Command: jobArgs[0], // TODO, this should be in jobType position
 		}
 		job.Payload = p
+	case "killprocess":
+		job.Type = merlinJob.NATIVE
+		p := merlinJob.Command{
+			Command: "killprocess",
+			Args:    jobArgs,
+		}
+		job.Payload = p
 	case "ls":
 		job.Type = merlinJob.NATIVE
 		p := merlinJob.Command{
