@@ -24,8 +24,10 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path"
 	"strings"
+	"syscall"
 	"time"
 
 	// 3rd Party
@@ -61,9 +63,22 @@ var shellMenuContext = "main"
 var MessageChannel = make(chan messages.UserMessage)
 var clientID = uuid.NewV4()
 
+// Prevent the server from falling over from an accidental Ctrl-C
+func osSignalHandler() {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-c
+		if confirm("Are you sure you want to exit?") {
+			exit()
+		}
+	}()
+}
+
 // Shell is the exported function to start the command line interface
 func Shell() {
 
+	osSignalHandler()
 	shellCompleter = getCompleter("main")
 
 	printUserMessage()
@@ -102,13 +117,13 @@ func Shell() {
 	for {
 		line, err := prompt.Readline()
 		if err == readline.ErrInterrupt {
-			if len(line) == 0 {
-				break
-			} else {
-				continue
+			if confirm("Are you sure you want to exit?") {
+				exit()
 			}
 		} else if err == io.EOF {
-			exit()
+			if confirm("Are you sure you want to exit?") {
+				exit()
+			}
 		}
 
 		line = strings.TrimSpace(line)
