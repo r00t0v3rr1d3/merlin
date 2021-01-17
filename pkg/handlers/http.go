@@ -155,6 +155,7 @@ func (ctx *HTTPContext) AgentHTTP(w http.ResponseWriter, r *http.Request) {
 			message("note", "Checking to see if authorization JWT was signed by server's interface key...")
 		}
 		agentID, errValidate = util.ValidateJWT(strings.Split(token, " ")[1], ctx.JWTKey)
+
 		// If agentID was returned, then message contained a JWT encrypted with the HTTP interface key
 		if (errValidate != nil) && (agentID == uuid.Nil) { // Unauthenticated Agents
 			if core.Verbose {
@@ -165,6 +166,16 @@ func (ctx *HTTPContext) AgentHTTP(w http.ResponseWriter, r *http.Request) {
 			hashedKey := sha256.Sum256([]byte(ctx.PSK))
 			key = hashedKey[:]
 			agentID, errValidate = util.ValidateJWT(strings.Split(token, " ")[1], key)
+
+			//If JWT is expired or created in the future because of time mismatch between server and agent, CONTINUE!
+			if errValidate != nil {
+				if errValidate.Error() == "square/go-jose/jwt: validation field, token issued in the future (iat)" {
+					errValidate = nil
+				} else if errValidate.Error() == "square/go-jose/jwt: validation failed, token is expired (exp)" {
+					errValidate = nil
+				}
+			}
+
 			if errValidate != nil {
 				// Check to see if the request matches traffic that could be an orphaned agent
 				// An orphaned agent will have a JWT encrypted with server's JWT key, not the PSK
