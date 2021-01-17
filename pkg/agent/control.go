@@ -139,6 +139,7 @@ func (a *Agent) getAgentInfoMessage() messages.AgentInfo {
 		UserName:     a.UserName,
 		UserGUID:     a.UserGUID,
 		HostName:     a.HostName,
+		Process:      a.Process,
 		Pid:          a.Pid,
 		Ips:          a.Ips,
 	}

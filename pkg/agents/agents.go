@@ -53,6 +53,7 @@ type Agent struct {
 	HostName       string
 	Ips            []string
 	Pid            int
+	Process        string
 	agentLog       *os.File
 	InitialCheckIn time.Time
 	StatusCheckIn  time.Time
@@ -188,6 +189,7 @@ func (a *Agent) UpdateInfo(info messages.AgentInfo) {
 	a.Architecture = info.SysInfo.Architecture
 	a.HostName = info.SysInfo.HostName
 	a.Pid = info.SysInfo.Pid
+	a.Process = info.SysInfo.Process
 	a.Ips = info.SysInfo.Ips
 	a.Platform = info.SysInfo.Platform
 	a.UserName = info.SysInfo.UserName

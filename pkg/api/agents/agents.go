@@ -325,6 +325,13 @@ func GetAgentInfo(agentID uuid.UUID) ([][]string, messages.UserMessage) {
 		return rows, message
 	}
 
+	var proc string
+	if a.Platform == "windows" {
+		proc = a.Process[strings.LastIndex(a.Process, "\\")+1:]
+	} else {
+		proc = a.Process[strings.LastIndex(a.Process, "/")+1:]
+	}
+
 	rows = [][]string{
 		{"Status", status},
 		{"ID", a.ID.String()},
@@ -334,6 +341,7 @@ func GetAgentInfo(agentID uuid.UUID) ([][]string, messages.UserMessage) {
 		{"User GUID", a.UserGUID},
 		{"Hostname", a.HostName},
 		{"Process ID", strconv.Itoa(a.Pid)},
+		{"Process Name", proc},
 		{"IP", fmt.Sprintf("%v", a.Ips)},
 		{"Initial Check In", a.InitialCheckIn.Format(time.RFC3339)},
 		{"Last Check In", a.StatusCheckIn.Format(time.RFC3339)},
