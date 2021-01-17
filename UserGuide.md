@@ -13,3 +13,4 @@
 * Agent `info` command will now list the executable name
 * Added `kill` command
 * Renamed `kill` to `exit`
+* A sweet banner

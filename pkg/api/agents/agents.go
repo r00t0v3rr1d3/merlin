@@ -398,10 +398,10 @@ func Ipconfig(agentID uuid.UUID, Args []string) messages.UserMessage {
 	return messages.JobMessage(agentID, job)
 }
 
-// Kill instructs the agent to quit running
-func Kill(agentID uuid.UUID, Args []string) messages.UserMessage {
+// Exit instructs the agent to quit running
+func Exit(agentID uuid.UUID, Args []string) messages.UserMessage {
 	if len(Args) > 0 {
-		job, err := jobs.Add(agentID, "kill", Args[0:])
+		job, err := jobs.Add(agentID, "exit", Args[0:])
 		if err != nil {
 			return messages.ErrorMessage(err.Error())
 		}

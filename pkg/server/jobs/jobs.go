@@ -127,7 +127,7 @@ func Add(agentID uuid.UUID, jobType string, jobArgs []string) (string, error) {
 			Command: "ifconfig",
 		}
 		job.Payload = p
-	case "kill":
+	case "exit":
 		job.Type = merlinJob.CONTROL
 		p := merlinJob.Command{
 			Command: jobArgs[0], // TODO, this should be in jobType position

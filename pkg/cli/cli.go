@@ -85,7 +85,7 @@ func Shell() {
 	getUserMessages()
 
 	p, err := readline.NewEx(&readline.Config{
-		Prompt:              "\033[31mMerlin»\033[0m ",
+		Prompt:              "\033[31mGandalf»\033[0m ",
 		HistoryFile:         "/tmp/readline.tmp",
 		AutoComplete:        shellCompleter,
 		InterruptPrompt:     "^C",
@@ -153,9 +153,10 @@ func Shell() {
 					}
 				case "banner":
 					m := "\n"
-					m += color.BlueString(banner.MerlinBanner1)
-					m += color.BlueString("\r\n\t\t   Version: %s", merlin.Version)
-					m += color.BlueString("\r\n\t\t   Build: %s\n", merlin.Build)
+					m += color.WhiteString(banner.MerlinBanner2)
+					m += color.WhiteString("\r\n\t\t   Version: %s", merlin.Version)
+					m += color.WhiteString("\r\n\t\t   Build: %s", merlin.Build)
+					m += color.WhiteString("\r\n\t\t   Codename: Gandalf\n")
 					MessageChannel <- messages.UserMessage{
 						Level:   messages.Plain,
 						Message: m,
@@ -184,7 +185,7 @@ func Shell() {
 				case "listeners":
 					shellMenuContext = "listenersmain"
 					prompt.Config.AutoComplete = getCompleter("listenersmain")
-					prompt.SetPrompt("\033[31mMerlin[\033[32mlisteners\033[31m]»\033[0m ")
+					prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m]»\033[0m ")
 				case "remove":
 					if len(cmd) > 1 {
 						i := []string{"remove"}
@@ -239,7 +240,7 @@ func Shell() {
 				case "version":
 					MessageChannel <- messages.UserMessage{
 						Level:   messages.Plain,
-						Message: color.BlueString("Merlin version: %s\n", merlin.Version),
+						Message: color.BlueString("Gandalf version: %s\n", merlin.Version),
 						Time:    time.Now().UTC(),
 						Error:   false,
 					}
@@ -395,8 +396,17 @@ func Shell() {
 					}
 					displayJobTable(jobs)
 				case "exit": // Stock merlin calls this "kill"
-					menuSetMain()
-					MessageChannel <- agentAPI.Kill(shellAgent, cmd)
+					if len(cmd) > 1 {
+						if strings.ToLower(cmd[1]) == "-y" {
+							menuSetMain()
+							MessageChannel <- agentAPI.Exit(shellAgent, cmd)
+						}
+					} else {
+						if confirm("Are you sure you want to exit the agent?") {
+							menuSetMain()
+							MessageChannel <- agentAPI.Exit(shellAgent, cmd)
+						}
+					}
 				case "kill": // Gandalf addition: kill a process
 					MessageChannel <- agentAPI.KillProcess(shellAgent, cmd)
 				case "ls":
@@ -555,7 +565,7 @@ func menuSetAgent(agentID uuid.UUID) {
 		if agentID == id {
 			shellAgent = agentID
 			prompt.Config.AutoComplete = getCompleter("agent")
-			prompt.SetPrompt("\033[31mMerlin[\033[32magent\033[31m][\033[33m" + shellAgent.String() + "\033[31m]»\033[0m ")
+			prompt.SetPrompt("\033[31mGandalf[\033[32magent\033[31m][\033[33m" + shellAgent.String() + "\033[31m]»\033[0m ")
 			shellMenuContext = "agent"
 		}
 	}
@@ -567,7 +577,7 @@ func menuListener(cmd []string) {
 	case "back":
 		shellMenuContext = "listenersmain"
 		prompt.Config.AutoComplete = getCompleter("listenersmain")
-		prompt.SetPrompt("\033[31mMerlin[\033[32mlisteners\033[31m]»\033[0m ")
+		prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m]»\033[0m ")
 	case "delete":
 		if confirm(fmt.Sprintf("Are you sure you want to delete the %s listener?", shellListener.name)) {
 			um := listenerAPI.Remove(shellListener.name)
@@ -576,7 +586,7 @@ func menuListener(cmd []string) {
 				shellListenerOptions = nil
 				shellMenuContext = "listenersmain"
 				prompt.Config.AutoComplete = getCompleter("listenersmain")
-				prompt.SetPrompt("\033[31mMerlin[\033[32mlisteners\033[31m]»\033[0m ")
+				prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m]»\033[0m ")
 			} else {
 				MessageChannel <- um
 			}
@@ -626,7 +636,7 @@ func menuListener(cmd []string) {
 			MessageChannel <- um
 			break
 		}
-		prompt.SetPrompt("\033[31mMerlin[\033[32mlisteners\033[31m][\033[33m" + options["Name"] + "\033[31m]»\033[0m ")
+		prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m][\033[33m" + options["Name"] + "\033[31m]»\033[0m ")
 	case "set":
 		MessageChannel <- listenerAPI.SetOption(shellListener.id, cmd)
 	case "start":
@@ -675,7 +685,7 @@ func menuListeners(cmd []string) {
 				shellListenerOptions = nil
 				shellMenuContext = "listenersmain"
 				prompt.Config.AutoComplete = getCompleter("listenersmain")
-				prompt.SetPrompt("\033[31mMerlin[\033[32mlisteners\033[31m]»\033[0m ")
+				prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m]»\033[0m ")
 			}
 		}
 	case "help":
@@ -739,7 +749,7 @@ func menuListeners(cmd []string) {
 			}
 			shellMenuContext = "listener"
 			prompt.Config.AutoComplete = getCompleter("listener")
-			prompt.SetPrompt("\033[31mMerlin[\033[32mlisteners\033[31m][\033[33m" + name + "\033[31m]»\033[0m ")
+			prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m][\033[33m" + name + "\033[31m]»\033[0m ")
 		} else {
 			MessageChannel <- messages.UserMessage{
 				Level:   messages.Note,
@@ -786,7 +796,7 @@ func menuListeners(cmd []string) {
 					shellListenerOptions["Protocol"] = strings.ToLower(cmd[1])
 					shellMenuContext = "listenersetup"
 					prompt.Config.AutoComplete = getCompleter("listenersetup")
-					prompt.SetPrompt("\033[31mMerlin[\033[32mlisteners\033[31m][\033[33m" + strings.ToLower(cmd[1]) + "\033[31m]»\033[0m ")
+					prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m][\033[33m" + strings.ToLower(cmd[1]) + "\033[31m]»\033[0m ")
 				}
 			}
 		}
@@ -806,7 +816,7 @@ func menuListenerSetup(cmd []string) {
 	case "back":
 		shellMenuContext = "listenersmain"
 		prompt.Config.AutoComplete = getCompleter("listenersmain")
-		prompt.SetPrompt("\033[31mMerlin[\033[32mlisteners\033[31m]»\033[0m ")
+		prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m]»\033[0m ")
 	case "exit", "quit":
 		if len(cmd) > 1 {
 			if strings.ToLower(cmd[1]) == "-y" {
@@ -875,7 +885,7 @@ func menuListenerSetup(cmd []string) {
 		}
 		shellMenuContext = "listener"
 		prompt.Config.AutoComplete = getCompleter("listener")
-		prompt.SetPrompt("\033[31mMerlin[\033[32mlisteners\033[31m][\033[33m" + options["Name"] + "\033[31m]»\033[0m ")
+		prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m][\033[33m" + options["Name"] + "\033[31m]»\033[0m ")
 	default:
 		if len(cmd) > 1 {
 			executeCommand(cmd[0], cmd[1:])
@@ -897,7 +907,7 @@ func menuSetModule(cmd string) {
 		if m.Name != "" {
 			shellModule = m
 			prompt.Config.AutoComplete = getCompleter("module")
-			prompt.SetPrompt("\033[31mMerlin[\033[32mmodule\033[31m][\033[33m" + shellModule.Name + "\033[31m]»\033[0m ")
+			prompt.SetPrompt("\033[31mGandalf[\033[32mmodule\033[31m][\033[33m" + shellModule.Name + "\033[31m]»\033[0m ")
 			shellMenuContext = "module"
 		}
 	}
@@ -905,7 +915,7 @@ func menuSetModule(cmd string) {
 
 func menuSetMain() {
 	prompt.Config.AutoComplete = getCompleter("main")
-	prompt.SetPrompt("\033[31mMerlin»\033[0m ")
+	prompt.SetPrompt("\033[31mGandalf»\033[0m ")
 	shellMenuContext = "main"
 }
 
@@ -1079,7 +1089,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 func menuHelpMain() {
 	MessageChannel <- messages.UserMessage{
 		Level:   messages.Plain,
-		Message: color.YellowString("Merlin C2 Server (version %s)\n", merlin.Version),
+		Message: color.YellowString("Gandalf C2 Server (version %s)\n", merlin.Version),
 		Time:    time.Now().UTC(),
 		Error:   false,
 	}
@@ -1091,15 +1101,15 @@ func menuHelpMain() {
 
 	data := [][]string{
 		{"agent", "Interact with agents or list agents", "interact, list"},
-		{"banner", "Print the Merlin banner", ""},
-		{"exit", "Exit and close the Merlin server", ""},
+		{"banner", "Print the Gandalf banner", ""},
+		{"exit", "Exit and close the Gandalf server", ""},
 		{"listeners", "Move to the listeners menu", ""},
 		{"interact", "Interact with an agent. Alias for Empire users", ""},
-		{"quit", "Exit and close the Merlin server", ""},
+		{"quit", "Exit and close the Gandalf server", ""},
 		{"remove", "Remove or delete a DEAD agent from the server"},
 		{"sessions", "List all agents session information. Alias for MSF users", ""},
-		{"use", "Use a function of Merlin", "module"},
-		{"version", "Print the Merlin server version", ""},
+		{"use", "Use a function of Gandalf", "module"},
+		{"version", "Print the Gandalf server version", ""},
 	}
 
 	table.AppendBulk(data)
@@ -1356,7 +1366,7 @@ func confirm(question string) bool {
 // exit will prompt the user to confirm if they want to exit
 func exit() {
 	color.Red("[!]Quitting...")
-	logging.Server("Shutting down Merlin due to user input")
+	logging.Server("Shutting down Gandalf due to user input")
 	os.Exit(0)
 }
 
