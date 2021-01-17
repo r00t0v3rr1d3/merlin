@@ -102,8 +102,6 @@ func HostIfconfig() (stdout string, err error) {
 		}
 		stdout += out
 	}
-	fmt.Println("Done")
-	fmt.Println(stdout)
 
 	return stdout, nil
 }
