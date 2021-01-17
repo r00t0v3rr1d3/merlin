@@ -23,7 +23,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"os/exec"
 	"os/signal"
 	"path"
 	"strings"
@@ -35,10 +34,10 @@ import (
 	"github.com/fatih/color"
 	"github.com/mattn/go-shellwords"
 	"github.com/olekukonko/tablewriter"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 
 	// Merlin
-	"github.com/Ne0nd0g/merlin/pkg"
+	merlin "github.com/Ne0nd0g/merlin/pkg"
 	agentAPI "github.com/Ne0nd0g/merlin/pkg/api/agents"
 	listenerAPI "github.com/Ne0nd0g/merlin/pkg/api/listeners"
 	"github.com/Ne0nd0g/merlin/pkg/api/messages"
@@ -1098,7 +1097,6 @@ func menuHelpMain() {
 		{"sessions", "List all agents session information. Alias for MSF users", ""},
 		{"use", "Use a function of Merlin", "module"},
 		{"version", "Print the Merlin server version", ""},
-		{"*", "Anything else will be execute on the host operating system", ""},
 	}
 
 	table.AppendBulk(data)
@@ -1130,7 +1128,6 @@ func menuHelpModule() {
 		{"set", "Set the value for one of the module's options", "<option name> <option value>"},
 		{"show", "Show information about a module or its options", "info, options"},
 		{"unset", "Clear a module option to empty", "<option name>"},
-		{"*", "Anything else will be execute on the host operating system", ""},
 	}
 
 	table.AppendBulk(data)
@@ -1174,7 +1171,6 @@ func menuHelpAgent() {
 		{"shell", "Execute a command on the agent", "shell ping -c 3 8.8.8.8"},
 		{"status", "Print the current status of the agent", ""},
 		{"upload", "Upload a file to the agent", "upload <local_file> <remote_file>"},
-		{"*", "Anything else will be execute on the host operating system", ""},
 	}
 
 	table.AppendBulk(data)
@@ -1207,7 +1203,6 @@ func menuHelpListenersMain() {
 		{"start", "Start a named listener", "start <listener_name>"},
 		{"stop", "Stop a named listener", "stop <listener_name>"},
 		{"use", "Create a new listener by protocol type", "use [http,https,http2,http3,h2c]"},
-		{"*", "Anything else will be execute on the host operating system", ""},
 	}
 
 	table.AppendBulk(data)
@@ -1239,7 +1234,6 @@ func menuHelpListenerSetup() {
 		{"set", "Set a configurable option", "set <option_name>"},
 		{"show", "Display all configurable information about a listener", ""},
 		{"start", "Create and start the listener", ""},
-		{"*", "Anything else will be execute on the host operating system", ""},
 	}
 
 	table.AppendBulk(data)
@@ -1273,7 +1267,6 @@ func menuHelpListener() {
 		{"start", "Start this listener", ""},
 		{"status", "Get the server's current status", ""},
 		{"stop", "Stop the listener", ""},
-		{"*", "Anything else will be execute on the host operating system", ""},
 	}
 
 	table.AppendBulk(data)
@@ -1364,31 +1357,11 @@ func exit() {
 }
 
 func executeCommand(name string, arg []string) {
-
-	cmd := exec.Command(name, arg...) // #nosec G204 Users can execute any arbitrary command by design
-
-	out, err := cmd.CombinedOutput()
-
 	MessageChannel <- messages.UserMessage{
 		Level:   messages.Info,
-		Message: "Executing system command...",
+		Message: "Unknown command",
 		Time:    time.Time{},
 		Error:   false,
-	}
-	if err != nil {
-		MessageChannel <- messages.UserMessage{
-			Level:   messages.Warn,
-			Message: err.Error(),
-			Time:    time.Time{},
-			Error:   true,
-		}
-	} else {
-		MessageChannel <- messages.UserMessage{
-			Level:   messages.Success,
-			Message: fmt.Sprintf("%s", out),
-			Time:    time.Time{},
-			Error:   false,
-		}
 	}
 }
 
