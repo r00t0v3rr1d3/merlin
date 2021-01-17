@@ -23,6 +23,7 @@ import (
 	// Standard
 	"errors"
 	"fmt"
+	"net"
 	"os/exec"
 )
 
@@ -79,6 +80,32 @@ func ExecuteShellcodeCreateProcessWithPipe(sc string, spawnto string, args strin
 	spawnto = ""
 	args = ""
 	return stdout, stderr, fmt.Errorf("CreateProcess modules in not implemented for this operating  system")
+}
+
+// Ifconfig on *nix prints basic network adapter information
+func HostIfconfig() (stdout string, err error) {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return "", err
+	}
+
+	for _, i := range ifaces {
+		out := ""
+		out += fmt.Sprintf("%s\n", i.Name)
+		out += fmt.Sprintf("  MAC Address\t%s\n", i.HardwareAddr.String())
+		addrs, err := i.Addrs()
+		if err != nil {
+			return "", err
+		}
+		for _, a := range addrs {
+			out += fmt.Sprintf("  IP Address\t%s\n", a.String())
+		}
+		stdout += out
+	}
+	fmt.Println("Done")
+	fmt.Println(stdout)
+
+	return stdout, nil
 }
 
 // miniDump is a Windows only module function to dump the memory of the provided process

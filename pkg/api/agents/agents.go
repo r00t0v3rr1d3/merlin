@@ -381,6 +381,15 @@ func GetJobsForAgent(agentID uuid.UUID) ([][]string, messages.UserMessage) {
 	return jobsRows, messages.UserMessage{}
 }
 
+// Ipconfig lists the agent's network adapter information
+func Ipconfig(agentID uuid.UUID, Args []string) messages.UserMessage {
+	job, err := jobs.Add(agentID, "ifconfig", nil)
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
 // Kill instructs the agent to quit running
 func Kill(agentID uuid.UUID, Args []string) messages.UserMessage {
 	if len(Args) > 0 {

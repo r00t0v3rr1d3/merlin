@@ -1,6 +1,7 @@
 # Gandalf User Guide 
 
 ## New Commands
+* `ifconfig`/`ipconfig`: Prints host network adapter information. Windows hosts use API calls to get extra info (e.g. DHCP)
 
 
 ## Changes from stock merlin

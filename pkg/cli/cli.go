@@ -387,6 +387,8 @@ func Shell() {
 					} else {
 						displayTable([]string{}, rows)
 					}
+				case "ifconfig", "ipconfig":
+					MessageChannel <- agentAPI.Ipconfig(shellAgent, cmd)
 				case "jobs":
 					jobs, message := agentAPI.GetJobsForAgent(shellAgent)
 					if message.Message != "" {
@@ -974,6 +976,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		),
 		readline.PcItem("help"),
 		readline.PcItem("info"),
+		readline.PcItem("ifconfig"),
 		readline.PcItem("jobs"),
 		readline.PcItem("kill"),
 		readline.PcItem("ls"),
@@ -1160,6 +1163,7 @@ func menuHelpAgent() {
 		{"execute-pe", "Execute a Windows PE (EXE)", "execute-pe <pe path> [<pe args>, <spawnto path>, <spawnto args>]"},
 		{"execute-shellcode", "Execute shellcode", "self, remote <pid>, RtlCreateUserThread <pid>"},
 		{"info", "Display all information about the agent", ""},
+		{"ifconfig", "Displays host network adapter information", ""},
 		{"jobs", "Display all active jobs for the agent", ""},
 		{"kill", "Instruct the agent to die or quit", ""},
 		{"ls", "List directory contents", "ls /etc OR ls C:\\\\Users OR ls C:/Users"},

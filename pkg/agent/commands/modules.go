@@ -61,6 +61,20 @@ func CreateProcess(cmd jobs.Command) jobs.Results {
 	return results
 }
 
+// Ifconfig needs extra WinAPI calls for windows hosts
+func Ifconfig(cmd jobs.Command) jobs.Results {
+	var results jobs.Results
+	var err error
+
+	out, err := HostIfconfig()
+	if err != nil {
+		results.Stderr = fmt.Sprintf("Error getting network interfaces:%s\r\n", err.Error())
+	} else {
+		results.Stdout = out
+	}
+	return results
+}
+
 // MiniDump is the top-level function used to receive a job and subsequently execute a Windows memory dump on the target process
 // The function returns the memory dump as a file upload to the server
 func MiniDump(cmd jobs.Command) (jobs.FileTransfer, error) {

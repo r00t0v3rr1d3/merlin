@@ -121,6 +121,12 @@ func Add(agentID uuid.UUID, jobType string, jobArgs []string) (string, error) {
 			Command: jobType,
 		}
 		job.Payload = p
+	case "ifconfig":
+		job.Type = merlinJob.MODULE
+		p := merlinJob.Command{
+			Command: "ifconfig",
+		}
+		job.Payload = p
 	case "kill":
 		job.Type = merlinJob.CONTROL
 		p := merlinJob.Command{
