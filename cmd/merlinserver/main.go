@@ -36,16 +36,16 @@ import (
 var build = "nonRelease"
 
 func main() {
-	logging.Server("Starting Merlin Server version " + merlin.Version + " build " + merlin.Build)
+	logging.Server("Starting Gandalf Server version " + merlin.Version + " build " + merlin.Build)
 
 	flag.Usage = func() {
-		color.Blue("#################################################")
-		color.Blue("#\t\tMERLIN SERVER\t\t\t#")
-		color.Blue("#################################################")
-		color.Blue("Version: " + merlin.Version)
-		color.Blue("Build: " + build)
-		color.Yellow("Merlin Server does not take any command line arguments")
-		color.Yellow("Visit the Merlin wiki for additional information: https://merlin-c2.readthedocs.io/en/latest/")
+		color.White("#################################################")
+		color.White("#\t\tGANDALF SERVER\t\t\t#")
+		color.White("#################################################")
+		color.White("Version: " + merlin.Version)
+		color.White("Build: " + build)
+		color.White("Codename: Gandalf")
+		color.Yellow("Gandalf Server does not take any command line arguments")
 		flag.PrintDefaults()
 		os.Exit(0)
 	}
