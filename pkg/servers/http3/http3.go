@@ -69,7 +69,7 @@ func init() {
 // GetOptions returns a map of configurable server options typically used when creating a listener
 func GetOptions() map[string]string {
 	options := make(map[string]string)
-	options["Interface"] = "127.0.0.1"
+	options["Interface"] = "0.0.0.0"
 	options["Port"] = "443"
 	options["PSK"] = "merlin"
 	options["URLS"] = "/"

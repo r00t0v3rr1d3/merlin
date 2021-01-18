@@ -14,3 +14,5 @@
 * Added `kill` command
 * Renamed `kill` to `exit`
 * A sweet banner
+* Removed help menu from agent
+* Changed listener default from 127.0.0.1 to 0.0.0.0

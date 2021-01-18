@@ -20,7 +20,6 @@ package main
 import (
 	// Standard
 	"flag"
-	"fmt"
 	"os"
 
 	// 3rd Party
@@ -69,8 +68,8 @@ func main() {
 	flag.Parse()
 
 	if *version {
-		color.Blue(fmt.Sprintf("Merlin Agent Version: %s", core.Version))
-		color.Blue(fmt.Sprintf("Merlin Agent Build: %s", build))
+		//color.Blue(fmt.Sprintf("Merlin Agent Version: %s", core.Version))
+		//color.Blue(fmt.Sprintf("Merlin Agent Build: %s", build))
 		os.Exit(0)
 	}
 
@@ -125,7 +124,7 @@ func main() {
 
 // usage prints command line options
 func usage() {
-	fmt.Printf("Merlin Agent\r\n")
-	flag.PrintDefaults()
+	//fmt.Printf("Merlin Agent\r\n")
+	//flag.PrintDefaults()
 	os.Exit(0)
 }
