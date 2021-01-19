@@ -210,9 +210,7 @@ func Add(agentID uuid.UUID, jobType string, jobArgs []string) (string, error) {
 			Command: jobArgs[0],
 		}
 
-		if len(jobArgs) == 2 {
-			p.Args = jobArgs[1:]
-		}
+		p.Args = jobArgs[1:]
 		job.Payload = p
 	case "ja3":
 		job.Type = merlinJob.CONTROL

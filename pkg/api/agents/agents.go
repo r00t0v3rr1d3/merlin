@@ -123,7 +123,7 @@ func ExecuteAssembly(agentID uuid.UUID, Args []string) messages.UserMessage {
 	if len(Args) > 3 {
 		options["spawnto"] = Args[3]
 	} else {
-		options["spawnto"] = "C:\\WIndows\\System32\\dllhost.exe"
+		options["spawnto"] = "C:\\Windows\\System32\\dllhost.exe"
 	}
 
 	// Set the SpawnTo arguments, if any
@@ -186,7 +186,7 @@ func ExecutePE(agentID uuid.UUID, Args []string) messages.UserMessage {
 	if len(Args) > 3 {
 		options["spawnto"] = Args[3]
 	} else {
-		options["spawnto"] = "C:\\WIndows\\System32\\dllhost.exe"
+		options["spawnto"] = "C:\\Windows\\System32\\dllhost.exe"
 	}
 
 	// Set the SpawnTo arguments, if any
@@ -347,8 +347,8 @@ func GetAgentInfo(agentID uuid.UUID) ([][]string, messages.UserMessage) {
 		{"Last Check In", a.StatusCheckIn.Format(time.RFC3339)},
 		{"Agent Version", a.Version},
 		{"Agent Build", a.Build},
-		{"Agent Wait Time", a.WaitTime},
-		{"Agent Wait Time Skew", strconv.FormatInt(a.Skew, 10)},
+		{"Agent Wait Time Min", strconv.FormatInt(a.WaitTimeMin, 10)},
+		{"Agent Wait Time Max", strconv.FormatInt(a.WaitTimeMax, 10)},
 		{"Agent Message Padding Max", strconv.Itoa(a.PaddingMax)},
 		{"Agent Max Retries", strconv.Itoa(a.MaxRetry)},
 		{"Agent Failed Check In", strconv.Itoa(a.FailedCheckin)},
@@ -366,13 +366,10 @@ func GetAgentStatus(agentID uuid.UUID) (string, messages.UserMessage) {
 	if !ok {
 		return status, messages.ErrorMessage(fmt.Sprintf("%s is not a valid agent", agentID))
 	}
-	dur, errDur := time.ParseDuration(agent.WaitTime)
-	if errDur != nil {
-		return status, messages.ErrorMessage(fmt.Sprintf("Error converting %s to a time duration: %s", agent.WaitTime, errDur))
-	}
-	if agent.StatusCheckIn.Add(dur).After(time.Now()) {
+	dur := time.Duration(agent.WaitTimeMax) * time.Second
+	if agent.StatusCheckIn.Add(dur * 3).After(time.Now()) { // little extra wiggle room
 		status = "Active"
-	} else if agent.StatusCheckIn.Add(dur * time.Duration(agent.MaxRetry+1)).After(time.Now()) { // +1 to account for skew
+	} else if agent.StatusCheckIn.Add(dur * 6).After(time.Now()) {
 		status = "Delayed"
 	} else {
 		status = "Dead"
@@ -517,26 +514,40 @@ func SetPadding(agentID uuid.UUID, Args []string) messages.UserMessage {
 
 // SetSleep configures the Agent's sleep time between checkins
 func SetSleep(agentID uuid.UUID, Args []string) messages.UserMessage {
-	if len(Args) > 2 {
-		job, err := jobs.Add(agentID, "sleep", Args[1:])
-		if err != nil {
-			return messages.ErrorMessage(err.Error())
+	if len(Args) == 3 {
+		NewWaitTimeMin, err1 := strconv.ParseInt(Args[1], 10, 64)
+		if err1 != nil {
+			return messages.ErrorMessage(err1.Error())
 		}
-		return messages.JobMessage(agentID, job)
-	}
-	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent SetSleep call: %s", Args))
-}
-
-// SetSkew configures the amount of skew an Agent uses to randomize checkin times
-func SetSkew(agentID uuid.UUID, Args []string) messages.UserMessage {
-	if len(Args) > 2 {
-		job, err := jobs.Add(agentID, "skew", Args[1:])
-		if err != nil {
-			return messages.ErrorMessage(err.Error())
+		NewWaitTimeMax, err2 := strconv.ParseInt(Args[2], 10, 64)
+		if err2 != nil {
+			return messages.ErrorMessage(err2.Error())
 		}
-		return messages.JobMessage(agentID, job)
+		if NewWaitTimeMin > 0 && NewWaitTimeMax > 0 && NewWaitTimeMax >= NewWaitTimeMin {
+			job, err := jobs.Add(agentID, "sleep", Args)
+			if err != nil {
+				return messages.ErrorMessage(err.Error())
+			}
+			return messages.JobMessage(agentID, job)
+		}
+		return messages.ErrorMessage(fmt.Sprintf("First value (min) must be smaller than second value (max): %s", Args))
+	} else if len(Args) == 2 {
+		NewWaitTime, err3 := strconv.ParseInt(Args[1], 10, 64)
+		if err3 != nil {
+			return messages.ErrorMessage(err3.Error())
+		}
+		if NewWaitTime > 0 {
+			Args = append(Args, Args[1])
+			job, err := jobs.Add(agentID, "sleep", Args)
+			if err != nil {
+				return messages.ErrorMessage(err.Error())
+			}
+			return messages.JobMessage(agentID, job)
+		}
+		return messages.ErrorMessage(fmt.Sprintf("Sleep value must be greater than zero: %s", Args))
+	} else {
+		return messages.ErrorMessage(fmt.Sprintf("Not enough arguments provided for the Agent SetSleep call: %s", Args))
 	}
-	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent SetSkew call: %s", Args))
 }
 
 // SharpGen generates a .NET core assembly, converts it to shellcode with go-donut, and executes it in the spawnto process
@@ -555,7 +566,7 @@ func SharpGen(agentID uuid.UUID, Args []string) messages.UserMessage {
 	if len(Args) > 2 {
 		options["spawnto"] = Args[2]
 	} else {
-		options["spawnto"] = "C:\\WIndows\\System32\\dllhost.exe"
+		options["spawnto"] = "C:\\Windows\\System32\\dllhost.exe"
 	}
 
 	// Set the SpawnTo arguments, if any

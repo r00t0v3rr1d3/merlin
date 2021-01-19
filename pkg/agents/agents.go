@@ -24,11 +24,12 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
 	// 3rd Party
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 
 	// Merlin
 	messageAPI "github.com/Ne0nd0g/merlin/pkg/api/messages"
@@ -59,11 +60,11 @@ type Agent struct {
 	StatusCheckIn  time.Time
 	Version        string
 	Build          string
-	WaitTime       string
+	WaitTimeMin    int64
+	WaitTimeMax    int64
 	PaddingMax     int
 	MaxRetry       int
 	FailedCheckin  int
-	Skew           int64
 	Proto          string
 	KillDate       int64
 	RSAKeys        *rsa.PrivateKey // RSA Private/Public key pair; Private key used to decrypt messages
@@ -154,8 +155,8 @@ func (a *Agent) UpdateInfo(info messages.AgentInfo) {
 		message("debug", "Processing new agent info")
 		message("debug", fmt.Sprintf("Agent Version: %s", info.Version))
 		message("debug", fmt.Sprintf("Agent Build: %s", info.Build))
-		message("debug", fmt.Sprintf("Agent waitTime: %s", info.WaitTime))
-		message("debug", fmt.Sprintf("Agent skew: %d", info.Skew))
+		message("debug", fmt.Sprintf("Agent WaitTimeMin: %d", info.WaitTimeMin))
+		message("debug", fmt.Sprintf("Agent WaitTimeMax: %d", info.WaitTimeMax))
 		message("debug", fmt.Sprintf("Agent paddingMax: %d", info.PaddingMax))
 		message("debug", fmt.Sprintf("Agent maxRetry: %d", info.MaxRetry))
 		message("debug", fmt.Sprintf("Agent failedCheckin: %d", info.FailedCheckin))
@@ -166,8 +167,8 @@ func (a *Agent) UpdateInfo(info messages.AgentInfo) {
 	a.Log("Processing AgentInfo message:")
 	a.Log(fmt.Sprintf("\tAgent Version: %s ", info.Version))
 	a.Log(fmt.Sprintf("\tAgent Build: %s ", info.Build))
-	a.Log(fmt.Sprintf("\tAgent waitTime: %s ", info.WaitTime))
-	a.Log(fmt.Sprintf("\tAgent skew: %d ", info.Skew))
+	a.Log(fmt.Sprintf("\tAgent WaitTimeMin: %s ", info.WaitTimeMin))
+	a.Log(fmt.Sprintf("\tAgent WaitTimeMax: %s ", info.WaitTimeMax))
 	a.Log(fmt.Sprintf("\tAgent paddingMax: %d ", info.PaddingMax))
 	a.Log(fmt.Sprintf("\tAgent maxRetry: %d ", info.MaxRetry))
 	a.Log(fmt.Sprintf("\tAgent failedCheckin: %d ", info.FailedCheckin))
@@ -177,8 +178,8 @@ func (a *Agent) UpdateInfo(info messages.AgentInfo) {
 
 	a.Version = info.Version
 	a.Build = info.Build
-	a.WaitTime = info.WaitTime
-	a.Skew = info.Skew
+	a.WaitTimeMin = info.WaitTimeMin
+	a.WaitTimeMax = info.WaitTimeMax
 	a.PaddingMax = info.PaddingMax
 	a.MaxRetry = info.MaxRetry
 	a.FailedCheckin = info.FailedCheckin
@@ -256,8 +257,10 @@ func GetAgentFieldValue(agentID uuid.UUID, field string) (string, error) {
 			return Agents[agentID].Architecture, nil
 		case "username":
 			return Agents[agentID].UserName, nil
-		case "waittime":
-			return Agents[agentID].WaitTime, nil
+		case "waittimemin":
+			return strconv.FormatInt(Agents[agentID].WaitTimeMin, 10), nil
+		case "waittimemax":
+			return strconv.FormatInt(Agents[agentID].WaitTimeMax, 10), nil
 		}
 		return "", fmt.Errorf("the provided agent field could not be found: %s", field)
 	}
@@ -348,32 +351,28 @@ func GetLifetime(agentID uuid.UUID) (time.Duration, error) {
 		return 0, nil
 	}
 
-	sleep, errSleep := time.ParseDuration(Agents[agentID].WaitTime)
-	if errSleep != nil {
-		return 0, fmt.Errorf("there was an error parsing the agent WaitTime to a duration:\r\n%s", errSleep.Error())
-	}
+	sleep := Agents[agentID].WaitTimeMax
 	if sleep == 0 {
-		return 0, fmt.Errorf("agent WaitTime is equal to zero")
+		return 0, fmt.Errorf("Agent WaitTimeMax is equal to zero")
 	}
 
 	retry := Agents[agentID].MaxRetry
 	if retry == 0 {
-		return 0, fmt.Errorf("agent MaxRetry is equal to zero")
+		return 0, fmt.Errorf("Agent MaxRetry is equal to zero")
 	}
 
-	skew := time.Duration(Agents[agentID].Skew) * time.Millisecond
 	maxRetry := Agents[agentID].MaxRetry
 
 	// Calculate the worst case scenario that an agent could be alive before dying
-	lifetime := sleep + skew
+	lifetime := sleep
 	for maxRetry > 1 {
-		lifetime = lifetime + (sleep + skew)
+		lifetime = lifetime + sleep
 		maxRetry--
 	}
 
 	if Agents[agentID].KillDate > 0 {
-		if time.Now().Add(lifetime).After(time.Unix(Agents[agentID].KillDate, 0)) {
-			return 0, fmt.Errorf("the agent lifetime will exceed the killdate")
+		if time.Now().Add(time.Duration(lifetime) * time.Second).After(time.Unix(Agents[agentID].KillDate, 0)) {
+			return 0, fmt.Errorf("Agent lifetime will exceed the killdate")
 		}
 	}
 
@@ -381,6 +380,5 @@ func GetLifetime(agentID uuid.UUID) (time.Duration, error) {
 		message("debug", "Leaving agents.GetLifeTime without error")
 	}
 
-	return lifetime, nil
-
+	return time.Duration(lifetime) * time.Second, nil
 }

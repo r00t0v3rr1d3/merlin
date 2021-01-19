@@ -426,10 +426,6 @@ func Shell() {
 							MessageChannel <- agentAPI.SetMaxRetry(shellAgent, cmd)
 						case "padding":
 							MessageChannel <- agentAPI.SetPadding(shellAgent, cmd)
-						case "sleep":
-							MessageChannel <- agentAPI.SetSleep(shellAgent, cmd)
-						case "skew":
-							MessageChannel <- agentAPI.SetSkew(shellAgent, cmd)
 						default:
 							MessageChannel <- messages.UserMessage{
 								Level:   messages.Warn,
@@ -441,6 +437,8 @@ func Shell() {
 					}
 				case "sharpgen":
 					go func() { MessageChannel <- agentAPI.SharpGen(shellAgent, cmd) }()
+				case "sleep":
+					MessageChannel <- agentAPI.SetSleep(shellAgent, cmd)
 				case "status":
 					status, message := agentAPI.GetAgentStatus(shellAgent)
 					if message.Error {
@@ -1004,6 +1002,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 			readline.PcItem("sleep"),
 		),
 		readline.PcItem("sharpgen"),
+		readline.PcItem("sleep"),
 		readline.PcItem("status"),
 		readline.PcItem("upload"),
 	)
@@ -1183,6 +1182,7 @@ func menuHelpAgent() {
 		{"set", "Set the value for one of the agent's options", "ja3, killdate, maxretry, padding, skew, sleep"},
 		{"sharpgen", "Use SharpGen to compile and execute a .NET assembly", "sharpgen <code> [<spawnto path>, <spawnto args>]"},
 		{"shell", "Execute a command on the agent", "shell ping -c 3 8.8.8.8"},
+		{"sleep", "<min> <max> (in seconds)", "sleep 15 30"},
 		{"status", "Print the current status of the agent", ""},
 		{"upload", "Upload a file to the agent", "upload <local_file> <remote_file>"},
 	}

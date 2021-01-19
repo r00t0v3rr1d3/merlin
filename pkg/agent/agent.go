@@ -29,7 +29,7 @@ import (
 	"time"
 
 	// 3rd Party
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 
 	// Merlin
 	"github.com/Ne0nd0g/merlin/pkg/agent/cli"
@@ -57,9 +57,9 @@ type Agent struct {
 	sCheckIn      time.Time               // sCheckIn is a timestamp of the agent's last status check in time
 	Version       string                  // Version is the version number of the Merlin Agent program
 	Build         string                  // Build is the build number of the Merlin Agent program
-	WaitTime      time.Duration           // WaitTime is how much time the agent waits in-between checking in
+	WaitTimeMin   int64                   // WaitTimeMin is shortest amount of time in which the agent waits in-between checking in
+	WaitTimeMax   int64                   // WaitTimeMax is longest amount of time in which the agent waits in-between checking in
 	MaxRetry      int                     // MaxRetry is the maximum amount of failed check in attempts before the agent quits
-	Skew          int64                   // Skew is size of skew added to each WaitTime to vary check in attempts
 	FailedCheckin int                     // FailedCheckin is a count of the total number of failed check ins
 	Initial       bool                    // Initial identifies if the agent has successfully completed the first initial check in
 	KillDate      int64                   // killDate is a unix timestamp that denotes a time the executable will not run after (if it is 0 it will not be used)
@@ -67,10 +67,10 @@ type Agent struct {
 
 // Config is a structure that is used to pass in all necessary information to instantiate a new Agent
 type Config struct {
-	Sleep    string // Sleep is the amount of time the Agent will wait between sending messages to the server
-	Skew     string // Skew is the variance, or jitter, used to vary the sleep time so that it isn't constant
-	KillDate string // KillDate is the date, as a Unix timestamp, that agent will quit running
-	MaxRetry string // MaxRetry is the maximum amount of time an agent will fail to check in before it quits running
+	WaitTimeMin int64  // WaitTimeMin is the minimum amount of time the Agent will wait between sending messages to the server
+	WaitTimeMax int64  // WaitTimeMax is the maximum amount of time the Agent will wait between sending messages to the server
+	KillDate    string // KillDate is the date, as a Unix timestamp, that agent will quit running
+	MaxRetry    string // MaxRetry is the maximum amount of time an agent will fail to check in before it quits running
 }
 
 // New creates a new agent struct with specific values and returns the object
@@ -145,23 +145,17 @@ func New(config Config) (*Agent, error) {
 	} else {
 		agent.MaxRetry = 7
 	}
-	// Parse Sleep
-	if config.Sleep != "" {
-		agent.WaitTime, err = time.ParseDuration(config.Sleep)
-		if err != nil {
-			return &agent, fmt.Errorf("there was an error converting the sleep time to an integer:\r\n%s", err)
-		}
+	// Parse WaitTimeMin
+	if config.WaitTimeMin != 0 {
+		agent.WaitTimeMin = config.WaitTimeMin
 	} else {
-		agent.WaitTime = 30000 * time.Millisecond
+		agent.WaitTimeMin = 15
 	}
-	// Parse Skew
-	if config.Skew != "" {
-		agent.Skew, err = strconv.ParseInt(config.Skew, 10, 64)
-		if err != nil {
-			return &agent, fmt.Errorf("there was an error converting the skew to an integer:\r\n%s", err)
-		}
+	// Parse WaitTimeMax
+	if config.WaitTimeMax != 0 {
+		agent.WaitTimeMax = config.WaitTimeMax
 	} else {
-		agent.Skew = 3000
+		agent.WaitTimeMax = 30
 	}
 
 	cli.Message(cli.INFO, "Host Information:")
@@ -205,14 +199,16 @@ func (a *Agent) Run() error {
 			os.Exit(0)
 		}
 		// Sleep
-		var sleep time.Duration
-		if a.Skew > 0 {
-			sleep = a.WaitTime + (time.Duration(rand.Int63n(a.Skew)) * time.Millisecond) // #nosec G404 - Does not need to be cryptographically secure, deterministic is OK
+		var totalWaitTime time.Duration
+		if a.WaitTimeMin != a.WaitTimeMax {
+			rand.Seed(time.Now().UnixNano())
+			totalWaitTimeInt := rand.Int63n(a.WaitTimeMax-a.WaitTimeMin) + a.WaitTimeMin
+			totalWaitTime = time.Duration(totalWaitTimeInt) * time.Second
 		} else {
-			sleep = a.WaitTime
+			totalWaitTime = time.Duration(a.WaitTimeMax) * time.Second
 		}
-		cli.Message(cli.NOTE, fmt.Sprintf("Sleeping for %s at %s", sleep.String(), time.Now().UTC().Format(time.RFC3339)))
-		time.Sleep(sleep)
+		cli.Message(cli.NOTE, fmt.Sprintf("Sleeping for %s at %s", totalWaitTime.String(), time.Now().UTC().Format(time.RFC3339)))
+		time.Sleep(totalWaitTime)
 	}
 }
 
