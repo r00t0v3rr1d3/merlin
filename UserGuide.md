@@ -19,3 +19,4 @@
 * Removed help menu from agent
 * Changed listener default from 127.0.0.1 to 0.0.0.0
 * Changed agent `sleep` command and agent behavior
+* Updated `sessions` to include a column for last checkin
