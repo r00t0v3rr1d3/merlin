@@ -287,35 +287,34 @@ func GetAgents() (agentList []uuid.UUID) {
 // GetAgentsRows returns a row of data for every agent that includes information about it such as
 // the Agent's GUID, platform, user, host, transport, and status
 func GetAgentsRows() (header []string, rows [][]string) {
-	header = []string{"Agent GUID", "Platform", "User", "Host", "Transport", "Status", "Last Checkin"}
+	header = []string{"Agent GUID",
+		"Platform",
+		"Host",
+		"Transport",
+		"Status",
+		"Last Checkin",
+		"User",
+		"Process"}
+
 	for _, agent := range agents.Agents {
-		// Convert proto (i.e. h2 or hq) to user friendly string
-		var proto string
-		switch agent.Proto {
-		case "http":
-			proto = "HTTP/1.1 clear-text"
-		case "https":
-			proto = "HTTP/1.1 over TLS"
-		case "h2c":
-			proto = "HTTP/2 clear-text"
-		case "h2":
-			proto = "HTTP/2 over TLS"
-		case "http3":
-			proto = "HTTP/3 (HTTP/2 over QUIC)"
-		default:
-			proto = fmt.Sprintf("Unknown: %s", agent.Proto)
+
+		// Get the process name, sans full path
+		var proc string
+		if agent.Platform == "windows" {
+			proc = agent.Process[strings.LastIndex(agent.Process, "\\")+1:]
+		} else {
+			proc = agent.Process[strings.LastIndex(agent.Process, "/")+1:]
 		}
 
-		// Calculate the last checkin time
-		lastTime := time.Since(agent.StatusCheckIn)
-		lastTimeStr := fmt.Sprintf("%d:%d:%d ago",
-			int(lastTime.Hours()),
-			int(lastTime.Minutes()),
-			int(lastTime.Seconds()))
-
 		status, _ := GetAgentStatus(agent.ID)
-		rows = append(rows, []string{agent.ID.String(), agent.Platform + "/" + agent.Architecture, agent.UserName,
-			agent.HostName, proto, status, lastTimeStr})
+		rows = append(rows, []string{agent.ID.String()[:8] + "...",
+			agent.Platform + "/" + agent.Architecture,
+			agent.HostName,
+			agent.Proto,
+			status,
+			lastCheckin(agent.StatusCheckIn) + " ago",
+			agent.UserName,
+			fmt.Sprintf("%s(%d)", proc, agent.Pid)})
 	}
 	return
 }
@@ -333,26 +332,33 @@ func GetAgentInfo(agentID uuid.UUID) ([][]string, messages.UserMessage) {
 		return rows, message
 	}
 
-	var proc string
-	if a.Platform == "windows" {
-		proc = a.Process[strings.LastIndex(a.Process, "\\")+1:]
-	} else {
-		proc = a.Process[strings.LastIndex(a.Process, "/")+1:]
+	// If the full path of the Process is too long, it makes the table ugly
+	// This should cover most use cases
+	procName := a.Process
+	if len(procName) > 80 {
+		var delim rune
+		if a.Platform == "windows" {
+			delim = '\\'
+		} else {
+			delim = '/'
+		}
+		procName = wordWrap(procName, delim, 60)
 	}
 
 	rows = [][]string{
-		{"Status", status},
 		{"ID", a.ID.String()},
+		{"Status", status},
 		{"Platform", a.Platform},
 		{"Architecture", a.Architecture},
+		{"IP", fmt.Sprintf("%s", strings.Join(a.Ips, "\n"))},
 		{"UserName", a.UserName},
 		{"User GUID", a.UserGUID},
 		{"Hostname", a.HostName},
 		{"Process ID", strconv.Itoa(a.Pid)},
-		{"Process Name", proc},
-		{"IP", fmt.Sprintf("%v", a.Ips)},
+		{"Process Name", procName},
 		{"Initial Check In", a.InitialCheckIn.Format(time.RFC3339)},
-		{"Last Check In", a.StatusCheckIn.Format(time.RFC3339)},
+		{"Last Check In", fmt.Sprintf("%s (%s)", a.StatusCheckIn.Format(time.RFC3339), lastCheckin(a.StatusCheckIn))},
+		{"", ""},
 		{"Agent Version", a.Version},
 		{"Agent Build", a.Build},
 		{"Agent Wait Time Min", strconv.FormatInt(a.WaitTimeMin, 10)},
@@ -636,4 +642,35 @@ func Upload(agentID uuid.UUID, Args []string) messages.UserMessage {
 
 	}
 	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent Upload call: %s", Args))
+}
+
+// Splits a string into newlines
+// Implementation improvised from https://gist.github.com/kennwhite/306317d81ab4a885a965e25aa835b8ef
+func wordWrap(text string, delim rune, maxLen int) string {
+	f := func(c rune) bool {
+		return c == delim
+	}
+	words := strings.FieldsFunc(text, f)
+	wrapped := words[0]
+	spaceLeft := maxLen - len(wrapped)
+	for _, word := range words[1:] {
+		if len(word)+1 > spaceLeft {
+			wrapped += string(delim) + "\n" + word
+		} else {
+			wrapped += string(delim) + word
+			spaceLeft -= 1 + len(word)
+		}
+	}
+	return wrapped
+}
+
+// Returns a nicely printed string for time since the last checkin (HH:MM:SS)
+func lastCheckin(t time.Time) string {
+	lastTime := time.Since(t)
+	lastTimeStr := fmt.Sprintf("%d:%02d:%02d",
+		int(lastTime.Hours()),
+		int(lastTime.Minutes())%60,
+		int(lastTime.Seconds())%60)
+
+	return lastTimeStr
 }
