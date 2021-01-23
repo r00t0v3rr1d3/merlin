@@ -474,56 +474,66 @@ func Remove(agentID uuid.UUID) messages.UserMessage {
 
 // SetJA3 is used to change the Agent's JA3 signature
 func SetJA3(agentID uuid.UUID, Args []string) messages.UserMessage {
-	if len(Args) > 2 {
-		job, err := jobs.Add(agentID, "ja3", Args[1:])
+	if len(Args) > 1 {
+		job, err := jobs.Add(agentID, "ja3", Args)
 		if err != nil {
 			return messages.ErrorMessage(err.Error())
 		}
 		return messages.JobMessage(agentID, job)
 	}
-	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent SetJA3 call: %s", Args))
+	return messages.ErrorMessage(fmt.Sprintf("Not enough arguments provided for the Agent SetJA3 call: %s", Args))
 }
 
 // SetKillDate configures the date and time that the agent will stop running
 func SetKillDate(agentID uuid.UUID, Args []string) messages.UserMessage {
-	if len(Args) > 2 {
-		_, errU := strconv.ParseInt(Args[2], 10, 64)
+	if len(Args) > 1 {
+		_, errU := strconv.ParseInt(Args[1], 10, 64)
 		if errU != nil {
-			m := fmt.Sprintf("There was an error converting %s to an int64", Args[2])
+			m := fmt.Sprintf("There was an error converting %s to an int64", Args[1])
 			m = m + "\r\nKill date takes in a UNIX epoch timestamp such as 811123200 for September 15, 1995"
 			return messages.ErrorMessage(m)
 		}
-		job, err := jobs.Add(agentID, "killdate", Args[1:])
+		job, err := jobs.Add(agentID, "killdate", Args)
 		if err != nil {
 			return messages.ErrorMessage(err.Error())
 		}
 		return messages.JobMessage(agentID, job)
 	}
-	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent SetKillDate call: %s", Args))
+	return messages.ErrorMessage(fmt.Sprintf("Not enough arguments provided for the Agent SetKillDate call: %s", Args))
 }
 
 // SetMaxRetry configures the amount of times an Agent will try to checkin before it quits
 func SetMaxRetry(agentID uuid.UUID, Args []string) messages.UserMessage {
-	if len(Args) > 2 {
-		job, err := jobs.Add(agentID, "maxretry", Args[1:])
+	if len(Args) > 1 {
+		_, errU := strconv.ParseInt(Args[1], 10, 64)
+		if errU != nil {
+			m := fmt.Sprintf("There was an error converting %s to an int64\n", Args[1])
+			return messages.ErrorMessage(m)
+		}
+		job, err := jobs.Add(agentID, "maxretry", Args)
 		if err != nil {
 			return messages.ErrorMessage(err.Error())
 		}
 		return messages.JobMessage(agentID, job)
 	}
-	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent SetMaxRetry call: %s", Args))
+	return messages.ErrorMessage(fmt.Sprintf("Not enough arguments provided for the Agent SetMaxRetry call: %s", Args))
 }
 
 // SetPadding configures the maxium size for the random amount of padding added to each message
 func SetPadding(agentID uuid.UUID, Args []string) messages.UserMessage {
-	if len(Args) > 2 {
-		job, err := jobs.Add(agentID, "padding", Args[1:])
+	if len(Args) > 1 {
+		_, errU := strconv.ParseInt(Args[1], 10, 64)
+		if errU != nil {
+			m := fmt.Sprintf("There was an error converting %s to an int64\n", Args[1])
+			return messages.ErrorMessage(m)
+		}
+		job, err := jobs.Add(agentID, "padding", Args)
 		if err != nil {
 			return messages.ErrorMessage(err.Error())
 		}
 		return messages.JobMessage(agentID, job)
 	}
-	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent SetPadding call: %s", Args))
+	return messages.ErrorMessage(fmt.Sprintf("Not enough arguments provided for the Agent SetPadding call: %s", Args))
 }
 
 // SetSleep configures the Agent's sleep time between checkins

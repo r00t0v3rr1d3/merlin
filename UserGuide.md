@@ -7,6 +7,10 @@
 
 ## Configurable settings
 * `sleep` has been modified. Just `sleep 30 60` instead of `set sleep 30s` and `set skew 30000`. In seconds.
+* `ja3`
+* `killdate`
+* `maxretry`
+* `padding`
 
 ## Changes from stock Merlin
 * Baby-proofed the server - Ctrl-C and DEL key won't exit the server without a confirmation prompt
@@ -20,3 +24,11 @@
 * Changed listener default from 127.0.0.1 to 0.0.0.0
 * Changed agent `sleep` command and agent behavior
 * Updated `sessions` and agent `info` output for more useful information
+* Ability to run `sessions` command from any menu
+* Ability to `interact` with agents from any menu
+* Command `quit` is now the only way to close the server. `exit` is reserved for telling an agent to die.
+* Added `create` command in listener menu since `use` wasn't super intuitive
+* Renamed `interact` command to `configure` in listener menu because interact is reserved for interacting with agents.
+* `?` now displays the help menus in addition to `help`
+* `set` commands are no longer. `sleep`, `ja3`, `killdate`, `maxretry`, `padding` are all individual commands now
+* The list of available commands (and tab complete) will now have different options for windows/non-windows hosts.

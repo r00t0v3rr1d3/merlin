@@ -38,6 +38,7 @@ import (
 
 	// Merlin
 	merlin "github.com/Ne0nd0g/merlin/pkg"
+	"github.com/Ne0nd0g/merlin/pkg/agents"
 	agentAPI "github.com/Ne0nd0g/merlin/pkg/api/agents"
 	listenerAPI "github.com/Ne0nd0g/merlin/pkg/api/listeners"
 	"github.com/Ne0nd0g/merlin/pkg/api/messages"
@@ -68,7 +69,7 @@ func osSignalHandler() {
 	signal.Notify(c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-c
-		if confirm("Are you sure you want to exit?") {
+		if confirm("Are you sure you want to quit the server?") {
 			exit()
 		}
 	}()
@@ -116,11 +117,11 @@ func Shell() {
 	for {
 		line, err := prompt.Readline()
 		if err == readline.ErrInterrupt {
-			if confirm("Are you sure you want to exit?") {
+			if confirm("Are you sure you want to quit the server?") {
 				exit()
 			}
 		} else if err == io.EOF {
-			if confirm("Are you sure you want to exit?") {
+			if confirm("Are you sure you want to quit the server?") {
 				exit()
 			}
 		}
@@ -163,17 +164,15 @@ func Shell() {
 						Time:    time.Now().UTC(),
 						Error:   false,
 					}
-				case "help":
+				case "help", "?":
 					menuHelpMain()
-				case "?":
-					menuHelpMain()
-				case "exit", "quit":
+				case "quit":
 					if len(cmd) > 1 {
 						if strings.ToLower(cmd[1]) == "-y" {
 							exit()
 						}
 					}
-					if confirm("Are you sure you want to exit?") {
+					if confirm("Are you sure you want to quit the server?") {
 						exit()
 					}
 				case "interact":
@@ -255,17 +254,28 @@ func Shell() {
 				}
 			case "module":
 				switch cmd[0] {
-				case "show":
-					if len(cmd) > 1 {
-						switch cmd[1] {
-						case "info":
-							shellModule.ShowInfo()
-						case "options":
-							shellModule.ShowOptions()
-						}
-					}
+				case "back", "main":
+					menuSetMain()
 				case "info":
 					shellModule.ShowInfo()
+				case "quit":
+					if len(cmd) > 1 {
+						if strings.ToLower(cmd[1]) == "-y" {
+							exit()
+						}
+					}
+					if confirm("Are you sure you want to quit the server?") {
+						exit()
+					}
+				case "reload":
+					menuSetModule(strings.TrimSuffix(strings.Join(shellModule.Path, "/"), ".json"))
+				case "run":
+					modMessages := moduleAPI.RunModule(shellModule)
+					for _, message := range modMessages {
+						MessageChannel <- message
+					}
+				case "sessions":
+					menuAgent([]string{"list"})
 				case "set":
 					if len(cmd) > 2 {
 						if cmd[1] == "Agent" {
@@ -304,23 +314,14 @@ func Shell() {
 							}
 						}
 					}
-				case "reload":
-					menuSetModule(strings.TrimSuffix(strings.Join(shellModule.Path, "/"), ".json"))
-				case "run":
-					modMessages := moduleAPI.RunModule(shellModule)
-					for _, message := range modMessages {
-						MessageChannel <- message
-					}
-				case "back", "main":
-					menuSetMain()
-				case "exit", "quit":
+				case "show":
 					if len(cmd) > 1 {
-						if strings.ToLower(cmd[1]) == "-y" {
-							exit()
+						switch cmd[1] {
+						case "info":
+							shellModule.ShowInfo()
+						case "options":
+							shellModule.ShowOptions()
 						}
-					}
-					if confirm("Are you sure you want to exit?") {
-						exit()
 					}
 				case "unset":
 					if len(cmd) >= 2 {
@@ -341,7 +342,7 @@ func Shell() {
 							}
 						}
 					}
-				case "?", "help":
+				case "help", "?":
 					menuHelpModule()
 				default:
 					if len(cmd) > 1 {
@@ -359,42 +360,16 @@ func Shell() {
 					MessageChannel <- agentAPI.CD(shellAgent, cmd)
 				case "clear", "c":
 					MessageChannel <- agentAPI.ClearJobs(shellAgent)
-				case "cmd", "shell":
+				case "cmd", "shell", "exec":
 					MessageChannel <- agentAPI.CMD(shellAgent, cmd)
 				case "download":
 					MessageChannel <- agentAPI.Download(shellAgent, cmd)
-				case "execute-assembly":
+				case "execute-assembly", "assembly":
 					go func() { MessageChannel <- agentAPI.ExecuteAssembly(shellAgent, cmd) }()
-				case "execute-pe":
+				case "execute-pe", "pe":
 					go func() { MessageChannel <- agentAPI.ExecutePE(shellAgent, cmd) }()
-				case "execute-shellcode":
+				case "execute-shellcode", "shinject":
 					MessageChannel <- agentAPI.ExecuteShellcode(shellAgent, cmd)
-				case "quit":
-					if len(cmd) > 1 {
-						if strings.ToLower(cmd[1]) == "-y" {
-							exit()
-						}
-					}
-					if confirm("Are you sure you want to exit?") {
-						exit()
-					}
-				case "?", "help":
-					menuHelpAgent()
-				case "info":
-					rows, message := agentAPI.GetAgentInfo(shellAgent)
-					if message.Error {
-						MessageChannel <- message
-					} else {
-						displayTable([]string{}, rows)
-					}
-				case "ifconfig", "ipconfig":
-					MessageChannel <- agentAPI.Ipconfig(shellAgent, cmd)
-				case "jobs":
-					jobs, message := agentAPI.GetJobsForAgent(shellAgent)
-					if message.Message != "" {
-						MessageChannel <- message
-					}
-					displayJobTable(jobs)
 				case "exit": // Stock merlin calls this "kill"
 					if len(cmd) > 1 {
 						if strings.ToLower(cmd[1]) == "-y" {
@@ -407,36 +382,99 @@ func Shell() {
 							MessageChannel <- agentAPI.Exit(shellAgent, cmd)
 						}
 					}
+				case "help", "?":
+					menuHelpAgent(agents.Agents[shellAgent].Platform)
+				case "ifconfig", "ipconfig":
+					MessageChannel <- agentAPI.Ipconfig(shellAgent, cmd)
+				case "inactivemultiplier":
+					//MessageChannel <- agentAPI.SetInactiveMultiplier(shellAgent, cmd)
+				case "inactivethreshold":
+					//MessageChannel <- agentAPI.SetInactiveThreshold(shellAgent, cmd)
+				case "info":
+					rows, message := agentAPI.GetAgentInfo(shellAgent)
+					if message.Error {
+						MessageChannel <- message
+					} else {
+						displayTable([]string{}, rows)
+					}
+				case "interact":
+					if len(cmd) > 1 {
+						i, errUUID := uuid.FromString(cmd[1])
+						if errUUID != nil {
+							MessageChannel <- messages.UserMessage{
+								Level:   messages.Warn,
+								Message: fmt.Sprintf("There was an error interacting with agent %s", cmd[1]),
+								Time:    time.Now().UTC(),
+								Error:   true,
+							}
+						} else {
+							menuSetAgent(i)
+						}
+					}
+				case "ja3":
+					MessageChannel <- agentAPI.SetJA3(shellAgent, cmd)
+				case "jobs":
+					jobs, message := agentAPI.GetJobsForAgent(shellAgent)
+					if message.Message != "" {
+						MessageChannel <- message
+					}
+					displayJobTable(jobs)
 				case "kill": // Gandalf addition: kill a process
 					MessageChannel <- agentAPI.KillProcess(shellAgent, cmd)
+				case "killdate":
+					MessageChannel <- agentAPI.SetKillDate(shellAgent, cmd)
 				case "ls":
 					MessageChannel <- agentAPI.LS(shellAgent, cmd)
 				case "main":
 					menuSetMain()
+				case "maxretry":
+					MessageChannel <- agentAPI.SetMaxRetry(shellAgent, cmd)
+				case "netstat":
+					//MessageChannel <- agentAPI.Netstat(shellAgent, cmd)
+				case "note":
+					//newNote := ""
+					//if len(cmd) > 1 {
+					//newNote = strings.Join(cmd[1:], " ")
+					//}
+					//err := agents.SetNote(curAgent, newNote)
+					//if err == nil {
+					//MessageChannel <- messages.UserMessage{
+					//Level:   messages.Success,
+					//Message: fmt.Sprintf("Note set to: %s", strings.Join(cmd[1:], " ")),
+					//Time:    time.Now().UTC(),
+					//Error:   true,
+					//}
+					//} else {
+					//MessageChannel <- messages.UserMessage{
+					//Level:   messages.Warn,
+					//Message: fmt.Sprintf("Error setting note: %s", err.Error()),
+					//Time:    time.Now().UTC(),
+					//Error:   true,
+					//}
+					//}
+				case "nslookup":
+					//MessageChannel <- agentAPI.Nslookup(shellAgent, cmd)
+				case "padding":
+					MessageChannel <- agentAPI.SetPadding(shellAgent, cmd)
+				case "pipes":
+					//MessageChannel <- agentAPI.Pipes(shellAgent, cmd)
+				case "ps":
+					//MessageChannel <- agentAPI.PS(shellAgent, cmd)
 				case "pwd":
 					MessageChannel <- agentAPI.PWD(shellAgent, cmd)
-				case "set":
+				case "quit":
 					if len(cmd) > 1 {
-						switch cmd[1] {
-						case "ja3":
-							MessageChannel <- agentAPI.SetJA3(shellAgent, cmd)
-						case "killdate":
-							MessageChannel <- agentAPI.SetKillDate(shellAgent, cmd)
-						case "maxretry":
-							MessageChannel <- agentAPI.SetMaxRetry(shellAgent, cmd)
-						case "padding":
-							MessageChannel <- agentAPI.SetPadding(shellAgent, cmd)
-						default:
-							MessageChannel <- messages.UserMessage{
-								Level:   messages.Warn,
-								Message: fmt.Sprintf("invalid option to set: %s", cmd[1]),
-								Time:    time.Time{},
-								Error:   true,
-							}
+						if strings.ToLower(cmd[1]) == "-y" {
+							exit()
 						}
 					}
-				case "sharpgen":
-					go func() { MessageChannel <- agentAPI.SharpGen(shellAgent, cmd) }()
+					if confirm("Are you sure you want to quit the server?") {
+						exit()
+					}
+				case "sessions":
+					menuAgent([]string{"list"})
+				case "sdelete":
+					//MessageChannel <- agentAPI.SecureDelete(shellAgent, cmd)
 				case "sleep":
 					MessageChannel <- agentAPI.SetSleep(shellAgent, cmd)
 				case "status":
@@ -473,8 +511,12 @@ func Shell() {
 							Error:   false,
 						}
 					}
+				case "touch", "timestomp":
+					//MessageChannel <- agentAPI.Touch(shellAgent, cmd)
 				case "upload":
 					MessageChannel <- agentAPI.Upload(shellAgent, cmd)
+				case "uptime":
+					//MessageChannel <- agentAPI.Uptime(shellAgent, cmd)
 				default:
 					if len(cmd) > 1 {
 						executeCommand(cmd[0], cmd[1:])
@@ -562,7 +604,11 @@ func menuSetAgent(agentID uuid.UUID) {
 	for _, id := range agentList {
 		if agentID == id {
 			shellAgent = agentID
-			prompt.Config.AutoComplete = getCompleter("agent")
+			if agents.Agents[id].Platform == "windows" {
+				prompt.Config.AutoComplete = getCompleter("agent-windows")
+			} else {
+				prompt.Config.AutoComplete = getCompleter("agent-nix")
+			}
 			prompt.SetPrompt("\033[31mGandalf[\033[32magent\033[31m][\033[33m" + shellAgent.String() + "\033[31m]»\033[0m ")
 			shellMenuContext = "agent"
 		}
@@ -589,16 +635,7 @@ func menuListener(cmd []string) {
 				MessageChannel <- um
 			}
 		}
-	case "exit", "quit":
-		if len(cmd) > 1 {
-			if strings.ToLower(cmd[1]) == "-y" {
-				exit()
-			}
-		}
-		if confirm("Are you sure you want to exit?") {
-			exit()
-		}
-	case "help":
+	case "help", "?":
 		menuHelpListener()
 	case "info", "show":
 		um, options := listenerAPI.GetListenerConfiguredOptions(shellListener.id)
@@ -625,8 +662,31 @@ func menuListener(cmd []string) {
 			table.Append([]string{"Status", shellListener.status})
 			table.Render()
 		}
+	case "interact":
+		if len(cmd) > 1 {
+			i, errUUID := uuid.FromString(cmd[1])
+			if errUUID != nil {
+				MessageChannel <- messages.UserMessage{
+					Level:   messages.Warn,
+					Message: fmt.Sprintf("There was an error interacting with agent %s", cmd[1]),
+					Time:    time.Now().UTC(),
+					Error:   true,
+				}
+			} else {
+				menuSetAgent(i)
+			}
+		}
 	case "main":
 		menuSetMain()
+	case "quit":
+		if len(cmd) > 1 {
+			if strings.ToLower(cmd[1]) == "-y" {
+				exit()
+			}
+		}
+		if confirm("Are you sure you want to quit the server?") {
+			exit()
+		}
 	case "restart":
 		MessageChannel <- listenerAPI.Restart(shellListener.id)
 		um, options := listenerAPI.GetListenerConfiguredOptions(shellListener.id)
@@ -635,6 +695,8 @@ func menuListener(cmd []string) {
 			break
 		}
 		prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m][\033[33m" + options["Name"] + "\033[31m]»\033[0m ")
+	case "sessions":
+		menuAgent([]string{"list"})
 	case "set":
 		MessageChannel <- listenerAPI.SetOption(shellListener.id, cmd)
 	case "start":
@@ -656,14 +718,34 @@ func menuListener(cmd []string) {
 // menuListeners handles all the logic for the root Listeners menu
 func menuListeners(cmd []string) {
 	switch strings.ToLower(cmd[0]) {
-	case "exit", "quit":
-		if len(cmd) > 1 {
-			if strings.ToLower(cmd[1]) == "-y" {
-				exit()
+	case "configure":
+		if len(cmd) >= 2 {
+			name := strings.Join(cmd[1:], " ")
+			r, id := listenerAPI.GetListenerByName(name)
+			if r.Error {
+				MessageChannel <- r
+				return
 			}
-		}
-		if confirm("Are you sure you want to exit?") {
-			exit()
+			if id == uuid.Nil {
+				return
+			}
+
+			status := listenerAPI.GetListenerStatus(id).Message
+			shellListener = listener{
+				id:     id,
+				name:   name,
+				status: status,
+			}
+			shellMenuContext = "listener"
+			prompt.Config.AutoComplete = getCompleter("listener")
+			prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m][\033[33m" + name + "\033[31m]»\033[0m ")
+		} else {
+			MessageChannel <- messages.UserMessage{
+				Level:   messages.Note,
+				Message: "You must select a listener to configure.",
+				Time:    time.Now().UTC(),
+				Error:   false,
+			}
 		}
 	case "delete":
 		if len(cmd) >= 2 {
@@ -686,7 +768,7 @@ func menuListeners(cmd []string) {
 				prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m]»\033[0m ")
 			}
 		}
-	case "help":
+	case "help", "?":
 		menuHelpListenersMain()
 	case "info":
 		if len(cmd) >= 2 {
@@ -728,32 +810,17 @@ func menuListeners(cmd []string) {
 			}
 		}
 	case "interact":
-		if len(cmd) >= 2 {
-			name := strings.Join(cmd[1:], " ")
-			r, id := listenerAPI.GetListenerByName(name)
-			if r.Error {
-				MessageChannel <- r
-				return
-			}
-			if id == uuid.Nil {
-				return
-			}
-
-			status := listenerAPI.GetListenerStatus(id).Message
-			shellListener = listener{
-				id:     id,
-				name:   name,
-				status: status,
-			}
-			shellMenuContext = "listener"
-			prompt.Config.AutoComplete = getCompleter("listener")
-			prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m][\033[33m" + name + "\033[31m]»\033[0m ")
-		} else {
-			MessageChannel <- messages.UserMessage{
-				Level:   messages.Note,
-				Message: "you must select a listener to interact with",
-				Time:    time.Now().UTC(),
-				Error:   false,
+		if len(cmd) > 1 {
+			i, errUUID := uuid.FromString(cmd[1])
+			if errUUID != nil {
+				MessageChannel <- messages.UserMessage{
+					Level:   messages.Warn,
+					Message: fmt.Sprintf("There was an error interacting with agent %s", cmd[1]),
+					Time:    time.Now().UTC(),
+					Error:   true,
+				}
+			} else {
+				menuSetAgent(i)
 			}
 		}
 	case "list":
@@ -775,6 +842,17 @@ func menuListeners(cmd []string) {
 		fmt.Println()
 	case "main", "back":
 		menuSetMain()
+	case "quit":
+		if len(cmd) > 1 {
+			if strings.ToLower(cmd[1]) == "-y" {
+				exit()
+			}
+		}
+		if confirm("Are you sure you want to quit the server?") {
+			exit()
+		}
+	case "sessions":
+		menuAgent([]string{"list"})
 	case "start":
 		if len(cmd) >= 2 {
 			name := strings.Join(cmd[1:], " ")
@@ -785,7 +863,7 @@ func menuListeners(cmd []string) {
 			name := strings.Join(cmd[1:], " ")
 			MessageChannel <- listenerAPI.Stop(name)
 		}
-	case "use":
+	case "use", "create":
 		if len(cmd) >= 2 {
 			types := listenerAPI.GetListenerTypes()
 			for _, v := range types {
@@ -815,18 +893,9 @@ func menuListenerSetup(cmd []string) {
 		shellMenuContext = "listenersmain"
 		prompt.Config.AutoComplete = getCompleter("listenersmain")
 		prompt.SetPrompt("\033[31mGandalf[\033[32mlisteners\033[31m]»\033[0m ")
-	case "exit", "quit":
-		if len(cmd) > 1 {
-			if strings.ToLower(cmd[1]) == "-y" {
-				exit()
-			}
-		}
-		if confirm("Are you sure you want to exit?") {
-			exit()
-		}
-	case "help":
+	case "help", "?":
 		menuHelpListenerSetup()
-	case "info", "show":
+	case "info", "show", "options":
 		if shellListenerOptions != nil {
 			table := tablewriter.NewWriter(os.Stdout)
 			table.SetHeader([]string{"Name", "Value"})
@@ -839,8 +908,33 @@ func menuListenerSetup(cmd []string) {
 			}
 			table.Render()
 		}
+	case "interact":
+		if len(cmd) > 1 {
+			i, errUUID := uuid.FromString(cmd[1])
+			if errUUID != nil {
+				MessageChannel <- messages.UserMessage{
+					Level:   messages.Warn,
+					Message: fmt.Sprintf("There was an error interacting with agent %s", cmd[1]),
+					Time:    time.Now().UTC(),
+					Error:   true,
+				}
+			} else {
+				menuSetAgent(i)
+			}
+		}
 	case "main":
 		menuSetMain()
+	case "quit":
+		if len(cmd) > 1 {
+			if strings.ToLower(cmd[1]) == "-y" {
+				exit()
+			}
+		}
+		if confirm("Are you sure you want to quit the server?") {
+			exit()
+		}
+	case "sessions":
+		menuAgent([]string{"list"})
 	case "set":
 		if len(cmd) >= 2 {
 			for k := range shellListenerOptions {
@@ -950,9 +1044,13 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("back"),
 		readline.PcItem("help"),
 		readline.PcItem("info"),
+		readline.PcItem("interact",
+			readline.PcItemDynamic(agentListCompleter()),
+		),
 		readline.PcItem("main"),
 		readline.PcItem("reload"),
 		readline.PcItem("run"),
+		readline.PcItem("sessions"),
 		readline.PcItem("show",
 			readline.PcItem("options"),
 			readline.PcItem("info"),
@@ -969,13 +1067,52 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		),
 	)
 
-	// Agent Menu
-	var agent = readline.NewPrefixCompleter(
+	// Agent Non-Windows Menu
+	var agentL = readline.NewPrefixCompleter(
+		readline.PcItem("back"),
 		readline.PcItem("cd"),
 		readline.PcItem("clear"),
-		readline.PcItem("cmd"),
-		readline.PcItem("back"),
 		readline.PcItem("download"),
+		readline.PcItem("exec"),
+		readline.PcItem("exit"),
+		readline.PcItem("help"),
+		readline.PcItem("ifconfig"),
+		readline.PcItem("inactivemultiplier"),
+		readline.PcItem("inactivethreshold"),
+		readline.PcItem("info"),
+		readline.PcItem("interact",
+			readline.PcItemDynamic(agentListCompleter()),
+		),
+		readline.PcItem("ipconfig"),
+		readline.PcItem("ja3"),
+		readline.PcItem("kill"),
+		readline.PcItem("killdate"),
+		readline.PcItem("jobs"),
+		readline.PcItem("ls"),
+		readline.PcItem("main"),
+		readline.PcItem("maxretry"),
+		readline.PcItem("note"),
+		readline.PcItem("nslookup"),
+		readline.PcItem("padding"),
+		readline.PcItem("pwd"),
+		readline.PcItem("quit"),
+		readline.PcItem("sessions"),
+		readline.PcItem("sdelete"),
+		readline.PcItem("sleep"),
+		readline.PcItem("status"),
+		readline.PcItem("timestomp"),
+		readline.PcItem("touch"),
+		readline.PcItem("upload"),
+	)
+
+	// Agent Windows Menu
+	var agentW = readline.NewPrefixCompleter(
+		readline.PcItem("assembly"),
+		readline.PcItem("back"),
+		readline.PcItem("cd"),
+		readline.PcItem("clear"),
+		readline.PcItem("download"),
+		readline.PcItem("exec"),
 		readline.PcItem("execute-assembly"),
 		readline.PcItem("execute-pe"),
 		readline.PcItem("execute-shellcode",
@@ -983,28 +1120,45 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 			readline.PcItem("remote"),
 			readline.PcItem("RtlCreateUserThread"),
 		),
-		readline.PcItem("help"),
-		readline.PcItem("info"),
-		readline.PcItem("ifconfig"),
-		readline.PcItem("jobs"),
 		readline.PcItem("exit"),
-		readline.PcItem("kill"),
-		readline.PcItem("ls"),
-		readline.PcItem("pwd"),
-		readline.PcItem("main"),
-		readline.PcItem("shell"),
-		readline.PcItem("set",
-			readline.PcItem("ja3"),
-			readline.PcItem("killdate"),
-			readline.PcItem("maxretry"),
-			readline.PcItem("padding"),
-			readline.PcItem("skew"),
-			readline.PcItem("sleep"),
+		readline.PcItem("help"),
+		readline.PcItem("ifconfig"),
+		readline.PcItem("inactivemultiplier"),
+		readline.PcItem("inactivethreshold"),
+		readline.PcItem("info"),
+		readline.PcItem("interact",
+			readline.PcItemDynamic(agentListCompleter()),
 		),
-		readline.PcItem("sharpgen"),
+		readline.PcItem("ipconfig"),
+		readline.PcItem("ja3"),
+		readline.PcItem("kill"),
+		readline.PcItem("killdate"),
+		readline.PcItem("jobs"),
+		readline.PcItem("ls"),
+		readline.PcItem("main"),
+		readline.PcItem("maxretry"),
+		readline.PcItem("netstat"),
+		readline.PcItem("note"),
+		readline.PcItem("nslookup"),
+		readline.PcItem("padding"),
+		readline.PcItem("pe"),
+		readline.PcItem("pipes"),
+		readline.PcItem("ps"),
+		readline.PcItem("pwd"),
+		readline.PcItem("quit"),
+		readline.PcItem("sessions"),
+		readline.PcItem("sdelete"),
+		readline.PcItem("shinject",
+			readline.PcItem("self"),
+			readline.PcItem("remote"),
+			readline.PcItem("RtlCreateUserThread"),
+		),
 		readline.PcItem("sleep"),
 		readline.PcItem("status"),
+		readline.PcItem("timestomp"),
+		readline.PcItem("touch"),
 		readline.PcItem("upload"),
+		readline.PcItem("uptime"),
 	)
 
 	// Listener Menu (a specific listener)
@@ -1013,9 +1167,13 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("delete"),
 		readline.PcItem("help"),
 		readline.PcItem("info"),
+		readline.PcItem("interact",
+			readline.PcItemDynamic(agentListCompleter()),
+		),
 		readline.PcItem("main"),
 		readline.PcItem("remove"),
 		readline.PcItem("restart"),
+		readline.PcItem("sessions"),
 		readline.PcItem("set",
 			readline.PcItemDynamic(listenerAPI.GetListenerOptionsCompleter(shellListenerOptions["Protocol"])),
 		),
@@ -1028,6 +1186,12 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 	// Listeners Main Menu (the root menu)
 	var listenersmain = readline.NewPrefixCompleter(
 		readline.PcItem("back"),
+		readline.PcItem("configure",
+			readline.PcItemDynamic(listenerAPI.GetListenerNamesCompleter()),
+		),
+		readline.PcItem("create",
+			readline.PcItemDynamic(listenerAPI.GetListenerTypesCompleter()),
+		),
 		readline.PcItem("delete",
 			readline.PcItemDynamic(listenerAPI.GetListenerNamesCompleter()),
 		),
@@ -1036,10 +1200,11 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 			readline.PcItemDynamic(listenerAPI.GetListenerNamesCompleter()),
 		),
 		readline.PcItem("interact",
-			readline.PcItemDynamic(listenerAPI.GetListenerNamesCompleter()),
+			readline.PcItemDynamic(agentListCompleter()),
 		),
 		readline.PcItem("list"),
 		readline.PcItem("main"),
+		readline.PcItem("sessions"),
 		readline.PcItem("start",
 			readline.PcItemDynamic(listenerAPI.GetListenerNamesCompleter()),
 		),
@@ -1057,8 +1222,13 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("execute"),
 		readline.PcItem("help"),
 		readline.PcItem("info"),
+		readline.PcItem("interact",
+			readline.PcItemDynamic(agentListCompleter()),
+		),
 		readline.PcItem("main"),
+		readline.PcItem("options"),
 		readline.PcItem("run"),
+		readline.PcItem("sessions"),
 		readline.PcItem("set",
 			readline.PcItemDynamic(listenerAPI.GetListenerOptionsCompleter(shellListenerOptions["Protocol"])),
 		),
@@ -1068,8 +1238,10 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 	)
 
 	switch completer {
-	case "agent":
-		return agent
+	case "agent-nix":
+		return agentL
+	case "agent-windows":
+		return agentW
 	case "listener":
 		return listener
 	case "listenersmain":
@@ -1086,12 +1258,6 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 }
 
 func menuHelpMain() {
-	MessageChannel <- messages.UserMessage{
-		Level:   messages.Plain,
-		Message: color.YellowString("Gandalf C2 Server (version %s)\n", merlin.Version),
-		Time:    time.Now().UTC(),
-		Error:   false,
-	}
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
 	table.SetBorder(false)
@@ -1101,12 +1267,15 @@ func menuHelpMain() {
 	data := [][]string{
 		{"agent", "Interact with agents or list agents", "interact, list"},
 		{"banner", "Print the Gandalf banner", ""},
+		{"clear", "Clear all queued commands that have not been sent to an agent", ""},
+		{"jobs", "List all queued commands to unassigned agents", ""},
 		{"exit", "Exit and close the Gandalf server", ""},
+		{"interact", "Interact with an agent.", ""},
 		{"listeners", "Move to the listeners menu", ""},
-		{"interact", "Interact with an agent. Alias for Empire users", ""},
+		{"queue", "Manually send a command to a client (that may not be registered yet)", "queue 2b112337-3476-4776-86fa-250b50ac8cfc sleep 300 600"},
 		{"quit", "Exit and close the Gandalf server", ""},
 		{"remove", "Remove or delete a DEAD agent from the server"},
-		{"sessions", "List all agents session information. Alias for MSF users", ""},
+		{"sessions", "List all agents session information.", ""},
 		{"use", "Use a function of Gandalf", "module"},
 		{"version", "Print the Gandalf server version", ""},
 	}
@@ -1114,13 +1283,6 @@ func menuHelpMain() {
 	table.AppendBulk(data)
 	fmt.Println()
 	table.Render()
-	fmt.Println()
-	MessageChannel <- messages.UserMessage{
-		Level:   messages.Info,
-		Message: "Visit the wiki for additional information https://merlin-c2.readthedocs.io/en/latest/server/menu/main.html",
-		Time:    time.Now().UTC(),
-		Error:   false,
-	}
 }
 
 // The help menu while in the modules menu
@@ -1134,9 +1296,11 @@ func menuHelpModule() {
 	data := [][]string{
 		{"back", "Return to the main menu", ""},
 		{"info", "Show information about a module"},
+		{"interact", "Interact with an agent.", ""},
 		{"main", "Return to the main menu", ""},
 		{"reload", "Reloads the module to a fresh clean state"},
 		{"run", "Run or execute the module", ""},
+		{"sessions", "List all agents session information.", ""},
 		{"set", "Set the value for one of the module's options", "<option name> <option value>"},
 		{"show", "Show information about a module or its options", "info, options"},
 		{"unset", "Clear a module option to empty", "<option name>"},
@@ -1146,16 +1310,10 @@ func menuHelpModule() {
 	fmt.Println()
 	table.Render()
 	fmt.Println()
-	MessageChannel <- messages.UserMessage{
-		Level:   messages.Info,
-		Message: "Visit the wiki for additional information https://merlin-c2.readthedocs.io/en/latest/server/menu/modules.html",
-		Time:    time.Now().UTC(),
-		Error:   false,
-	}
 }
 
 // The help menu while in the agent menu
-func menuHelpAgent() {
+func menuHelpAgent(platform string) {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
 	table.SetBorder(false)
@@ -1163,40 +1321,50 @@ func menuHelpAgent() {
 	table.SetHeader([]string{"Command", "Description", "Options"})
 
 	data := [][]string{
+		{"back", "Return to the main menu", ""},
 		{"cd", "Change directories", "cd ../../ OR cd c:\\\\Users"},
 		{"clear", "Clear any UNSENT jobs from the queue", ""},
-		{"cmd", "Execute a command on the agent (DEPRECIATED)", "cmd ping -c 3 8.8.8.8"},
-		{"back", "Return to the main menu", ""},
 		{"download", "Download a file from the agent", "download <remote_file>"},
-		{"execute-assembly", "Execute a .NET 4.0 assembly", "execute-assembly <assembly path> [<assembly args>, <spawnto path>, <spawnto args>]"},
-		{"execute-pe", "Execute a Windows PE (EXE)", "execute-pe <pe path> [<pe args>, <spawnto path>, <spawnto args>]"},
-		{"execute-shellcode", "Execute shellcode", "self, remote <pid>, RtlCreateUserThread <pid>"},
-		{"info", "Display all information about the agent", ""},
-		{"ifconfig", "Displays host network adapter information", ""},
-		{"jobs", "Display all active jobs for the agent", ""},
+		{"exec", "Execute a command on the agent", "exec ping -c 3 8.8.8.8"},
 		{"exit", "Instruct the agent to die", ""},
-		{"kill", "Kill another process by PID", ""},
+		{"help", "Display this message", ""},
+		{"ifconfig", "Displays host network adapter information", ""},
+		{"inactivemultiplier", "Multiply sleep values by this number each time threshold is reached", "inactivemultiplier 10"},
+		{"inactivethreshold", "Go inactive if operator is idle for this many check ins", "inactivethreshold 3"},
+		{"info", "Display all information about the agent", ""},
+		{"interact", "Interact with an agent.", ""},
+		{"ja3", "Change agent's TLS fingerprint", "github.com/Ne0nd0g/ja3transport"},
+		{"jobs", "Display all active jobs for the agent", ""},
+		{"kill", "Kill another process by PID", "kill <pid>"},
+		{"killdate", "Set agent's killdate (UNIX epoch timestamp)", "killdate 1609480800"},
 		{"ls", "List directory contents", "ls /etc OR ls C:\\\\Users OR ls C:/Users"},
 		{"main", "Return to the main menu", ""},
+		{"maxretry", "Set number of failed check in attempts before the agent exits", "maxretry 30"},
+		{"nslookup", "Perform lookup of hostname or IP address", "nslookup 8.8.8.8"},
+		{"padding", "Set maximum number of random bytes to pad messages", "padding 4096"},
 		{"pwd", "Display the current working directory", "pwd"},
-		{"set", "Set the value for one of the agent's options", "ja3, killdate, maxretry, padding, skew, sleep"},
-		{"sharpgen", "Use SharpGen to compile and execute a .NET assembly", "sharpgen <code> [<spawnto path>, <spawnto args>]"},
-		{"shell", "Execute a command on the agent", "shell ping -c 3 8.8.8.8"},
+		{"quit", "Shutdown and close the server", ""},
+		{"sessions", "List all agents session information.", ""},
+		{"sdelete", "Secure delete a file", "sdelete C:\\\\Gandalf.exe"},
 		{"sleep", "<min> <max> (in seconds)", "sleep 15 30"},
 		{"status", "Print the current status of the agent", ""},
+		{"touch", "<source> <destination>", "touch \"C:\\\\old file.txt\" C:\\\\Gandalf.exe"},
 		{"upload", "Upload a file to the agent", "upload <local_file> <remote_file>"},
+	}
+
+	if platform == "windows" {
+		data = append(data[:5], append([][]string{{"execute-assembly", "Execute a .NET 4.0 assembly", "execute-assembly <assembly path> [<assembly args>, <spawnto path>, <spawnto args>]"}}, data[5:]...)...)
+		data = append(data[:6], append([][]string{{"execute-pe", "Execute a Windows PE (EXE)", "execute-pe <pe path> [<pe args>, <spawnto path>, <spawnto args>]"}}, data[6:]...)...)
+		data = append(data[:7], append([][]string{{"execute-shellcode", "Execute shellcode", "self, remote <pid>, RtlCreateUserThread <pid>"}}, data[7:]...)...)
+		data = append(data[:22], append([][]string{{"netstat", "Display network connections", "netstat -p tcp"}}, data[22:]...)...)
+		data = append(data[:25], append([][]string{{"pipes", "List named pipes", ""}}, data[25:]...)...)
+		data = append(data[:26], append([][]string{{"ps", "Display running processes", ""}}, data[26:]...)...)
+		data = append(data[:35], append([][]string{{"uptime", "Print system uptime", ""}}, data[35:]...)...)
 	}
 
 	table.AppendBulk(data)
 	fmt.Println()
 	table.Render()
-	fmt.Println()
-	MessageChannel <- messages.UserMessage{
-		Level:   messages.Info,
-		Message: "Visit the wiki for additional information https://merlin-c2.readthedocs.io/en/latest/server/menu/agents.html",
-		Time:    time.Now().UTC(),
-		Error:   false,
-	}
 }
 
 // The help menu for the main or root Listeners menu
@@ -1209,11 +1377,14 @@ func menuHelpListenersMain() {
 
 	data := [][]string{
 		{"back", "Return to the main menu", ""},
+		{"configure", "Configure existing listener", "configure <listener_name>"},
+		{"create", "Create a new listener by protocol type", "create [http,https,http2,http3,h2c]"},
 		{"delete", "Delete a named listener", "delete <listener_name>"},
 		{"info", "Display all information about a listener", "info <listener_name>"},
-		{"interact", "Interact with a named agent to modify it", "interact <listener_name>"},
+		{"interact", "Interact with an agent.", ""},
 		{"list", "List all created listeners", ""},
 		{"main", "Return to the main menu", ""},
+		{"sessions", "List all agents session information.", ""},
 		{"start", "Start a named listener", "start <listener_name>"},
 		{"stop", "Stop a named listener", "stop <listener_name>"},
 		{"use", "Create a new listener by protocol type", "use [http,https,http2,http3,h2c]"},
@@ -1222,13 +1393,6 @@ func menuHelpListenersMain() {
 	table.AppendBulk(data)
 	fmt.Println()
 	table.Render()
-	fmt.Println()
-	MessageChannel <- messages.UserMessage{
-		Level:   messages.Info,
-		Message: "Visit the wiki for additional information https://merlin-c2.readthedocs.io/en/latest/server/menu/listeners.html",
-		Time:    time.Now().UTC(),
-		Error:   false,
-	}
 }
 
 // The help menu for Listeners template, or setup, menu
@@ -1243,8 +1407,11 @@ func menuHelpListenerSetup() {
 		{"back", "Return to the listeners menu", ""},
 		{"execute", "Create and start the listener (alias)", ""},
 		{"info", "Display all configurable information about a listener", ""},
+		{"interact", "Interact with an agent.", ""},
 		{"main", "Return to the main menu", ""},
+		{"options", "Display all configurable information about a listener", ""},
 		{"run", "Create and start the listener (alias)", ""},
+		{"sessions", "List all agents session information.", ""},
 		{"set", "Set a configurable option", "set <option_name>"},
 		{"show", "Display all configurable information about a listener", ""},
 		{"start", "Create and start the listener", ""},
@@ -1253,13 +1420,6 @@ func menuHelpListenerSetup() {
 	table.AppendBulk(data)
 	fmt.Println()
 	table.Render()
-	fmt.Println()
-	MessageChannel <- messages.UserMessage{
-		Level:   messages.Info,
-		Message: "Visit the wiki for additional information https://merlin-c2.readthedocs.io/en/latest/server/menu/listeners.html",
-		Time:    time.Now().UTC(),
-		Error:   false,
-	}
 }
 
 // The help menu for a specific, instantiated, listener
@@ -1274,8 +1434,10 @@ func menuHelpListener() {
 		{"back", "Return to the listeners menu", ""},
 		{"delete", "Delete this listener", "delete <listener_name>"},
 		{"info", "Display all configurable information the current listener", ""},
+		{"interact", "Interact with an agent.", ""},
 		{"main", "Return to the main menu", ""},
 		{"restart", "Restart this listener", ""},
+		{"sessions", "List all agents session information.", ""},
 		{"set", "Set a configurable option", "set <option_name>"},
 		{"show", "Display all configurable information about a listener", ""},
 		{"start", "Start this listener", ""},
@@ -1286,13 +1448,6 @@ func menuHelpListener() {
 	table.AppendBulk(data)
 	fmt.Println()
 	table.Render()
-	fmt.Println()
-	MessageChannel <- messages.UserMessage{
-		Level:   messages.Info,
-		Message: "Visit the wiki for additional information https://merlin-c2.readthedocs.io/en/latest/server/menu/listeners.html",
-		Time:    time.Now().UTC(),
-		Error:   false,
-	}
 }
 
 func filterInput(r rune) (rune, bool) {
@@ -1363,7 +1518,7 @@ func confirm(question string) bool {
 	return false
 }
 
-// exit will prompt the user to confirm if they want to exit
+// quit will prompt the user to confirm if they want to exit
 func exit() {
 	color.Red("[!]Quitting...")
 	logging.Server("Shutting down Gandalf due to user input")
