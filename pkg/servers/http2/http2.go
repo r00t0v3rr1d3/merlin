@@ -67,7 +67,7 @@ func GetOptions() map[string]string {
 	options := make(map[string]string)
 	options["Interface"] = "0.0.0.0"
 	options["Port"] = "80"
-	options["PSK"] = "merlin"
+	options["PSK"] = "gandalf"
 	options["URLS"] = "/"
 	return options
 }

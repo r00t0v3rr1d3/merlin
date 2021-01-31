@@ -134,7 +134,10 @@ func New(config Config) (*Agent, error) {
 			return &agent, fmt.Errorf("there was an error converting the killdate to an integer:\r\n%s", err)
 		}
 	} else {
-		agent.KillDate = 0
+		//18 digit max
+		StrKillDate := "000000000000000000"
+		IntKillDate, _ := strconv.ParseInt(StrKillDate, 10, 64)
+		agent.KillDate = IntKillDate
 	}
 	// Parse MaxRetry
 	if config.MaxRetry != "" {
@@ -143,19 +146,28 @@ func New(config Config) (*Agent, error) {
 			return &agent, fmt.Errorf("there was an error converting the max retry to an integer:\r\n%s", err)
 		}
 	} else {
-		agent.MaxRetry = 7
+		//18 digit max
+		StrMaxRetry := "555555555555555555"
+		IntMaxRetry, _ := strconv.Atoi(StrMaxRetry)
+		agent.MaxRetry = IntMaxRetry
 	}
 	// Parse WaitTimeMin
 	if config.WaitTimeMin != 0 {
 		agent.WaitTimeMin = config.WaitTimeMin
 	} else {
-		agent.WaitTimeMin = 15
+		//18 digit max
+		StrWaitTimeMin := "999999999999999999"
+		IntWaitTimeMin, _ := strconv.ParseInt(StrWaitTimeMin, 10, 64)
+		agent.WaitTimeMin = IntWaitTimeMin
 	}
 	// Parse WaitTimeMax
 	if config.WaitTimeMax != 0 {
 		agent.WaitTimeMax = config.WaitTimeMax
 	} else {
-		agent.WaitTimeMax = 30
+		//18 digit max
+		StrWaitTimeMax := "888888888888888888"
+		IntWaitTimeMax, _ := strconv.ParseInt(StrWaitTimeMax, 10, 64)
+		agent.WaitTimeMax = IntWaitTimeMax
 	}
 
 	cli.Message(cli.INFO, "Host Information:")

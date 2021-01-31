@@ -93,13 +93,8 @@ func New(config Config) (*Client, error) {
 		Protocol:  config.Protocol,
 		JA3:       config.JA3,
 		psk:       config.PSK,
+		Proxy:     config.Proxy,
 	}
-
-	// Set secret for JWT and JWE encryption key from PSK
-	k := sha256.Sum256([]byte(client.psk))
-	client.secret = k[:]
-	cli.Message(cli.DEBUG, fmt.Sprintf("new client PSK: %s", client.psk))
-	cli.Message(cli.DEBUG, fmt.Sprintf("new client Secret: %x", client.secret))
 
 	//Convert Padding from string to an integer
 	var err error
@@ -109,8 +104,79 @@ func New(config Config) (*Client, error) {
 			return &client, fmt.Errorf("there was an error converting the padding max to an integer:\r\n%s", err)
 		}
 	} else {
-		client.PaddingMax = 0
+		//18 digit max
+		StrPaddingMax := "444444444444444444"
+		IntPaddingMax, _ := strconv.Atoi(StrPaddingMax)
+		client.PaddingMax = IntPaddingMax
 	}
+	// Parse URL
+	if config.URL != "" {
+		client.URL = config.URL
+	} else {
+		//200 character max
+		StrURLPre := "YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
+		StrURLPost := strings.Trim(StrURLPre, " ")
+		client.URL = StrURLPost
+	}
+	// Parse User Agent
+	if config.UserAgent != "" {
+		client.UserAgent = config.UserAgent
+	} else {
+		//200 character max
+		StrUserAgentPre := "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
+		StrUserAgentPost := strings.Trim(StrUserAgentPre, " ")
+		client.UserAgent = StrUserAgentPost
+	}
+	// Parse PSK
+	if config.PSK != "" {
+		client.psk = config.PSK
+	} else {
+		//200 character max
+		StrPSKPre := "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
+		StrPSKPost := strings.Trim(StrPSKPre, " ")
+		client.psk = StrPSKPost
+	}
+	// Parse Protocol
+	if config.Protocol != "" {
+		client.Protocol = config.Protocol
+	} else {
+		StrProtocolPre := "XXXXX"
+		StrProtocolPost := strings.Trim(StrProtocolPre, " ")
+		client.Protocol = StrProtocolPost
+	}
+	// Parse Host
+	if config.Host != "" {
+		client.Host = config.Host
+	} else {
+		//200 character max
+		StrHostHeaderPre := "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+		StrHostHeaderPost := strings.Trim(StrHostHeaderPre, " ")
+		client.Host = StrHostHeaderPost
+	}
+	// Parse JA3
+	if config.JA3 != "" {
+		client.JA3 = config.JA3
+	} else {
+		//200 character max
+		StrJA3Pre := "UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU"
+		StrJA3Post := strings.Trim(StrJA3Pre, " ")
+		client.JA3 = StrJA3Post
+	}
+	// Parse Proxy
+	if config.Proxy != "" {
+		client.Proxy = config.Proxy
+	} else {
+		//200 character max
+		StrProxyPre := "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
+		StrProxyPost := strings.Trim(StrProxyPre, " ")
+		client.Proxy = StrProxyPost
+	}
+
+	// Set secret for JWT and JWE encryption key from PSK
+	k := sha256.Sum256([]byte(client.psk))
+	client.secret = k[:]
+	cli.Message(cli.DEBUG, fmt.Sprintf("new client PSK: %s", client.psk))
+	cli.Message(cli.DEBUG, fmt.Sprintf("new client Secret: %x", client.secret))
 
 	// Get the HTTP client
 	client.Client, err = getClient(client.Protocol, client.Proxy, client.JA3)

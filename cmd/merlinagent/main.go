@@ -32,19 +32,19 @@ import (
 )
 
 // GLOBAL VARIABLES
-var url = "https://127.0.0.1:443"
-var protocol = "h2"
+var url = ""
+var protocol = ""
 var build = "nonRelease"
-var psk = "merlin"
+var psk = ""
 var proxy = ""
 var host = ""
 var ja3 = ""
-var useragent = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36"
-var waittimemin int64 = 15
-var waittimemax int64 = 30
-var killdate = "0"
-var maxretry = "99999"
-var padding = "4096"
+var useragent = ""
+var waittimemin int64 = 0
+var waittimemax int64 = 0
+var killdate = ""
+var maxretry = ""
+var padding = ""
 var opaque []byte
 
 func main() {

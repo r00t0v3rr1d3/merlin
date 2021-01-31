@@ -80,7 +80,7 @@ func GetOptions(protocol string) map[string]string {
 	}
 
 	//options["Protocol"] = protocol
-	options["PSK"] = "merlin"
+	options["PSK"] = "gandalf"
 	options["URLS"] = "/"
 
 	if strings.ToLower(protocol) != "http" {

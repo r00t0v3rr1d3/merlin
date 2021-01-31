@@ -34,9 +34,12 @@ USERAGENT ?= Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML,
 XUSERAGENT =-X "main.useragent=$(USERAGENT)"
 SLEEP ?= 30s
 XSLEEP = -X main.sleep=$(SLEEP)
-LDFLAGS=-ldflags '-s -w ${XBUILD} ${XPROTO} ${XURL} ${XHOST} ${XPSK} ${XPROXY} ${XKILLDATE} ${XMAXRETRY} ${XPADDING} ${XSKEW} ${XUSERAGENT} ${XSLEEP} -buildid='
-WINAGENTLDFLAGS=-ldflags '-s -w ${XBUILD} ${XPROTO} ${XURL} ${XHOST} ${XPSK} ${XPROXY} ${XKILLDATE} ${XMAXRETRY} ${XPADDING} ${XSKEW} ${XUSERAGENT} ${XSLEEP} -H=windowsgui -buildid='
-WINAGENTLDFLAGSDEBUG=-ldflags '-s -w ${XBUILD} ${XPROTO} ${XURL} ${XHOST} ${XPSK} ${XPROXY} ${XKILLDATE} ${XMAXRETRY} ${XPADDING} ${XSKEW} ${XUSERAGENT} ${XSLEEP} -buildid='
+#LDFLAGS=-ldflags '-s -w ${XBUILD} ${XPROTO} ${XURL} ${XHOST} ${XPSK} ${XPROXY} ${XKILLDATE} ${XMAXRETRY} ${XPADDING} ${XSKEW} ${XUSERAGENT} ${XSLEEP} -buildid='
+LDFLAGS=-ldflags '-s -w ${XBUILD} -buildid='
+#WINAGENTLDFLAGS=-ldflags '-s -w ${XBUILD} ${XPROTO} ${XURL} ${XHOST} ${XPSK} ${XPROXY} ${XKILLDATE} ${XMAXRETRY} ${XPADDING} ${XSKEW} ${XUSERAGENT} ${XSLEEP} -H=windowsgui -buildid='
+WINAGENTLDFLAGS=-ldflags '-s -w ${XBUILD} -H=windowsgui -buildid='
+#WINAGENTLDFLAGSDEBUG=-ldflags '-s -w ${XBUILD} ${XPROTO} ${XURL} ${XHOST} ${XPSK} ${XPROXY} ${XKILLDATE} ${XMAXRETRY} ${XPADDING} ${XSKEW} ${XUSERAGENT} ${XSLEEP} -buildid='
+WINAGENTLDFLAGSDEBUG=-ldflags '-s -w ${XBUILD} -buildid='
 # TODO Update when Go1.13 is released https://stackoverflow.com/questions/45279385/remove-file-paths-from-text-directives-in-go-binaries
 GCFLAGS=-gcflags=all=-trimpath=$(GOPATH)
 ASMFLAGS=-asmflags=all=-trimpath=$(GOPATH)# -asmflags=-trimpath=$(GOPATH)
