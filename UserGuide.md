@@ -13,21 +13,21 @@
 * `padding`
 
 ## Agent Command Line Options (For something quick if you don't want to use gandalf_generate.py)
-* -v           s:= Enable verbose output
-* -version     := Print the agent version and exit
-* -debug       := Enable debug output
-* -url         := Full URL for agent to connect to
-* -psk"        := Pre-Shared Key used to encrypt initial communications
-* -proto       := Protocol for the agent to connect with [https (HTTP/1.1), http (HTTP/1.1 Clear-Text), h2 (HTTP/2), h2c (HTTP/2 Clear-Text), http3 (QUIC or HTTP/3.0)]
-* -proxy       := Hardcoded proxy to use for http/1.1 traffic only that will override host configuration
-* -host"       := HTTP Host header
-* -ja3         := JA3 signature string (not the MD5 hash). Overrides -proto flag
-* -waittimemin := Minimum time for agent to sleep
-* -waittimemax := Maximum time for agent to sleep
-* -killdate    := The date, as a Unix EPOCH timestamp, that the agent will quit running
-* -maxretry    := The maximum amount of failed checkins before the agent will quit running
-* -padding     := The maximum amount of data that will be randomly selected and appended to every message
-* -useragent   := The HTTP User-Agent header string that the Agent will use while sending traffic")
+* `-v`           := Enable verbose output
+* `-version`     := Print the agent version and exit
+* `-debug`       := Enable debug output
+* `-url`         := Full URL for agent to connect to
+* `-psk`         := Pre-Shared Key used to encrypt initial communications
+* `-proto`       := Protocol for the agent to connect with [https (HTTP/1.1), http (HTTP/1.1 Clear-Text), h2 (HTTP/2), h2c (HTTP/2 Clear-Text), http3 (QUIC or HTTP/3.0)]
+* `-proxy`       := Hardcoded proxy to use for http/1.1 traffic only that will override host configuration
+* `-host`        := HTTP Host header
+* `-ja3`         := JA3 signature string (not the MD5 hash). Overrides -proto flag
+* `-waittimemin` := Minimum time for agent to sleep
+* `-waittimemax` := Maximum time for agent to sleep
+* `-killdate`    := The date, as a Unix EPOCH timestamp, that the agent will quit running
+* `-maxretry`    := The maximum amount of failed checkins before the agent will quit running
+* `-padding`     := The maximum amount of data that will be randomly selected and appended to every message
+* `-useragent`   := The HTTP User-Agent header string that the Agent will use while sending traffic
 
 ## Changes from stock Merlin
 * Baby-proofed the server - Ctrl-C and DEL key won't exit the server without a confirmation prompt
