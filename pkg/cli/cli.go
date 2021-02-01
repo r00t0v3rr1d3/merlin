@@ -1463,7 +1463,7 @@ func displayJobTable(rows [][]string) {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
 	table.SetBorder(false)
-	table.SetHeader([]string{"ID", "Status", "Type", "Created", "Sent"})
+	table.SetHeader([]string{"Command", "Status", "Created", "Sent"})
 
 	table.AppendBulk(rows)
 	fmt.Println()

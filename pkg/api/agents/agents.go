@@ -428,7 +428,7 @@ func KillProcess(agentID uuid.UUID, Args []string) messages.UserMessage {
 			return messages.ErrorMessage(fmt.Sprintf("Invalid PID provided: %s\n", Args[1]))
 		}
 		args := []string{Args[1]}
-		job, err := jobs.Add(agentID, "killprocess", args)
+		job, err := jobs.Add(agentID, "kill", args)
 		if err != nil {
 			return messages.ErrorMessage(err.Error())
 		}

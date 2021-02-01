@@ -58,7 +58,7 @@ func Native(cmd jobs.Command) jobs.Results {
 				results.Stdout = fmt.Sprintf("Changed working directory to %s", path)
 			}
 		}
-	case "killprocess":
+	case "kill":
 		targetpid, err := strconv.Atoi(cmd.Args[0])
 		if err != nil || targetpid < 0 {
 			results.Stderr = fmt.Sprintf("Invalid PID: %d\r\n", targetpid)

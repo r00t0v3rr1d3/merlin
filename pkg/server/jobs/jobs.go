@@ -27,6 +27,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	// 3rd Party
@@ -57,6 +58,7 @@ type info struct {
 	Created   time.Time // Time the job was created
 	Sent      time.Time // Time the job was sent to the agent
 	Completed time.Time // Time the job finished
+	Cmd       string    // Command line arguments
 }
 
 // Add creates a job and adds it to the specified agent's job channel
@@ -133,10 +135,10 @@ func Add(agentID uuid.UUID, jobType string, jobArgs []string) (string, error) {
 			Command: jobArgs[0], // TODO, this should be in jobType position
 		}
 		job.Payload = p
-	case "killprocess":
+	case "kill":
 		job.Type = merlinJob.NATIVE
 		p := merlinJob.Command{
-			Command: "killprocess",
+			Command: "kill",
 			Args:    jobArgs,
 		}
 		job.Payload = p
@@ -267,6 +269,14 @@ func Add(agentID uuid.UUID, jobType string, jobArgs []string) (string, error) {
 		return "", fmt.Errorf("invalid job type: %d", job.Type)
 	}
 
+	// To render the jobs table with useful data, let's iron out the string right now
+	var jobCmd string
+	if job.Type == merlinJob.CMD || job.Type == merlinJob.CONTROL {
+		jobCmd = strings.Join(jobArgs, " ")
+	} else {
+		jobCmd = jobType + " " + strings.Join(jobArgs, " ")
+	}
+
 	// If the Agent is set to broadcast identifier for ALL agents
 	if ok || agentID.String() == "ffffffff-ffff-ffff-ffff-ffffffffffff" {
 		if agentID.String() == "ffffffff-ffff-ffff-ffff-ffffffffffff" {
@@ -293,6 +303,7 @@ func Add(agentID uuid.UUID, jobType string, jobArgs []string) (string, error) {
 					Type:    merlinJob.String(job.Type),
 					Status:  merlinJob.CREATED,
 					Created: time.Now().UTC(),
+					Cmd:     strings.Join(jobArgs, " "),
 				}
 				// Log the job
 				agent.Log(fmt.Sprintf("Created job Type:%s, ID:%s, Status:%s, Args:%s",
@@ -322,6 +333,7 @@ func Add(agentID uuid.UUID, jobType string, jobArgs []string) (string, error) {
 			Type:    merlinJob.String(job.Type),
 			Status:  merlinJob.CREATED,
 			Created: time.Now().UTC(),
+			Cmd:     jobCmd,
 		}
 		// Log the job
 		agent.Log(fmt.Sprintf("Created job Type:%s, ID:%s, Status:%s, Args:%s",
@@ -572,7 +584,7 @@ func GetTableActive(agentID uuid.UUID) ([][]string, error) {
 		return jobs, fmt.Errorf("%s is not a valid agent", agentID)
 	}
 
-	for id, job := range Jobs {
+	for _, job := range Jobs {
 		if job.AgentID == agentID {
 			//message("debug", fmt.Sprintf("GetTableActive(%s) ID: %s, Job: %+v", agentID.String(), id, job))
 			var status string
@@ -593,11 +605,10 @@ func GetTableActive(agentID uuid.UUID) ([][]string, error) {
 				if job.Sent != zeroTime {
 					sent = job.Sent.Format(time.RFC3339)
 				}
-				// <JobID>, <JobStatus>, <JobType>, <Created>, <Sent>
+				// <Command>, <JobStatus>, <JobType>, <Created>, <Sent>
 				jobs = append(jobs, []string{
-					id,
+					job.Cmd,
 					status,
-					job.Type,
 					job.Created.Format(time.RFC3339),
 					sent,
 				})
