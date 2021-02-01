@@ -21,6 +21,7 @@ import (
 	// Standard
 	"flag"
 	"os"
+	"strings"
 
 	// 3rd Party
 	"github.com/fatih/color"
@@ -33,6 +34,7 @@ import (
 
 // GLOBAL VARIABLES
 var url = ""
+var urls []string
 var protocol = ""
 var build = "nonRelease"
 var psk = ""
@@ -91,13 +93,18 @@ func main() {
 		os.Exit(1)
 	}
 
+	if url != "" {
+		tempurl := strings.ReplaceAll(url, " ", "")
+		urls = strings.Split(tempurl, ",")
+	}
+
 	// Get the client
 	var errClient error
 	clientConfig := http.Config{
 		AgentID:     a.ID,
 		Protocol:    protocol,
 		Host:        host,
-		URL:         url,
+		URL:         urls,
 		Proxy:       proxy,
 		UserAgent:   useragent,
 		PSK:         psk,

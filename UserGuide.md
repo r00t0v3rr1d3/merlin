@@ -49,4 +49,5 @@
 * `?` now displays the help menus in addition to `help`
 * `set` commands are no longer. `sleep`, `ja3`, `killdate`, `maxretry`, `padding` are all individual commands now
 * The list of available commands (and tab complete) will now have different options for windows/non-windows hosts.
+* You may now enter a comma-separated list of URLs for Gandalf to rotate through for callbacks
 * Custom agent builder menu-driven python script: gandalf_generate.py
