@@ -288,9 +288,10 @@ func GetAgents() (agentList []uuid.UUID) {
 // the Agent's GUID, platform, user, host, transport, and status
 func GetAgentsRows() (header []string, rows [][]string) {
 	header = []string{"Agent GUID",
-		"Platform",
 		"Host",
-		"Transport",
+		"Note",
+		"Platform",
+		"C2",
 		"Status",
 		"Last Checkin",
 		"User",
@@ -308,8 +309,9 @@ func GetAgentsRows() (header []string, rows [][]string) {
 
 		status, _ := GetAgentStatus(agent.ID)
 		rows = append(rows, []string{agent.ID.String()[:8] + "...",
-			agent.Platform + "/" + agent.Architecture,
 			agent.HostName,
+			agent.Note,
+			agent.Platform + "/" + agent.Architecture,
 			agent.Proto,
 			status,
 			lastCheckin(agent.StatusCheckIn) + " ago",
@@ -350,6 +352,7 @@ func GetAgentInfo(agentID uuid.UUID) ([][]string, messages.UserMessage) {
 		{"Status", status},
 		{"Platform", a.Platform},
 		{"Architecture", a.Architecture},
+		{"Note", a.Note},
 		{"IP", fmt.Sprintf("%s", strings.Join(a.Ips, "\n"))},
 		{"UserName", a.UserName},
 		{"User GUID", a.UserGUID},
@@ -522,6 +525,20 @@ func SetMaxRetry(agentID uuid.UUID, Args []string) messages.UserMessage {
 		return messages.JobMessage(agentID, job)
 	}
 	return messages.ErrorMessage(fmt.Sprintf("Not enough arguments provided for the Agent SetMaxRetry call: %s", Args))
+}
+
+// Set an agent note
+func SetNote(agentID uuid.UUID, Args []string) messages.UserMessage {
+	note := strings.Join(Args, " ")
+	err := agents.SetAgentNote(agentID, note)
+	if err == nil {
+		return messages.UserMessage{
+			Level:   messages.Info,
+			Time:    time.Now().UTC(),
+			Message: fmt.Sprintf("Agent %s's note set to %s", agentID, note),
+		}
+	}
+	return messages.ErrorMessage(err.Error())
 }
 
 // SetPadding configures the maxium size for the random amount of padding added to each message

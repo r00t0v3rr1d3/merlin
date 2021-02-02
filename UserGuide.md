@@ -8,6 +8,7 @@
 * `queue`: Queue up a command for agents from the main menu, even if they haven't come in yet! Keyword `all` is supported
     * Usage: `queue <agentID> sleep 300 600`
     * Usage: `queue all ifconfig`
+* `note`: Sets a (server-side) note to keep track of agents.
 
 ## Configurable settings
 * `sleep` has been modified. Just `sleep 30 60` instead of `set sleep 30s` and `set skew 30000`. In seconds.

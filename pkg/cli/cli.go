@@ -555,26 +555,11 @@ func handleAgentShell(curAgent uuid.UUID, cmd []string) {
 	case "netstat":
 		//MessageChannel <- agentAPI.Netstat(curAgent, cmd)
 	case "note":
-		//newNote := ""
-		//if len(cmd) > 1 {
-		//newNote = strings.Join(cmd[1:], " ")
-		//}
-		//err := agents.SetNote(curAgent, newNote)
-		//if err == nil {
-		//MessageChannel <- messages.UserMessage{
-		//Level:   messages.Success,
-		//Message: fmt.Sprintf("Note set to: %s", strings.Join(cmd[1:], " ")),
-		//Time:    time.Now().UTC(),
-		//Error:   true,
-		//}
-		//} else {
-		//MessageChannel <- messages.UserMessage{
-		//Level:   messages.Warn,
-		//Message: fmt.Sprintf("Error setting note: %s", err.Error()),
-		//Time:    time.Now().UTC(),
-		//Error:   true,
-		//}
-		//}
+		if len(cmd) > 1 {
+			MessageChannel <- agentAPI.SetNote(shellAgent, cmd[1:])
+		} else {
+			MessageChannel <- agentAPI.SetNote(shellAgent, []string{})
+		}
 	case "nslookup":
 		//MessageChannel <- agentAPI.Nslookup(curAgent, cmd)
 	case "padding":

@@ -72,6 +72,7 @@ type Agent struct {
 	Secret         []byte          // secret is used to perform symmetric encryption operations
 	OPAQUE         *opaque.Server  // Holds information about OPAQUE Registration and Authentication
 	JA3            string          // The JA3 signature applied to the agent's TLS client
+	Note           string          //Notes are only stored server-side
 }
 
 // KeyExchange is used to exchange public keys between the server and agent
@@ -324,6 +325,7 @@ func New(agentID uuid.UUID) (Agent, error) {
 	agent.agentLog = f
 	agent.InitialCheckIn = time.Now().UTC()
 	agent.StatusCheckIn = time.Now().UTC()
+	agent.Note = ""
 
 	_, errAgentLog := agent.agentLog.WriteString(fmt.Sprintf("[%s]%s\r\n", time.Now().UTC().Format(time.RFC3339), "Instantiated agent"))
 	if errAgentLog != nil {
@@ -381,4 +383,14 @@ func GetLifetime(agentID uuid.UUID) (time.Duration, error) {
 	}
 
 	return time.Duration(lifetime) * time.Second, nil
+}
+
+// Sets an agent note
+func SetAgentNote(agentID uuid.UUID, note string) error {
+	if !isAgent(agentID) {
+		return fmt.Errorf("%s is not a known agent", agentID)
+	}
+
+	Agents[agentID].Note = note
+	return nil
 }
