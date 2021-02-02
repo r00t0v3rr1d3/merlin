@@ -1363,6 +1363,7 @@ func menuHelpAgent(platform string) {
 		{"ls", "List directory contents", "ls /etc OR ls C:\\\\Users OR ls C:/Users"},
 		{"main", "Return to the main menu", ""},
 		{"maxretry", "Set number of failed check in attempts before the agent exits", "maxretry 30"},
+		{"note", "Set a custom note for an agent", "note 4623d176-26b3-4855-a9ed-9c121766aff6 My workstation"},
 		{"nslookup", "Perform lookup of hostname or IP address", "nslookup 8.8.8.8"},
 		{"padding", "Set maximum number of random bytes to pad messages", "padding 4096"},
 		{"pwd", "Display the current working directory", "pwd"},
@@ -1380,9 +1381,9 @@ func menuHelpAgent(platform string) {
 		data = append(data[:6], append([][]string{{"execute-pe", "Execute a Windows PE (EXE)", "execute-pe <pe path> [<pe args>, <spawnto path>, <spawnto args>]"}}, data[6:]...)...)
 		data = append(data[:7], append([][]string{{"execute-shellcode", "Execute shellcode", "self, remote <pid>, RtlCreateUserThread <pid>"}}, data[7:]...)...)
 		data = append(data[:22], append([][]string{{"netstat", "Display network connections", "netstat -p tcp"}}, data[22:]...)...)
-		data = append(data[:25], append([][]string{{"pipes", "List named pipes", ""}}, data[25:]...)...)
-		data = append(data[:26], append([][]string{{"ps", "Display running processes", ""}}, data[26:]...)...)
-		data = append(data[:35], append([][]string{{"uptime", "Print system uptime", ""}}, data[35:]...)...)
+		data = append(data[:26], append([][]string{{"pipes", "List named pipes", ""}}, data[26:]...)...)
+		data = append(data[:27], append([][]string{{"ps", "Display running processes", ""}}, data[27:]...)...)
+		data = append(data[:36], append([][]string{{"uptime", "Print system uptime", ""}}, data[36:]...)...)
 	}
 
 	table.AppendBulk(data)

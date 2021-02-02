@@ -58,3 +58,4 @@
 * Custom agent builder menu-driven python script: gandalf_generate.py
 * Adjustment to `jobs` agent output
 * Inclusion of global jobs via `queue` and `jobs` from the main menu
+* `note`s to keep track of your agents
