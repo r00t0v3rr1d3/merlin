@@ -4,6 +4,10 @@
 * `ifconfig`/`ipconfig`: Prints host network adapter information. Windows hosts use API calls to get extra info (e.g. DHCP)
 * `kill`: Kill a process by pid using Native Go. This stomps over Merlin's `kill`, which tells your agent to honorable sudoku
     * Usage: `kill <pid>`
+* `jobs`: List created (but unsent) jobs across all agents from the main menu
+* `queue`: Queue up a command for agents from the main menu, even if they haven't come in yet! Keyword `all` is supported
+    * Usage: `queue <agentID> sleep 300 600`
+    * Usage: `queue all ifconfig`
 
 ## Configurable settings
 * `sleep` has been modified. Just `sleep 30 60` instead of `set sleep 30s` and `set skew 30000`. In seconds.
@@ -51,4 +55,5 @@
 * The list of available commands (and tab complete) will now have different options for windows/non-windows hosts.
 * You may now enter a comma-separated list of URLs for Gandalf to rotate through for callbacks
 * Custom agent builder menu-driven python script: gandalf_generate.py
-* Jobs output now has useful information (like the command run)
+* Adjustment to `jobs` agent output
+* Inclusion of global jobs via `queue` and `jobs` from the main menu

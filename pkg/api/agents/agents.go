@@ -391,6 +391,11 @@ func GetAgentStatus(agentID uuid.UUID) (string, messages.UserMessage) {
 	return status, messages.UserMessage{}
 }
 
+// GetCreatedJobs enumerates all created (but unsent) jobs across all agents
+func GetCreatedJobs() [][]string {
+	return jobs.GetTableCreated()
+}
+
 // GetJobsForAgent enumerates all jobs and their status
 func GetJobsForAgent(agentID uuid.UUID) ([][]string, messages.UserMessage) {
 	jobsRows, err := jobs.GetTableActive(agentID)

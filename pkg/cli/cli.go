@@ -140,6 +140,8 @@ func Shell() {
 
 		if len(cmd) > 0 {
 			switch shellMenuContext {
+			case "agent":
+				handleAgentShell(uuid.Nil, cmd)
 			case "listener":
 				menuListener(cmd)
 			case "listenersmain":
@@ -166,6 +168,32 @@ func Shell() {
 					}
 				case "help", "?":
 					menuHelpMain()
+				case "jobs":
+					displayJobTable(agentAPI.GetCreatedJobs())
+				case "queue":
+					if len(cmd) > 2 {
+						if cmd[1] == "all" {
+							cmd[1] = "ffffffff-ffff-ffff-ffff-ffffffffffff"
+						}
+						newID, err := uuid.FromString(cmd[1])
+						if err != nil {
+							MessageChannel <- messages.UserMessage{
+								Level:   messages.Warn,
+								Message: "Invalid uuid",
+								Time:    time.Now().UTC(),
+								Error:   true,
+							}
+						} else {
+							handleAgentShell(newID, cmd[2:])
+						}
+					} else {
+						MessageChannel <- messages.UserMessage{
+							Level:   messages.Warn,
+							Message: "Not enough arguments provided",
+							Time:    time.Now().UTC(),
+							Error:   true,
+						}
+					}
 				case "quit":
 					if len(cmd) > 1 {
 						if strings.ToLower(cmd[1]) == "-y" {
@@ -352,178 +380,6 @@ func Shell() {
 						executeCommand(cmd[0], x)
 					}
 				}
-			case "agent":
-				switch cmd[0] {
-				case "back":
-					menuSetMain()
-				case "cd":
-					MessageChannel <- agentAPI.CD(shellAgent, cmd)
-				case "clear", "c":
-					MessageChannel <- agentAPI.ClearJobs(shellAgent)
-				case "cmd", "shell", "exec":
-					MessageChannel <- agentAPI.CMD(shellAgent, cmd)
-				case "download":
-					MessageChannel <- agentAPI.Download(shellAgent, cmd)
-				case "execute-assembly", "assembly":
-					go func() { MessageChannel <- agentAPI.ExecuteAssembly(shellAgent, cmd) }()
-				case "execute-pe", "pe":
-					go func() { MessageChannel <- agentAPI.ExecutePE(shellAgent, cmd) }()
-				case "execute-shellcode", "shinject":
-					MessageChannel <- agentAPI.ExecuteShellcode(shellAgent, cmd)
-				case "exit": // Stock merlin calls this "kill"
-					if len(cmd) > 1 {
-						if strings.ToLower(cmd[1]) == "-y" {
-							menuSetMain()
-							MessageChannel <- agentAPI.Exit(shellAgent, cmd)
-						}
-					} else {
-						if confirm("Are you sure you want to exit the agent?") {
-							menuSetMain()
-							MessageChannel <- agentAPI.Exit(shellAgent, cmd)
-						}
-					}
-				case "help", "?":
-					menuHelpAgent(agents.Agents[shellAgent].Platform)
-				case "ifconfig", "ipconfig":
-					MessageChannel <- agentAPI.Ipconfig(shellAgent, cmd)
-				case "inactivemultiplier":
-					//MessageChannel <- agentAPI.SetInactiveMultiplier(shellAgent, cmd)
-				case "inactivethreshold":
-					//MessageChannel <- agentAPI.SetInactiveThreshold(shellAgent, cmd)
-				case "info":
-					rows, message := agentAPI.GetAgentInfo(shellAgent)
-					if message.Error {
-						MessageChannel <- message
-					} else {
-						displayTable([]string{}, rows)
-					}
-				case "interact":
-					if len(cmd) > 1 {
-						i, errUUID := uuid.FromString(cmd[1])
-						if errUUID != nil {
-							MessageChannel <- messages.UserMessage{
-								Level:   messages.Warn,
-								Message: fmt.Sprintf("There was an error interacting with agent %s", cmd[1]),
-								Time:    time.Now().UTC(),
-								Error:   true,
-							}
-						} else {
-							menuSetAgent(i)
-						}
-					}
-				case "ja3":
-					MessageChannel <- agentAPI.SetJA3(shellAgent, cmd)
-				case "jobs":
-					jobs, message := agentAPI.GetJobsForAgent(shellAgent)
-					if message.Message != "" {
-						MessageChannel <- message
-					}
-					displayJobTable(jobs)
-				case "kill": // Gandalf addition: kill a process
-					MessageChannel <- agentAPI.KillProcess(shellAgent, cmd)
-				case "killdate":
-					MessageChannel <- agentAPI.SetKillDate(shellAgent, cmd)
-				case "ls":
-					MessageChannel <- agentAPI.LS(shellAgent, cmd)
-				case "main":
-					menuSetMain()
-				case "maxretry":
-					MessageChannel <- agentAPI.SetMaxRetry(shellAgent, cmd)
-				case "netstat":
-					//MessageChannel <- agentAPI.Netstat(shellAgent, cmd)
-				case "note":
-					//newNote := ""
-					//if len(cmd) > 1 {
-					//newNote = strings.Join(cmd[1:], " ")
-					//}
-					//err := agents.SetNote(curAgent, newNote)
-					//if err == nil {
-					//MessageChannel <- messages.UserMessage{
-					//Level:   messages.Success,
-					//Message: fmt.Sprintf("Note set to: %s", strings.Join(cmd[1:], " ")),
-					//Time:    time.Now().UTC(),
-					//Error:   true,
-					//}
-					//} else {
-					//MessageChannel <- messages.UserMessage{
-					//Level:   messages.Warn,
-					//Message: fmt.Sprintf("Error setting note: %s", err.Error()),
-					//Time:    time.Now().UTC(),
-					//Error:   true,
-					//}
-					//}
-				case "nslookup":
-					//MessageChannel <- agentAPI.Nslookup(shellAgent, cmd)
-				case "padding":
-					MessageChannel <- agentAPI.SetPadding(shellAgent, cmd)
-				case "pipes":
-					//MessageChannel <- agentAPI.Pipes(shellAgent, cmd)
-				case "ps":
-					//MessageChannel <- agentAPI.PS(shellAgent, cmd)
-				case "pwd":
-					MessageChannel <- agentAPI.PWD(shellAgent, cmd)
-				case "quit":
-					if len(cmd) > 1 {
-						if strings.ToLower(cmd[1]) == "-y" {
-							exit()
-						}
-					}
-					if confirm("Are you sure you want to quit the server?") {
-						exit()
-					}
-				case "sessions":
-					menuAgent([]string{"list"})
-				case "sdelete":
-					//MessageChannel <- agentAPI.SecureDelete(shellAgent, cmd)
-				case "sleep":
-					MessageChannel <- agentAPI.SetSleep(shellAgent, cmd)
-				case "status":
-					status, message := agentAPI.GetAgentStatus(shellAgent)
-					if message.Error {
-						MessageChannel <- message
-					}
-					if status == "Active" {
-						MessageChannel <- messages.UserMessage{
-							Level:   messages.Plain,
-							Message: color.GreenString("%s agent is active\n", shellAgent),
-							Time:    time.Now().UTC(),
-							Error:   false,
-						}
-					} else if status == "Delayed" {
-						MessageChannel <- messages.UserMessage{
-							Level:   messages.Plain,
-							Message: color.YellowString("%s agent is delayed\n", shellAgent),
-							Time:    time.Now().UTC(),
-							Error:   false,
-						}
-					} else if status == "Dead" {
-						MessageChannel <- messages.UserMessage{
-							Level:   messages.Plain,
-							Message: color.RedString("%s agent is dead\n", shellAgent),
-							Time:    time.Now().UTC(),
-							Error:   false,
-						}
-					} else {
-						MessageChannel <- messages.UserMessage{
-							Level:   messages.Plain,
-							Message: color.BlueString("%s agent is %s\n", shellAgent, status),
-							Time:    time.Now().UTC(),
-							Error:   false,
-						}
-					}
-				case "touch", "timestomp":
-					//MessageChannel <- agentAPI.Touch(shellAgent, cmd)
-				case "upload":
-					MessageChannel <- agentAPI.Upload(shellAgent, cmd)
-				case "uptime":
-					//MessageChannel <- agentAPI.Uptime(shellAgent, cmd)
-				default:
-					if len(cmd) > 1 {
-						executeCommand(cmd[0], cmd[1:])
-					} else {
-						executeCommand(cmd[0], []string{})
-					}
-				}
 			}
 		}
 
@@ -611,6 +467,184 @@ func menuSetAgent(agentID uuid.UUID) {
 			}
 			prompt.SetPrompt("\033[31mGandalf[\033[32magent\033[31m][\033[33m" + shellAgent.String() + "\033[31m]»\033[0m ")
 			shellMenuContext = "agent"
+		}
+	}
+}
+
+func handleAgentShell(curAgent uuid.UUID, cmd []string) {
+	if uuid.Equal(uuid.Nil, curAgent) {
+		curAgent = shellAgent
+	}
+
+	switch cmd[0] {
+	case "back":
+		menuSetMain()
+	case "cd":
+		MessageChannel <- agentAPI.CD(curAgent, cmd)
+	case "clear", "c":
+		MessageChannel <- agentAPI.ClearJobs(curAgent)
+	case "cmd", "shell", "exec":
+		MessageChannel <- agentAPI.CMD(curAgent, cmd)
+	case "download":
+		MessageChannel <- agentAPI.Download(curAgent, cmd)
+	case "execute-assembly", "assembly":
+		go func() { MessageChannel <- agentAPI.ExecuteAssembly(curAgent, cmd) }()
+	case "execute-pe", "pe":
+		go func() { MessageChannel <- agentAPI.ExecutePE(curAgent, cmd) }()
+	case "execute-shellcode", "shinject":
+		MessageChannel <- agentAPI.ExecuteShellcode(curAgent, cmd)
+	case "exit": // Stock merlin calls this "kill"
+		if len(cmd) > 1 {
+			if strings.ToLower(cmd[1]) == "-y" {
+				menuSetMain()
+				MessageChannel <- agentAPI.Exit(curAgent, cmd)
+			}
+		} else {
+			if confirm("Are you sure you want to exit the agent?") {
+				menuSetMain()
+				MessageChannel <- agentAPI.Exit(curAgent, cmd)
+			}
+		}
+	case "help", "?":
+		menuHelpAgent(agents.Agents[curAgent].Platform)
+	case "ifconfig", "ipconfig":
+		MessageChannel <- agentAPI.Ipconfig(curAgent, cmd)
+	case "inactivemultiplier":
+		//MessageChannel <- agentAPI.SetInactiveMultiplier(curAgent, cmd)
+	case "inactivethreshold":
+		//MessageChannel <- agentAPI.SetInactiveThreshold(curAgent, cmd)
+	case "info":
+		rows, message := agentAPI.GetAgentInfo(curAgent)
+		if message.Error {
+			MessageChannel <- message
+		} else {
+			displayTable([]string{}, rows)
+		}
+	case "interact":
+		if len(cmd) > 1 {
+			i, errUUID := uuid.FromString(cmd[1])
+			if errUUID != nil {
+				MessageChannel <- messages.UserMessage{
+					Level:   messages.Warn,
+					Message: fmt.Sprintf("There was an error interacting with agent %s", cmd[1]),
+					Time:    time.Now().UTC(),
+					Error:   true,
+				}
+			} else {
+				menuSetAgent(i)
+			}
+		}
+	case "ja3":
+		MessageChannel <- agentAPI.SetJA3(curAgent, cmd)
+	case "jobs":
+		jobs, message := agentAPI.GetJobsForAgent(curAgent)
+		if message.Message != "" {
+			MessageChannel <- message
+		}
+		displayJobTable(jobs)
+	case "kill": // Gandalf addition: kill a process
+		MessageChannel <- agentAPI.KillProcess(curAgent, cmd)
+	case "killdate":
+		MessageChannel <- agentAPI.SetKillDate(curAgent, cmd)
+	case "ls":
+		MessageChannel <- agentAPI.LS(curAgent, cmd)
+	case "main":
+		menuSetMain()
+	case "maxretry":
+		MessageChannel <- agentAPI.SetMaxRetry(curAgent, cmd)
+	case "netstat":
+		//MessageChannel <- agentAPI.Netstat(curAgent, cmd)
+	case "note":
+		//newNote := ""
+		//if len(cmd) > 1 {
+		//newNote = strings.Join(cmd[1:], " ")
+		//}
+		//err := agents.SetNote(curAgent, newNote)
+		//if err == nil {
+		//MessageChannel <- messages.UserMessage{
+		//Level:   messages.Success,
+		//Message: fmt.Sprintf("Note set to: %s", strings.Join(cmd[1:], " ")),
+		//Time:    time.Now().UTC(),
+		//Error:   true,
+		//}
+		//} else {
+		//MessageChannel <- messages.UserMessage{
+		//Level:   messages.Warn,
+		//Message: fmt.Sprintf("Error setting note: %s", err.Error()),
+		//Time:    time.Now().UTC(),
+		//Error:   true,
+		//}
+		//}
+	case "nslookup":
+		//MessageChannel <- agentAPI.Nslookup(curAgent, cmd)
+	case "padding":
+		MessageChannel <- agentAPI.SetPadding(curAgent, cmd)
+	case "pipes":
+		//MessageChannel <- agentAPI.Pipes(curAgent, cmd)
+	case "ps":
+		//MessageChannel <- agentAPI.PS(curAgent, cmd)
+	case "pwd":
+		MessageChannel <- agentAPI.PWD(curAgent, cmd)
+	case "quit":
+		if len(cmd) > 1 {
+			if strings.ToLower(cmd[1]) == "-y" {
+				exit()
+			}
+		}
+		if confirm("Are you sure you want to quit the server?") {
+			exit()
+		}
+	case "sessions":
+		menuAgent([]string{"list"})
+	case "sdelete":
+		//MessageChannel <- agentAPI.SecureDelete(curAgent, cmd)
+	case "sleep":
+		MessageChannel <- agentAPI.SetSleep(curAgent, cmd)
+	case "status":
+		status, message := agentAPI.GetAgentStatus(curAgent)
+		if message.Error {
+			MessageChannel <- message
+		}
+		if status == "Active" {
+			MessageChannel <- messages.UserMessage{
+				Level:   messages.Plain,
+				Message: color.GreenString("%s agent is active\n", curAgent),
+				Time:    time.Now().UTC(),
+				Error:   false,
+			}
+		} else if status == "Delayed" {
+			MessageChannel <- messages.UserMessage{
+				Level:   messages.Plain,
+				Message: color.YellowString("%s agent is delayed\n", curAgent),
+				Time:    time.Now().UTC(),
+				Error:   false,
+			}
+		} else if status == "Dead" {
+			MessageChannel <- messages.UserMessage{
+				Level:   messages.Plain,
+				Message: color.RedString("%s agent is dead\n", curAgent),
+				Time:    time.Now().UTC(),
+				Error:   false,
+			}
+		} else {
+			MessageChannel <- messages.UserMessage{
+				Level:   messages.Plain,
+				Message: color.BlueString("%s agent is %s\n", curAgent, status),
+				Time:    time.Now().UTC(),
+				Error:   false,
+			}
+		}
+	case "touch", "timestomp":
+		//MessageChannel <- agentAPI.Touch(curAgent, cmd)
+	case "upload":
+		MessageChannel <- agentAPI.Upload(curAgent, cmd)
+	case "uptime":
+		//MessageChannel <- agentAPI.Uptime(curAgent, cmd)
+	default:
+		if len(cmd) > 1 {
+			executeCommand(cmd[0], cmd[1:])
+		} else {
+			executeCommand(cmd[0], []string{})
 		}
 	}
 }
@@ -1026,7 +1060,11 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("interact",
 			readline.PcItemDynamic(agentListCompleter()),
 		),
+		readline.PcItem("jobs"),
 		readline.PcItem("listeners"),
+		readline.PcItem("queue",
+			readline.PcItemDynamic(agentListCompleter()),
+		),
 		readline.PcItem("remove",
 			readline.PcItemDynamic(agentListCompleter()),
 		),
@@ -1463,7 +1501,7 @@ func displayJobTable(rows [][]string) {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
 	table.SetBorder(false)
-	table.SetHeader([]string{"Command", "Status", "Created", "Sent"})
+	table.SetHeader([]string{"Agent ID", "Command", "Status"})
 
 	table.AppendBulk(rows)
 	fmt.Println()

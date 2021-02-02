@@ -69,11 +69,6 @@ func Add(agentID uuid.UUID, jobType string, jobArgs []string) (string, error) {
 		message("debug", fmt.Sprintf("In jobs.Add function for type: %s, arguments: %v", jobType, jobType))
 	}
 
-	agent, ok := agents.Agents[agentID]
-	if !ok {
-		return "", fmt.Errorf("%s is not a valid agent", agentID)
-	}
-
 	var job merlinJob.Job
 
 	switch jobType {
@@ -110,7 +105,7 @@ func Add(agentID uuid.UUID, jobType string, jobArgs []string) (string, error) {
 		job.Payload = payload
 	case "download":
 		job.Type = merlinJob.FILETRANSFER
-		agent.Log(fmt.Sprintf("Downloading file from agent at %s\n", jobArgs[0]))
+		//agent.Log(fmt.Sprintf("Downloading file from agent at %s\n", jobArgs[0]))
 
 		p := merlinJob.FileTransfer{
 			FileLocation: jobArgs[0],
@@ -253,11 +248,13 @@ func Add(agentID uuid.UUID, jobType string, jobArgs []string) (string, error) {
 		if err != nil {
 			message("warn", fmt.Sprintf("There was an error generating file hash:\r\n%s", err.Error()))
 		}
-		agent.Log(fmt.Sprintf("Uploading file from server at %s of size %d bytes and SHA-256: %x to agent at %s",
-			jobArgs[0],
-			len(uploadFile),
-			fileHash.Sum(nil),
-			jobArgs[1]))
+		/*
+			agent.Log(fmt.Sprintf("Uploading file from server at %s of size %d bytes and SHA-256: %x to agent at %s",
+				jobArgs[0],
+				len(uploadFile),
+				fileHash.Sum(nil),
+				jobArgs[1]))
+		*/
 
 		p := merlinJob.FileTransfer{
 			FileLocation: jobArgs[1],
@@ -278,43 +275,35 @@ func Add(agentID uuid.UUID, jobType string, jobArgs []string) (string, error) {
 	}
 
 	// If the Agent is set to broadcast identifier for ALL agents
-	if ok || agentID.String() == "ffffffff-ffff-ffff-ffff-ffffffffffff" {
-		if agentID.String() == "ffffffff-ffff-ffff-ffff-ffffffffffff" {
-			if len(agents.Agents) <= 0 {
-				return "", fmt.Errorf("there are 0 available agents, no jobs were created")
-			}
-			for a := range agents.Agents {
-				// Fill out remaining job fields
-				token := uuid.NewV4()
-				job.ID = core.RandStringBytesMaskImprSrc(10)
-				job.Token = token
-				job.AgentID = a
-				// Add job to the channel
-				_, k := JobsChannel[agentID]
-				if !k {
-					JobsChannel[agentID] = make(chan merlinJob.Job, 100)
-				}
-				JobsChannel[agentID] <- job
-				//agents.Agents[a].JobChannel <- job
-				// Add job to the list
-				Jobs[job.ID] = info{
-					AgentID: a,
-					Token:   token,
-					Type:    merlinJob.String(job.Type),
-					Status:  merlinJob.CREATED,
-					Created: time.Now().UTC(),
-					Cmd:     strings.Join(jobArgs, " "),
-				}
-				// Log the job
-				agent.Log(fmt.Sprintf("Created job Type:%s, ID:%s, Status:%s, Args:%s",
-					messages.String(job.Type),
-					job.ID,
-					"Created",
-					jobArgs))
-			}
-			return job.ID, nil
+	if agentID.String() == "ffffffff-ffff-ffff-ffff-ffffffffffff" {
+		if len(agents.Agents) <= 0 {
+			return "", fmt.Errorf("there are 0 available agents, no jobs were created")
 		}
-		// A single Agent
+		for a := range agents.Agents {
+			// Fill out remaining job fields
+			token := uuid.NewV4()
+			job.ID = core.RandStringBytesMaskImprSrc(10)
+			job.Token = token
+			job.AgentID = a
+			// Add job to the channel
+			_, k := JobsChannel[a]
+			if !k {
+				JobsChannel[a] = make(chan merlinJob.Job, 100)
+			}
+			JobsChannel[a] <- job
+			//agents.Agents[a].JobChannel <- job
+			// Add job to the list
+			Jobs[job.ID] = info{
+				AgentID: a,
+				Token:   token,
+				Type:    merlinJob.String(job.Type),
+				Status:  merlinJob.CREATED,
+				Created: time.Now().UTC(),
+				Cmd:     jobCmd,
+			}
+		}
+		return job.ID, nil
+	} else { // A single agent, even if it doesn't exist
 		token := uuid.NewV4()
 		job.Token = token
 		job.ID = core.RandStringBytesMaskImprSrc(10)
@@ -335,14 +324,8 @@ func Add(agentID uuid.UUID, jobType string, jobArgs []string) (string, error) {
 			Created: time.Now().UTC(),
 			Cmd:     jobCmd,
 		}
-		// Log the job
-		agent.Log(fmt.Sprintf("Created job Type:%s, ID:%s, Status:%s, Args:%s",
-			messages.String(job.Type),
-			job.ID,
-			"Created",
-			jobArgs))
+		return job.ID, nil
 	}
-	return job.ID, nil
 }
 
 // Clear removes any jobs the queue that have been created, but NOT sent to the agent
@@ -388,6 +371,7 @@ func Get(agentID uuid.UUID) ([]merlinJob.Job, error) {
 	if core.Debug {
 		message("debug", "Entering into jobs.Get() function...")
 	}
+
 	var jobs []merlinJob.Job
 	_, ok := agents.Agents[agentID]
 	if !ok {
@@ -598,24 +582,34 @@ func GetTableActive(agentID uuid.UUID) ([][]string, error) {
 			default:
 				status = fmt.Sprintf("Unknown job status: %d", job.Status)
 			}
-			var zeroTime time.Time
+
 			// Don't add completed or canceled jobs
 			if job.Status != merlinJob.COMPLETE && job.Status != merlinJob.CANCELED {
-				var sent string
-				if job.Sent != zeroTime {
-					sent = job.Sent.Format(time.RFC3339)
-				}
-				// <Command>, <JobStatus>, <JobType>, <Created>, <Sent>
+				// <agentID, <Command>, <JobStatus>
 				jobs = append(jobs, []string{
+					job.AgentID.String(),
 					job.Cmd,
 					status,
-					job.Created.Format(time.RFC3339),
-					sent,
 				})
 			}
 		}
 	}
 	return jobs, nil
+}
+
+// Returns all unsent jobs to be displayed as a table
+func GetTableCreated() [][]string {
+	var jobs [][]string
+	for _, job := range Jobs {
+		if job.Status == merlinJob.CREATED {
+			jobs = append(jobs, []string{
+				job.AgentID.String(),
+				job.Cmd,
+				"Created", // Match output to the individual agent's table
+			})
+		}
+	}
+	return jobs
 }
 
 // checkJob verifies that the input job message contains the expected token and was not already completed
