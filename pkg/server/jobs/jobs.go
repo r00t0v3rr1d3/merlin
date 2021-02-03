@@ -334,11 +334,6 @@ func Clear(agentID uuid.UUID) error {
 		message("debug", "Entering into jobs.Clear() function...")
 	}
 
-	_, ok := agents.Agents[agentID]
-	if !ok {
-		return fmt.Errorf("%s is not a valid agent", agentID)
-	}
-
 	// Empty the job channel
 	jobChannel, k := JobsChannel[agentID]
 	if !k {
@@ -371,7 +366,7 @@ func ClearAll() error {
 	if core.Debug {
 		message("debug", "Entering into jobs.Clear() function...")
 	}
-	for aid, _ := range agents.Agents {
+	for aid, _ := range JobsChannel {
 		err := Clear(aid)
 		if err != nil {
 			return err
