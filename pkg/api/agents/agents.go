@@ -56,6 +56,17 @@ func CD(agentID uuid.UUID, Args []string) messages.UserMessage {
 	return messages.JobMessage(agentID, job)
 }
 
+// ClearCreatedJobs clears all created (but unsent) jobs for all agents
+func ClearCreatedJobs() messages.UserMessage {
+	jobs.ClearAll()
+	return messages.UserMessage{
+		Level:   messages.Success,
+		Message: fmt.Sprintf("All unsent jobs cleared at %s", time.Now().UTC().Format(time.RFC3339)),
+		Time:    time.Now().UTC(),
+		Error:   false,
+	}
+}
+
 // ClearJobs removes any jobs the queue that have been created, but NOT sent to the agent
 func ClearJobs(agentID uuid.UUID) messages.UserMessage {
 	err := jobs.Clear(agentID)

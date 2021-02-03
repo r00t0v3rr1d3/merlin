@@ -166,6 +166,8 @@ func Shell() {
 						Time:    time.Now().UTC(),
 						Error:   false,
 					}
+				case "clear", "c":
+					MessageChannel <- agentAPI.ClearCreatedJobs()
 				case "help", "?":
 					menuHelpMain()
 				case "jobs":
@@ -1363,7 +1365,7 @@ func menuHelpAgent(platform string) {
 		{"ls", "List directory contents", "ls /etc OR ls C:\\\\Users OR ls C:/Users"},
 		{"main", "Return to the main menu", ""},
 		{"maxretry", "Set number of failed check in attempts before the agent exits", "maxretry 30"},
-		{"note", "Set a custom note for an agent", "note 4623d176-26b3-4855-a9ed-9c121766aff6 My workstation"},
+		{"note", "Set a custom note for an agent", "note My workstation"},
 		{"nslookup", "Perform lookup of hostname or IP address", "nslookup 8.8.8.8"},
 		{"padding", "Set maximum number of random bytes to pad messages", "padding 4096"},
 		{"pwd", "Display the current working directory", "pwd"},
