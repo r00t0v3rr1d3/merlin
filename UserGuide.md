@@ -5,10 +5,15 @@
 * `kill`: Kill a process by pid using Native Go. This stomps over Merlin's `kill`, which tells your agent to honorable sudoku
     * Usage: `kill <pid>`
 * `jobs`: List created (but unsent) jobs across all agents from the main menu
-* `queue`: Queue up a command for agents from the main menu, even if they haven't come in yet! Keyword `all` is supported
+* `queue`: Queue up a command for agents (or groups) from the main menu, even if they haven't come in yet!
     * Usage: `queue <agentID> sleep 300 600`
     * Usage: `queue all ifconfig`
 * `note`: Sets a (server-side) note to keep track of agents.
+* `group`: Add agents to groups for bulk command processing.
+    * Usage: `group add <agentID> <groupName>`
+    * Usage: `group remove <agentID> <groupName>`
+    * Usage: `group list`
+    * Usage (from an agent's menu): `group add <groupName>`
 
 ## Configurable settings
 * `sleep` has been modified. Just `sleep 30 60` instead of `set sleep 30s` and `set skew 30000`. In seconds.
@@ -59,3 +64,4 @@
 * Adjustment to `jobs` agent output
 * Inclusion of global jobs via `queue` and `jobs` from the main menu
 * `note`s to keep track of your agents
+* `group` to send bulk commands to agents

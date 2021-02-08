@@ -168,25 +168,50 @@ func Shell() {
 					}
 				case "clear", "c":
 					MessageChannel <- agentAPI.ClearCreatedJobs()
+				case "group":
+					if len(cmd) < 2 {
+						MessageChannel <- messages.UserMessage{
+							Level:   messages.Warn,
+							Message: "Not enough arguments provided",
+							Time:    time.Now().UTC(),
+							Error:   true,
+						}
+					} else {
+						handleGroupMenu(cmd)
+					}
 				case "help", "?":
 					menuHelpMain()
 				case "jobs":
 					displayJobTable(agentAPI.GetCreatedJobs())
 				case "queue":
 					if len(cmd) > 2 {
-						if cmd[1] == "all" {
-							cmd[1] = "ffffffff-ffff-ffff-ffff-ffffffffffff"
-						}
+						// Check for uuid match
 						newID, err := uuid.FromString(cmd[1])
-						if err != nil {
-							MessageChannel <- messages.UserMessage{
-								Level:   messages.Warn,
-								Message: "Invalid uuid",
-								Time:    time.Now().UTC(),
-								Error:   true,
-							}
-						} else {
+						if err == nil {
 							handleAgentShell(newID, cmd[2:])
+						} else {
+							found := false
+							// Check for a group name match
+							for _, groupName := range agentAPI.GroupListNames() {
+								if groupName == cmd[1] {
+									found = true
+									for _, agentIDstr := range agentAPI.GroupList(groupName) {
+										// We know it's a valid UUID because it's already in a group
+										newID, _ := uuid.FromString(agentIDstr)
+										handleAgentShell(newID, cmd[2:])
+									}
+								}
+							}
+
+							// Nothing found
+							if !found {
+								MessageChannel <- messages.UserMessage{
+									Level:   messages.Warn,
+									Message: "Couldn't find a user or group by that name",
+									Time:    time.Now().UTC(),
+									Error:   true,
+								}
+							}
 						}
 					} else {
 						MessageChannel <- messages.UserMessage{
@@ -507,6 +532,26 @@ func handleAgentShell(curAgent uuid.UUID, cmd []string) {
 				MessageChannel <- agentAPI.Exit(curAgent, cmd)
 			}
 		}
+	case "group":
+		if len(cmd) != 3 {
+			MessageChannel <- messages.UserMessage{
+				Level:   messages.Warn,
+				Message: fmt.Sprintf("Invalid arguments: 'group <add | remove> <groupname>"),
+				Time:    time.Now().UTC(),
+				Error:   true,
+			}
+		} else if cmd[1] == "add" {
+			MessageChannel <- agentAPI.GroupAdd(curAgent, cmd[2])
+		} else if cmd[1] == "remove" {
+			MessageChannel <- agentAPI.GroupRemove(curAgent, cmd[2])
+		} else {
+			MessageChannel <- messages.UserMessage{
+				Level:   messages.Warn,
+				Message: fmt.Sprintf("Invalid arguments: 'group <add | remove> <groupname>"),
+				Time:    time.Now().UTC(),
+				Error:   true,
+			}
+		}
 	case "help", "?":
 		menuHelpAgent(agents.Agents[curAgent].Platform)
 	case "ifconfig", "ipconfig":
@@ -632,6 +677,79 @@ func handleAgentShell(curAgent uuid.UUID, cmd []string) {
 			executeCommand(cmd[0], cmd[1:])
 		} else {
 			executeCommand(cmd[0], []string{})
+		}
+	}
+}
+
+// Handle group commands from the main menu (add, remove list)
+func handleGroupMenu(cmd []string) {
+	switch cmd[1] {
+	case "add":
+		if len(cmd) != 4 {
+			MessageChannel <- messages.UserMessage{
+				Level:   messages.Warn,
+				Message: "Invalid number of arguments",
+				Time:    time.Now().UTC(),
+				Error:   true,
+			}
+		} else {
+			i, errUUID := uuid.FromString(cmd[2])
+			if errUUID != nil {
+				MessageChannel <- messages.UserMessage{
+					Level:   messages.Warn,
+					Message: fmt.Sprintf("Invalid UUID: %s", cmd[1]),
+					Time:    time.Now().UTC(),
+					Error:   true,
+				}
+			} else {
+				MessageChannel <- agentAPI.GroupAdd(i, cmd[3])
+			}
+		}
+	case "list":
+		var data [][]string
+		if len(cmd) == 3 { // List a specific group
+			agents := agentAPI.GroupList(cmd[2])
+			for _, a := range agents {
+				data = append(data, []string{cmd[2], a})
+			}
+		} else {
+			data = agentAPI.GroupListAll()
+		}
+
+		table := tablewriter.NewWriter(os.Stdout)
+		table.SetHeader([]string{"Group", "Agent ID"})
+		table.SetAlignment(tablewriter.ALIGN_LEFT)
+		table.SetRowLine(false)
+		table.SetBorder(true)
+		table.AppendBulk(data)
+		table.Render()
+	case "remove":
+		if len(cmd) != 4 {
+			MessageChannel <- messages.UserMessage{
+				Level:   messages.Warn,
+				Message: "Invalid number of arguments",
+				Time:    time.Now().UTC(),
+				Error:   true,
+			}
+		} else {
+			i, errUUID := uuid.FromString(cmd[2])
+			if errUUID != nil {
+				MessageChannel <- messages.UserMessage{
+					Level:   messages.Warn,
+					Message: fmt.Sprintf("Invalid UUID: %s", cmd[1]),
+					Time:    time.Now().UTC(),
+					Error:   true,
+				}
+			} else {
+				MessageChannel <- agentAPI.GroupRemove(i, cmd[3])
+			}
+		}
+	default:
+		MessageChannel <- messages.UserMessage{
+			Level:   messages.Warn,
+			Message: "Invalid arguments",
+			Time:    time.Now().UTC(),
+			Error:   true,
 		}
 	}
 }
@@ -1043,6 +1161,21 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 			),
 		),
 		readline.PcItem("banner"),
+		readline.PcItem("group",
+			readline.PcItem("list",
+				readline.PcItemDynamic(groupNameCompleter()),
+			),
+			readline.PcItem("add",
+				readline.PcItemDynamic(agentListCompleter(),
+					readline.PcItemDynamic(groupNameCompleter()),
+				),
+			),
+			readline.PcItem("remove",
+				readline.PcItemDynamic(agentListCompleter(),
+					readline.PcItemDynamic(groupNameCompleter()),
+				),
+			),
+		),
 		readline.PcItem("help"),
 		readline.PcItem("interact",
 			readline.PcItemDynamic(agentListCompleter()),
@@ -1051,6 +1184,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("listeners"),
 		readline.PcItem("queue",
 			readline.PcItemDynamic(agentListCompleter()),
+			readline.PcItemDynamic(groupNameCompleter()),
 		),
 		readline.PcItem("remove",
 			readline.PcItemDynamic(agentListCompleter()),
@@ -1293,11 +1427,12 @@ func menuHelpMain() {
 		{"agent", "Interact with agents or list agents", "interact, list"},
 		{"banner", "Print the Gandalf banner", ""},
 		{"clear", "Clear all queued commands that have not been sent to an agent", ""},
+		{"group", "Add, remove or list groups", ""},
 		{"jobs", "List all queued commands to unassigned agents", ""},
 		{"exit", "Exit and close the Gandalf server", ""},
 		{"interact", "Interact with an agent.", ""},
 		{"listeners", "Move to the listeners menu", ""},
-		{"queue", "Manually send a command to a client (that may not be registered yet)", "queue 2b112337-3476-4776-86fa-250b50ac8cfc sleep 300 600"},
+		{"queue", "Manually send a command to a client or group", "queue 2b112337-3476-4776-86fa-250b50ac8cfc sleep 300 600"},
 		{"quit", "Exit and close the Gandalf server", ""},
 		{"remove", "Remove or delete a DEAD agent from the server"},
 		{"sessions", "List all agents session information.", ""},
@@ -1615,6 +1750,13 @@ func agentListCompleter() func(string) []string {
 			a = append(a, id.String())
 		}
 		return a
+	}
+}
+
+// groupNameCompleter returns a list of group names for command line tab completion
+func groupNameCompleter() func(string) []string {
+	return func(line string) []string {
+		return agentAPI.GroupListNames()
 	}
 }
 

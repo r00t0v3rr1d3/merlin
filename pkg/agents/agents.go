@@ -44,6 +44,16 @@ import (
 // Agents contains all of the instantiated agent object that are accessed by other modules
 var Agents = make(map[uuid.UUID]*Agent)
 
+// Groups map agent(s) to a string for bulk access
+var groups = make(map[string][]uuid.UUID)
+
+func init() {
+	globalUUID, err := uuid.FromString("ffffffff-ffff-ffff-ffff-ffffffffffff")
+	if err == nil {
+		groups["all"] = []uuid.UUID{globalUUID}
+	}
+}
+
 // Agent is a server side structure that holds information about a Merlin Agent
 type Agent struct {
 	ID             uuid.UUID
@@ -392,5 +402,74 @@ func SetAgentNote(agentID uuid.UUID, note string) error {
 	}
 
 	Agents[agentID].Note = note
+	return nil
+}
+
+// Add an agent to a group
+func GroupAddAgent(agentID uuid.UUID, groupName string) error {
+	if !isAgent(agentID) {
+		return fmt.Errorf("%s is not a known agent", agentID)
+	} else {
+		grp, ok := groups[groupName]
+		if !ok {
+			groups[groupName] = []uuid.UUID{agentID}
+		} else {
+			// Don't add it to the group if it's already there
+			for _, a := range groups[groupName] {
+				if uuid.Equal(a, agentID) {
+					return nil
+				}
+			}
+			groups[groupName] = append(grp, agentID)
+		}
+		return nil
+	}
+}
+
+// List groups as a table of {groupName,agentID}
+func GroupListAll() [][]string {
+	out := [][]string{}
+	for groupName, agentIDs := range groups {
+		for _, aID := range agentIDs {
+			out = append(out, []string{groupName, aID.String()})
+		}
+	}
+	return out
+}
+
+// List out just the names of existing groups
+func GroupListNames() []string {
+	keys := make([]string, 0, len(groups))
+	for k, _ := range groups {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+// Remove an agent from a group
+func GroupRemoveAgent(agentID uuid.UUID, groupName string) error {
+	if !isAgent(agentID) {
+		return fmt.Errorf("%s is not a known agent", agentID)
+	}
+
+	grp, ok := groups[groupName]
+	if !ok {
+		return fmt.Errorf("%s is not a group", groupName)
+	}
+
+	// Why doesn't go have a remove() like append() reee
+	tmp := grp[:0]
+	for _, a := range grp {
+		if !uuid.Equal(a, agentID) {
+			tmp = append(tmp, a)
+		}
+	}
+	groups[groupName] = tmp
+
+	//Make sure to delete group if empty
+	if len(groups[groupName]) == 0 {
+		delete(groups, groupName)
+	}
+
 	return nil
 }
