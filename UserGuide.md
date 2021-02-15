@@ -60,7 +60,7 @@
 * `set` commands are no longer. `sleep`, `ja3`, `killdate`, `maxretry`, `padding` are all individual commands now
 * The list of available commands (and tab complete) will now have different options for windows/non-windows hosts.
 * You may now enter a comma-separated list of URLs for Gandalf to rotate through for callbacks
-* Custom agent builder menu-driven python script: gandalf_generate.py
+* Custom agent builder menu-driven python2 script: gandalf_generate.py; python3 script: py3_gandalf_generate.py
 * Adjustment to `jobs` agent output
 * Inclusion of global jobs via `queue` and `jobs` from the main menu
 * `note`s to keep track of your agents
