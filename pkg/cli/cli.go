@@ -510,7 +510,7 @@ func handleAgentShell(curAgent uuid.UUID, cmd []string) {
 		MessageChannel <- agentAPI.CD(curAgent, cmd)
 	case "clear", "c":
 		MessageChannel <- agentAPI.ClearJobs(curAgent)
-	case "cmd", "shell", "exec":
+	case "cmd", "run", "exec", "shell":
 		MessageChannel <- agentAPI.CMD(curAgent, cmd)
 	case "download":
 		MessageChannel <- agentAPI.Download(curAgent, cmd)
@@ -1255,8 +1255,10 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("padding"),
 		readline.PcItem("pwd"),
 		readline.PcItem("quit"),
+		readline.PcItem("run"),
 		readline.PcItem("sessions"),
 		readline.PcItem("sdelete"),
+		readline.PcItem("shell"),
 		readline.PcItem("sleep"),
 		readline.PcItem("status"),
 		readline.PcItem("timestomp"),
@@ -1305,8 +1307,10 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("ps"),
 		readline.PcItem("pwd"),
 		readline.PcItem("quit"),
+		readline.PcItem("run"),
 		readline.PcItem("sessions"),
 		readline.PcItem("sdelete"),
+		readline.PcItem("shell"),
 		readline.PcItem("shinject",
 			readline.PcItem("self"),
 			readline.PcItem("remote"),
@@ -1485,7 +1489,7 @@ func menuHelpAgent(platform string) {
 		{"cd", "Change directories", "cd ../../ OR cd c:\\\\Users"},
 		{"clear", "Clear any UNSENT jobs from the queue", ""},
 		{"download", "Download a file from the agent", "download <remote_file>"},
-		{"exec", "Execute a command on the agent", "exec ping -c 3 8.8.8.8"},
+		{"exec", "Alias for run", "exec ping -c 3 8.8.8.8"},
 		{"exit", "Instruct the agent to die", ""},
 		{"help", "Display this message", ""},
 		{"ifconfig", "Displays host network adapter information", ""},
@@ -1505,8 +1509,10 @@ func menuHelpAgent(platform string) {
 		{"padding", "Set maximum number of random bytes to pad messages", "padding 4096"},
 		{"pwd", "Display the current working directory", "pwd"},
 		{"quit", "Shutdown and close the server", ""},
+		{"run", "Execute a program directly, without using a shell", "run ping -c 3 8.8.8.8"},
 		{"sessions", "List all agents session information.", ""},
 		{"sdelete", "Secure delete a file", "sdelete C:\\\\Gandalf.exe"},
+		{"shell", "Execute a command on the agent using the host's default shell", "shell ping -c 3 8.8.8.8"},
 		{"sleep", "<min> <max> (in seconds)", "sleep 15 30"},
 		{"status", "Print the current status of the agent", ""},
 		{"touch", "<source> <destination>", "touch \"C:\\\\old file.txt\" C:\\\\Gandalf.exe"},
@@ -1520,7 +1526,7 @@ func menuHelpAgent(platform string) {
 		data = append(data[:22], append([][]string{{"netstat", "Display network connections", "netstat -p tcp"}}, data[22:]...)...)
 		data = append(data[:26], append([][]string{{"pipes", "List named pipes", ""}}, data[26:]...)...)
 		data = append(data[:27], append([][]string{{"ps", "Display running processes", ""}}, data[27:]...)...)
-		data = append(data[:36], append([][]string{{"uptime", "Print system uptime", ""}}, data[36:]...)...)
+		data = append(data[:38], append([][]string{{"uptime", "Print system uptime", ""}}, data[38:]...)...)
 	}
 
 	table.AppendBulk(data)
