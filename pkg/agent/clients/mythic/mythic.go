@@ -25,7 +25,7 @@ import (
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha1"
+	"crypto/sha1" // #nosec G505
 	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
@@ -245,7 +245,7 @@ func (client *Client) Initial(agent messages.AgentInfo) (messages.Base, error) {
 
 	// RSA Key Exchange
 	rsaRequest := RSARequest{
-		Action:    RSA_STAGING,
+		Action:    RSAStaging,
 		PubKey:    base64.StdEncoding.EncodeToString(x509.MarshalPKCS1PublicKey(&client.privKey.PublicKey)),
 		SessionID: core.RandStringBytesMaskImprSrc(20),
 	}
@@ -414,7 +414,7 @@ func (client *Client) convertToMerlinMessage(data []byte) (messages.Base, error)
 	} else if bytes.Contains(data, []byte("\"action\":\"post_response\"")) {
 		action = RESPONSE
 	} else if bytes.Contains(data, []byte("\"action\":\"staging_rsa\"")) {
-		action = RSA_STAGING
+		action = RSAStaging
 	} else if bytes.Contains(data, []byte("\"action\":\"upload\"")) {
 		action = UPLOAD
 	} else {
@@ -439,10 +439,9 @@ func (client *Client) convertToMerlinMessage(data []byte) (messages.Base, error)
 			cli.Message(cli.SUCCESS, "initial checkin successful")
 			client.MythicID = uuid.FromStringOrNil(msg.ID)
 			return messages.Base{}, nil
-		} else {
-			return messages.Base{}, fmt.Errorf("unknown checkin action status:\r\n%+v", msg)
 		}
-	case RSA_STAGING:
+		return messages.Base{}, fmt.Errorf("unknown checkin action status:\r\n%+v", msg)
+	case RSAStaging:
 		// https://docs.mythic-c2.net/customizing/c2-related-development/c2-profile-code/agent-side-coding/initial-checkin#eke-by-generating-client-side-rsa-keys
 		var msg RSAResponse
 		err := json.Unmarshal(data, &msg)
@@ -455,7 +454,7 @@ func (client *Client) convertToMerlinMessage(data []byte) (messages.Base, error)
 			return messages.Base{}, fmt.Errorf("there was an error Base64 decoding the RSA session key:\r\n%s", err)
 		}
 		// Decrypt with RSA Private key and update the Client's secret key to use the session key
-		hash := sha1.New()
+		hash := sha1.New() // #nosec G401
 		client.secret, err = rsa.DecryptOAEP(hash, rand.Reader, client.privKey, key, nil)
 		if err != nil {
 			return messages.Base{}, fmt.Errorf("there was an error decrypting the returned RSA session key:\r\n%s", err)
@@ -504,7 +503,7 @@ func (client *Client) convertToMerlinMessage(data []byte) (messages.Base, error)
 							Data:   d.FileBlob,
 						}
 						returnMessage.ID = client.AgentID
-						returnMessage.Type = DOWNLOAD_SEND
+						returnMessage.Type = DownloadSend
 						returnMessage.Payload = f
 						// This isn't great because now we're in recursive SendMerlinMessage, but YOLO
 						m, err := client.SendMerlinMessage(returnMessage)
@@ -515,12 +514,11 @@ func (client *Client) convertToMerlinMessage(data []byte) (messages.Base, error)
 							// Remove the file from the global Files structure
 							delete(Files, m.Token)
 							return m, nil
-						} else {
-							return messages.Base{}, fmt.Errorf("file download response did not have a task ID:\r\n%+v", m)
 						}
-					} else {
-						return messages.Base{}, fmt.Errorf("the Mythic global Files map did not contain data for task %s", response.ID)
+						return messages.Base{}, fmt.Errorf("file download response did not have a task ID:\r\n%+v", m)
+
 					}
+					return messages.Base{}, fmt.Errorf("the Mythic global Files map did not contain data for task %s", response.ID)
 				}
 			}
 			if response.Status == "success" && response.ID != "" {
@@ -580,13 +578,13 @@ func (client *Client) convertToMythicMessage(m messages.Base) (string, error) {
 				response.Output = job.Payload.(jobs.Results).Stdout
 				if job.Payload.(jobs.Results).Stderr != "" {
 					response.Output += job.Payload.(jobs.Results).Stderr
-					response.Status = STATUS_ERROR
+					response.Status = StatusError
 				}
 			case jobs.AGENTINFO:
 				info, err := json.Marshal(job.Payload)
 				if err != nil {
 					response.Output = fmt.Sprintf("there was an error marshalling the AgentInfo structure to JSON:\r\n%s", err)
-					response.Status = STATUS_ERROR
+					response.Status = StatusError
 				}
 				response.Output = string(info)
 			case jobs.FILETRANSFER:
@@ -604,7 +602,7 @@ func (client *Client) convertToMythicMessage(m messages.Base) (string, error) {
 
 					returnMessage := messages.Base{
 						ID:      client.AgentID,
-						Type:    DOWNLOAD_INIT,
+						Type:    DownloadInit,
 						Payload: fm,
 					}
 
@@ -632,7 +630,7 @@ func (client *Client) convertToMythicMessage(m messages.Base) (string, error) {
 				return "", fmt.Errorf("there was an error marshalling the mythic.RSARequest structrong to JSON:\r\n%s", err)
 			}
 		}
-	case DOWNLOAD_INIT:
+	case DownloadInit:
 		returnMessage := PostResponseFile{
 			Action: RESPONSE,
 		}
@@ -641,7 +639,7 @@ func (client *Client) convertToMythicMessage(m messages.Base) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("there was an error marshalling the mythic.FileDownloadInitial structure to JSON:\r\n%s", err)
 		}
-	case DOWNLOAD_SEND:
+	case DownloadSend:
 		returnMessage := PostResponseDownload{
 			Action: RESPONSE,
 		}
@@ -781,7 +779,10 @@ func (client *Client) aesEncrypt(plaintext []byte) ([]byte, error) {
 
 	// HMAC
 	hash := hmac.New(sha256.New, client.secret)
-	hash.Write(ciphertext)
+	_, err = hash.Write(ciphertext)
+	if err != nil {
+		return nil, fmt.Errorf("there was an error in the aesEncrypt function writing the HMAC:\r\n%s", err)
+	}
 
 	// IV + Ciphertext + HMAC
 	return append(ciphertext, hash.Sum(nil)...), nil
@@ -813,7 +814,10 @@ func (client *Client) aesDecrypt(ciphertext []byte) ([]byte, error) {
 
 	// Verify the HMAC hash
 	h := hmac.New(sha256.New, client.secret)
-	h.Write(append(iv, ciphertext...))
+	_, err = h.Write(append(iv, ciphertext...))
+	if err != nil {
+		return nil, fmt.Errorf("there was an error in the aesDecrypt function writing the HMAC:\r\n%s", err)
+	}
 	if !hmac.Equal(h.Sum(nil), hash) {
 		return nil, fmt.Errorf("there was an error validating the AES HMAC hash, expected: %x but got: %x", h.Sum(nil), hash)
 	}

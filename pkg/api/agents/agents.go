@@ -1,6 +1,6 @@
 // Merlin is a post-exploitation command and control framework.
 // This file is part of Merlin.
-// Copyright (C) 2020  Russel Van Tuyl
+// Copyright (C) 2021  Russel Van Tuyl
 
 // Merlin is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ func ClearJobs(agentID uuid.UUID) messages.UserMessage {
 // Used with `cmd` and `shell` commands as well as through "standard" modules
 func CMD(agentID uuid.UUID, Args []string) messages.UserMessage {
 	if len(Args) > 1 {
-		job, err := jobs.Add(agentID, "cmd", Args[1:])
+		job, err := jobs.Add(agentID, Args[0], Args[1:])
 		if err != nil {
 			return messages.ErrorMessage(err.Error())
 		}

@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## 0.10.0 - 2020-12-31
+## 0.10.0 - 2021-02-13
 
 ### Added
 
@@ -20,8 +20,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added a new `jobs` command to view created and sent jobs
 - Added a new `clear` command to remove any jobs that have not been sent to the agent
 - Added `killdate`, `maxretry`, `useragent`, `padding`, `skew` to Merlin Agent command line arguments and Makefile
-- Added checks to OPAQUE handling to ensure resliency if server is not available or has an error during registration
+- Added checks to OPAQUE handling to ensure resiliency if server is not available or has an error during registration
 - Added Makefile `agent-windows-debug` build target to enable viewing verbose and debug messages
+- Added Mythic client so [Merlin](https://github.com/MythicAgents/merlin) agent can be used with the [Mythic](https://github.com/its-a-feature/mythic) Framework
 
 ### Changes
 
@@ -39,6 +40,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Restructured Merlin Agent code into multiple go files
 - Created generic MerlinClient interface to facilitate using different protocols
 - Changed HTTP server timeout from 10 seconds to 30 seconds
+- Changed the `shell` command to actually use the operating system's default shell
+- Changed the old `cmd` & `shell` commands to just the `run` which executes the program directly without a shell
+
+## Removed
+
+- Removed the `cmd` command from the Agents menu
 
 ## 0.9.1 - 2020-09-23
 

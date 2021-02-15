@@ -1,3 +1,5 @@
+// +build darwin
+
 // Merlin is a post-exploitation command and control framework.
 // This file is part of Merlin.
 // Copyright (C) 2021  Russel Van Tuyl
@@ -15,29 +17,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Merlin.  If not, see <http://www.gnu.org/licenses/>.
 
-package createprocess
+package commands
 
-import (
-	// Standard
-	"encoding/base64"
-	"fmt"
+import "os/exec"
 
-	// Merlin
-	"github.com/Ne0nd0g/merlin/pkg/modules/shellcode"
-)
+// shell is used to execute a command on a host using the operating system's default shell
+func shell(args []string) (stdout string, stderr string) {
+	cmd := exec.Command("/bin/sh", append([]string{"-c"}, args...)...) // #nosec G204
 
-// Parse is the initial entry point for all extended modules. All validation checks and processing will be performed here
-// The function input types are limited to strings and therefore require additional processing
-func Parse(options map[string]string) ([]string, error) {
-	// 1. Shellcode
-	// 2. SpawnTo
-	// 3. Arguments
-	if len(options) != 3 {
-		return nil, fmt.Errorf("3 arguments were expected, %d were provided", len(options))
-	}
-	sc, err := shellcode.ParseShellcode(options["shellcode"])
+	out, err := cmd.CombinedOutput()
+	stdout = string(out)
+	stderr = ""
+
 	if err != nil {
-		return nil, err
+		stderr = err.Error()
 	}
-	return []string{"CreateProcess", base64.StdEncoding.EncodeToString(sc), options["spawnto"], options["args"]}, nil
+
+	return stdout, stderr
 }
