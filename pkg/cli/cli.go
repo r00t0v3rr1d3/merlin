@@ -407,6 +407,131 @@ func Shell() {
 						executeCommand(cmd[0], x)
 					}
 				}
+<<<<<<< HEAD
+=======
+			case "agent":
+				switch cmd[0] {
+				case "back":
+					menuSetMain()
+				case "cd":
+					MessageChannel <- agentAPI.CD(shellAgent, cmd)
+				case "clear":
+					MessageChannel <- agentAPI.ClearJobs(shellAgent)
+				case "download":
+					MessageChannel <- agentAPI.Download(shellAgent, cmd)
+				case "execute-assembly":
+					go func() { MessageChannel <- agentAPI.ExecuteAssembly(shellAgent, cmd) }()
+				case "execute-pe":
+					go func() { MessageChannel <- agentAPI.ExecutePE(shellAgent, cmd) }()
+				case "execute-shellcode":
+					MessageChannel <- agentAPI.ExecuteShellcode(shellAgent, cmd)
+				case "exit", "quit":
+					if len(cmd) > 1 {
+						if strings.ToLower(cmd[1]) == "-y" {
+							exit()
+						}
+					}
+					if confirm("Are you sure you want to exit?") {
+						exit()
+					}
+				case "?", "help":
+					menuHelpAgent()
+				case "info":
+					rows, message := agentAPI.GetAgentInfo(shellAgent)
+					if message.Error {
+						MessageChannel <- message
+					} else {
+						displayTable([]string{}, rows)
+					}
+				case "jobs":
+					jobs, message := agentAPI.GetJobsForAgent(shellAgent)
+					if message.Message != "" {
+						MessageChannel <- message
+					}
+					displayJobTable(jobs)
+				case "nslookup":
+					MessageChannel <- agentAPI.NSLOOKUP(shellAgent, cmd)
+				case "kill":
+					menuSetMain()
+					MessageChannel <- agentAPI.Kill(shellAgent, cmd)
+				case "ls":
+					MessageChannel <- agentAPI.LS(shellAgent, cmd)
+				case "main":
+					menuSetMain()
+				case "pwd":
+					MessageChannel <- agentAPI.PWD(shellAgent, cmd)
+				case "run", "shell":
+					MessageChannel <- agentAPI.CMD(shellAgent, cmd)
+				case "set":
+					if len(cmd) > 1 {
+						switch cmd[1] {
+						case "ja3":
+							MessageChannel <- agentAPI.SetJA3(shellAgent, cmd)
+						case "killdate":
+							MessageChannel <- agentAPI.SetKillDate(shellAgent, cmd)
+						case "maxretry":
+							MessageChannel <- agentAPI.SetMaxRetry(shellAgent, cmd)
+						case "padding":
+							MessageChannel <- agentAPI.SetPadding(shellAgent, cmd)
+						case "sleep":
+							MessageChannel <- agentAPI.SetSleep(shellAgent, cmd)
+						case "skew":
+							MessageChannel <- agentAPI.SetSkew(shellAgent, cmd)
+						default:
+							MessageChannel <- messages.UserMessage{
+								Level:   messages.Warn,
+								Message: fmt.Sprintf("invalid option to set: %s", cmd[1]),
+								Time:    time.Time{},
+								Error:   true,
+							}
+						}
+					}
+				case "sharpgen":
+					go func() { MessageChannel <- agentAPI.SharpGen(shellAgent, cmd) }()
+				case "status":
+					status, message := agentAPI.GetAgentStatus(shellAgent)
+					if message.Error {
+						MessageChannel <- message
+					}
+					if status == "Active" {
+						MessageChannel <- messages.UserMessage{
+							Level:   messages.Plain,
+							Message: color.GreenString("%s agent is active\n", shellAgent),
+							Time:    time.Now().UTC(),
+							Error:   false,
+						}
+					} else if status == "Delayed" {
+						MessageChannel <- messages.UserMessage{
+							Level:   messages.Plain,
+							Message: color.YellowString("%s agent is delayed\n", shellAgent),
+							Time:    time.Now().UTC(),
+							Error:   false,
+						}
+					} else if status == "Dead" {
+						MessageChannel <- messages.UserMessage{
+							Level:   messages.Plain,
+							Message: color.RedString("%s agent is dead\n", shellAgent),
+							Time:    time.Now().UTC(),
+							Error:   false,
+						}
+					} else {
+						MessageChannel <- messages.UserMessage{
+							Level:   messages.Plain,
+							Message: color.BlueString("%s agent is %s\n", shellAgent, status),
+							Time:    time.Now().UTC(),
+							Error:   false,
+						}
+					}
+				case "upload":
+					MessageChannel <- agentAPI.Upload(shellAgent, cmd)
+				default:
+					if len(cmd) > 1 {
+						executeCommand(cmd[0], cmd[1:])
+					} else {
+						executeCommand(cmd[0], []string{})
+					}
+				}
+>>>>>>> upstream/dev
 			}
 		}
 
@@ -1503,10 +1628,14 @@ func menuHelpAgent(platform string) {
 		{"killdate", "Set agent's killdate (UNIX epoch timestamp)", "killdate 1609480800"},
 		{"ls", "List directory contents", "ls /etc OR ls C:\\\\Users OR ls C:/Users"},
 		{"main", "Return to the main menu", ""},
+<<<<<<< HEAD
 		{"maxretry", "Set number of failed check in attempts before the agent exits", "maxretry 30"},
 		{"note", "Set a custom note for an agent", "note My workstation"},
 		{"nslookup", "Perform lookup of hostname or IP address", "nslookup 8.8.8.8"},
 		{"padding", "Set maximum number of random bytes to pad messages", "padding 4096"},
+=======
+		{"nslookup", "DNS query on host or ip", "nslookup 8.8.8.8"},
+>>>>>>> upstream/dev
 		{"pwd", "Display the current working directory", "pwd"},
 		{"quit", "Shutdown and close the server", ""},
 		{"run", "Execute a program directly, without using a shell", "run ping -c 3 8.8.8.8"},
