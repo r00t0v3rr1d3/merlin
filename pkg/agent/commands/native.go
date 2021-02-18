@@ -54,7 +54,6 @@ func Native(cmd jobs.Command) jobs.Results {
 				results.Stdout = fmt.Sprintf("Changed working directory to %s", path)
 			}
 		}
-<<<<<<< HEAD
 	case "kill":
 		targetpid, err := strconv.Atoi(cmd.Args[0])
 		if err != nil || targetpid < 0 {
@@ -72,7 +71,6 @@ func Native(cmd jobs.Command) jobs.Results {
 			break
 		}
 		results.Stdout = fmt.Sprintf("Successfully killed pid %d\n", targetpid)
-=======
 	case "ls":
 		listing, err := list(cmd.Args[0])
 		if err != nil {
@@ -82,7 +80,6 @@ func Native(cmd jobs.Command) jobs.Results {
 		results.Stdout = listing
 	case "nslookup":
 		results.Stdout, results.Stderr = nslookup(cmd.Args)
->>>>>>> upstream/dev
 	case "pwd":
 		dir, err := os.Getwd()
 		if err != nil {

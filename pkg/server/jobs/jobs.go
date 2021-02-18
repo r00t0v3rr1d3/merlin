@@ -115,6 +115,15 @@ func Add(agentID uuid.UUID, jobType string, jobArgs []string) (string, error) {
 			Command: "ifconfig",
 		}
 		job.Payload = p
+	case "cmd":
+		job.Type = merlinJob.CMD
+		payload := merlinJob.Command{
+			Command: jobArgs[0],
+		}
+		if len(jobArgs) > 1 {
+			payload.Args = jobArgs[1:]
+		}
+		job.Payload = payload
 	case "exec":
 		job.Type = merlinJob.CMD
 		payload := merlinJob.Command{
