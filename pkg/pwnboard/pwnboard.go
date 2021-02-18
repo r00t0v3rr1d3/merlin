@@ -96,7 +96,7 @@ func Updateserver(pwnboardURL string) {
 								uniqueIP := strings.Split(ip, "/")[0]
 								// If the IP is not localhost send it to pwnboard
 								// This will catch a lot of non-existnet IPs but pwnboard will only care about the ones it's aware of.
-								if unique_ip != "127.0.0.1"{
+								if uniqueIP != "127.0.0.1"{
 									updatepwnBoard(pwnboardURL, uniqueIP)
 								}
 							}

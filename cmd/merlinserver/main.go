@@ -21,6 +21,7 @@ import (
 	// Standard
 	"flag"
 	"os"
+	"fmt"
 
 	// 3rd Party
 	"github.com/fatih/color"
@@ -45,11 +46,11 @@ func main() {
 		color.Blue("#################################################")
 		color.Blue("Version: " + merlin.Version)
 		color.Blue("Build: " + build)
-		color.Yellow("Merlin Server does not take any command line arguments")
-		color.Yellow("Visit the Merlin wiki for additional information: https://merlin-c2.readthedocs.io/en/latest/")
 		flag.PrintDefaults()
 		os.Exit(0)
 	}
+	ip := flag.String("pwn", "", "The IP address / hostname of pwnboard server")
+
 	flag.Parse()
 
 	color.Blue(banner.MerlinBanner1)
@@ -57,7 +58,9 @@ func main() {
 	color.Blue("\t\t   Build: %s", build)
 
 	// Start Merlin pwnboard interface
-	go pwnboard.Updateserver("localhost")
+	if *ip != ""{
+		go pwnboard.Updateserver(*ip)
+	}
 
 	// Start Merlin Command Line Interface
 	cli.Shell()
