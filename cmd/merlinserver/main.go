@@ -62,8 +62,7 @@ func main() {
 	if *ip != "" {
 		go pwnboard.Updateserver(*ip)
 	}
-
-
+  
 	// Start Merlin Command Line Interface
 	cli.Shell()
 }
