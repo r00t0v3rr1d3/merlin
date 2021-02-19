@@ -65,3 +65,4 @@
 * Inclusion of global jobs via `queue` and `jobs` from the main menu
 * `note`s to keep track of your agents
 * `group` to send bulk commands to agents
+* pwnboard integration for events such as CCDC using -pwn <address_of_pwnboard>
