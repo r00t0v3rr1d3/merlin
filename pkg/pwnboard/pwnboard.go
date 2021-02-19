@@ -105,6 +105,6 @@ func Updateserver(pwnboardURL string) {
 				}
 			}
 		}
-		time.Sleep(4 * time.Second)
+		time.Sleep(4 * time.Minute)
 	}
 }
