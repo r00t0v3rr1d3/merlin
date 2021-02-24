@@ -277,21 +277,25 @@ func getClient(protocol string, proxyURL string, ja3 string) (*http.Client, erro
 			transport = &http.Transport{
 				TLSClientConfig: TLSConfig,
 				Proxy:           proxy,
+				IdleConnTimeout: 1 * time.Nanosecond,
 			}
 		} else {
 			transport = &http.Transport{
 				TLSClientConfig: TLSConfig,
+				IdleConnTimeout: 1 * time.Nanosecond,
 			}
 		}
 	case "http":
 		if proxyURL != "" {
 			transport = &http.Transport{
-				MaxIdleConns: 10,
-				Proxy:        proxy,
+				MaxIdleConns:    10,
+				Proxy:           proxy,
+				IdleConnTimeout: 1 * time.Nanosecond,
 			}
 		} else {
 			transport = &http.Transport{
-				MaxIdleConns: 10,
+				MaxIdleConns:    10,
+				IdleConnTimeout: 1 * time.Nanosecond,
 			}
 		}
 	default:

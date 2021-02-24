@@ -29,7 +29,7 @@
 * `-url`         := Full URL for agent to connect to
 * `-psk`         := Pre-Shared Key used to encrypt initial communications
 * `-proto`       := Protocol for the agent to connect with [https (HTTP/1.1), http (HTTP/1.1 Clear-Text), h2 (HTTP/2), h2c (HTTP/2 Clear-Text), http3 (QUIC or HTTP/3.0)]
-* `-proxy`       := Hardcoded proxy to use for http/1.1 traffic only that will override host configuration
+* `-proxy`       := Hardcoded proxy to use for http/1.1 (only http/https) traffic only that will override host configuration
 * `-host`        := HTTP Host header
 * `-ja3`         := JA3 signature string (not the MD5 hash). Overrides -proto flag
 * `-waittimemin` := Minimum time for agent to sleep
@@ -66,3 +66,4 @@
 * `note`s to keep track of your agents
 * `group` to send bulk commands to agents
 * pwnboard integration for events such as CCDC using -pwn <address_of_pwnboard>
+* When using http or https protocol, the connection only appears in netstat for one second or less
