@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #Python 3..
 
 DEFAULT_TEMPLATE = "gandalfAgentTemplate-Windows-x64.exe"
@@ -49,7 +50,7 @@ print ("\nSelect Protocol:\n\n    [1] - http2\n    [2] - https\n    [3] - http\n
 tempproto = input('[' + "1" + '] > ')
 if (len(tempproto) > 0 and (tempproto == "1" or tempproto == "2" or tempproto == "3" or tempproto == "4" or tempproto == "5")):
     if (tempproto == "1"):
-	    DEFAULT_PROTO = "h2   "
+        DEFAULT_PROTO = "h2   "
     elif (tempproto == "2"):
         DEFAULT_PROTO = "https"
     elif (tempproto == "3"):
