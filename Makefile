@@ -57,7 +57,7 @@ export GO111MODULE=on
 $(shell mkdir -p ${DIR})
 
 # Change default to just make for the host OS and add MAKE ALL to do this
-default: server-windows agent-windows server-linux agent-linux server-darwin agent-darwin agent-dll agent-javascript prism-windows prism-linux prism-darwin
+default: server-windows agent-windows server-linux agent-linux server-darwin agent-darwin agent-dll agent-so agent-javascript prism-windows prism-linux prism-darwin
 
 all: default
 
@@ -65,7 +65,7 @@ all: default
 windows: server-windows agent-windows agent-dll
 
 # Compile Linux binaries
-linux: server-linux agent-linux
+linux: server-linux agent-linux agent-so
 
 # Compile Arm binaries
 arm: agent-arm
@@ -115,6 +115,12 @@ agent-arm:
 agent-linux:
 	export GOOS=linux;export GOARCH=amd64;go build ${LDFLAGS} ${GCFLAGS} ${ASMFLAGS} -o ${DIR}/${MAGENT}-${L} cmd/merlinagent/main.go
 
+# Compile Agent - Linux x64 SO
+agent-so:
+	export GOOS=linux;export GOARCH=amd64 CGO_ENABLED=1;go build ${LDFLAGS} ${GCFLAGS} ${ASMFLAGS} -buildmode=c-archive -o ${DIR}/main-linux.a cmd/merlinagentso/main.go; \
+	cp data/bin/so/merlin.c ${DIR}/merlin-so.c; \
+	gcc -shared -pthread -o ${DIR}/merlin.so ${DIR}/merlin-so.c ${DIR}/main-linux.a
+
 # Compile PRISM - Linux x64
 prism-linux:
 	export GOOS=linux;export GOARCH=amd64;go build ${LDFLAGS} -o ${DIR}/PRISM-${L} cmd/prism/main.go
@@ -161,6 +167,11 @@ package-agent-linux:
 	cd ${DIR};${PACKAGE} ${MAGENT}-${L}.7z ${MAGENT}-${L}
 	mkdir -p ${BIN}linux
 	cp ${DIR}/${MAGENT}-${L} ${BIN}linux/
+
+package-agent-so:
+	${PACKAGE} ${DIR}/${MAGENT}-${L}-SO.7z ${F2}
+	cd ${DIR};${PACKAGE} ${MAGENT}-${L}-SO.7z merlin.so
+	cp ${DIR}/merlin.so ${BIN}so/
 	
 package-agent-darwin:
 	${PACKAGE} ${DIR}/${MAGENT}-${D}.7z ${F2}
@@ -189,7 +200,7 @@ package-prism-darwin:
 	cp ${DIR}/PRISM-${D} ${BIN}darwin/
 
 # Package agents and PRISM first so that they can be included in the Server distro
-package-all: package-agent-windows package-agent-dll package-agent-linux package-agent-darwin package-prism-windows package-prism-linux package-prism-darwin package-server-linux package-server-windows package-server-darwin
+package-all: package-agent-windows package-agent-dll package-agent-linux package-agent-so package-agent-darwin package-prism-windows package-prism-linux package-prism-darwin package-server-linux package-server-windows package-server-darwin
 
 clean:
 	rm -rf ${DIR}*
@@ -198,7 +209,7 @@ clean:
 distro: clean all package-all
 
 #Create all agents and move them to Merlin's data/bin directory; Used with Docker container
-generate-agents: agent-windows agent-dll agent-linux agent-darwin
+generate-agents: agent-windows agent-dll agent-linux agent-so agent-darwin
 	mkdir -p ${BIN}windows/
 	cp ${DIR}/${MAGENT}-${W}.exe ${BIN}windows/
 	mkdir -p ${BIN}dll
