@@ -119,7 +119,7 @@ agent-linux:
 agent-so:
 	export GOOS=linux;export GOARCH=amd64 CGO_ENABLED=1;go build ${LDFLAGS} ${GCFLAGS} ${ASMFLAGS} -buildmode=c-archive -o ${DIR}/main-linux.a cmd/merlinagentso/main.go; \
 	cp data/bin/so/merlin.c ${DIR}/merlin-so.c; \
-	gcc -shared -pthread -o ${DIR}/merlin.so ${DIR}/merlin-so.c ${DIR}/main-linux.a
+	gcc -O2 -s -fPIC -shared -pthread -o ${DIR}/merlin.so ${DIR}/merlin-so.c ${DIR}/main-linux.a
 
 # Compile PRISM - Linux x64
 prism-linux:
