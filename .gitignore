@@ -5,6 +5,7 @@ data/db
 data/log
 data/bin/darwin
 data/bin/dll/merlin.dll
+data/bin/so/merlin.so
 data/bin/linux
 data/bin/windows
 .idea/
