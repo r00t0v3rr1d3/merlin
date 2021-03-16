@@ -575,6 +575,18 @@ func Remove(agentID uuid.UUID) messages.UserMessage {
 	return messages.ErrorMessage(err.Error())
 }
 
+// Securely deletes supplied file
+func SecureDelete(agentID uuid.UUID, Args []string) messages.UserMessage {
+	if len(Args) < 1 {
+		return messages.ErrorMessage("Not enough arguments. A file path was not provided.")
+	}
+	job, err := jobs.Add(agentID, "sdelete", Args)
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
 // SetJA3 is used to change the Agent's JA3 signature
 func SetJA3(agentID uuid.UUID, Args []string) messages.UserMessage {
 	if len(Args) > 1 {

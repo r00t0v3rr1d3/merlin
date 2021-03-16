@@ -14,6 +14,7 @@
     * Usage: `group remove <agentID> <groupName>`
     * Usage: `group list`
     * Usage (from an agent's menu): `group add <groupName>`
+* `sdelete`: Securely delete a given file.
 
 ## Configurable settings
 * `sleep` has been modified. Just `sleep 30 60` instead of `set sleep 30s` and `set skew 30000`. In seconds.
@@ -45,6 +46,7 @@
 * Removed ability to run arbitrary commands from the server
 * Agent `info` command will now list the executable name
 * Added `kill` command
+* Added `sdelete` command
 * Renamed `kill` to `exit`
 * A sweet banner
 * Removed help menu from agent

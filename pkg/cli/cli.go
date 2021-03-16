@@ -629,7 +629,7 @@ func handleAgentShell(curAgent uuid.UUID, cmd []string) {
 	case "sessions":
 		menuAgent([]string{"list"})
 	case "sdelete":
-		//MessageChannel <- agentAPI.SecureDelete(curAgent, cmd)
+		MessageChannel <- agentAPI.SecureDelete(curAgent, cmd)
 	case "sleep":
 		MessageChannel <- agentAPI.SetSleep(curAgent, cmd)
 	case "status":
