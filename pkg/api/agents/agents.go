@@ -577,7 +577,7 @@ func Remove(agentID uuid.UUID) messages.UserMessage {
 
 // Securely deletes supplied file
 func SecureDelete(agentID uuid.UUID, Args []string) messages.UserMessage {
-	if len(Args) < 1 {
+	if len(Args) < 2 {
 		return messages.ErrorMessage("Not enough arguments. A file path was not provided.")
 	}
 	job, err := jobs.Add(agentID, "sdelete", Args)
@@ -756,6 +756,18 @@ func SharpGen(agentID uuid.UUID, Args []string) messages.UserMessage {
 
 	// Add job to the Agent's queue
 	job, err := jobs.Add(agentID, j[0], j[1:])
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
+// Match destination file's timestamps with source file
+func Touch(agentID uuid.UUID, Args []string) messages.UserMessage {
+	if len(Args) < 3 {
+		return messages.ErrorMessage("Not enough arguments.")
+	}
+	job, err := jobs.Add(agentID, "touch", Args)
 	if err != nil {
 		return messages.ErrorMessage(err.Error())
 	}

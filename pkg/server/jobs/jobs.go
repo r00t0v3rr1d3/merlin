@@ -236,6 +236,12 @@ func Add(agentID uuid.UUID, jobType string, jobArgs []string) (string, error) {
 
 		p.Args = jobArgs[1:]
 		job.Payload = p
+	case "touch":
+		job.Type = merlinJob.NATIVE
+		job.Payload = merlinJob.Command{
+			Command: jobType,
+			Args:    jobArgs,
+		}
 	case "ja3":
 		job.Type = merlinJob.CONTROL
 		p := merlinJob.Command{

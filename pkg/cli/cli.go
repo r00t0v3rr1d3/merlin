@@ -667,7 +667,7 @@ func handleAgentShell(curAgent uuid.UUID, cmd []string) {
 			}
 		}
 	case "touch", "timestomp":
-		//MessageChannel <- agentAPI.Touch(curAgent, cmd)
+		MessageChannel <- agentAPI.Touch(curAgent, cmd)
 	case "upload":
 		MessageChannel <- agentAPI.Upload(curAgent, cmd)
 	case "uptime":
