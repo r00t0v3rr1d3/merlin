@@ -130,3 +130,8 @@ func Pipes() (stdout string, stderr string) {
 func Ps() (stdout string, stderr string) {
 	return "", "Process listing is not implemented for this operating system"
 }
+
+// Uptime is only a valid function on Windows agents...for now
+func Uptime() (stdout string, stderr string) {
+	return "", "Uptime is not implemented for this operating system"
+}

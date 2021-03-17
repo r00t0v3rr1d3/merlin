@@ -838,6 +838,15 @@ func Upload(agentID uuid.UUID, Args []string) messages.UserMessage {
 	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent Upload call: %s", Args))
 }
 
+// UPTIME displays running processes
+func UPTIME(agentID uuid.UUID, Args []string) messages.UserMessage {
+	job, err := jobs.Add(agentID, "uptime", nil)
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
 // Splits a string into newlines
 // Implementation improvised from https://gist.github.com/kennwhite/306317d81ab4a885a965e25aa835b8ef
 func wordWrap(text string, delim rune, maxLen int) string {

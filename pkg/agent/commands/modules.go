@@ -173,3 +173,17 @@ func PS(cmd jobs.Command) jobs.Results {
 	}
 	return results
 }
+
+// Uptime is only a valid function on Windows agents...for now
+func UPTIME(cmd jobs.Command) jobs.Results {
+	var results jobs.Results
+	var err string
+
+	out, err := Uptime()
+	if err != "" {
+		results.Stderr = fmt.Sprintf("%s\r\n", err)
+	} else {
+		results.Stdout = out
+	}
+	return results
+}

@@ -21,6 +21,7 @@
 * `netstat`: Display network connection for Windows agents (tcp, tcp6, udp, udp6)
     * Usage `netstat [-p tcp|udp]
 * `pipes`: List Windows named pipes
+* `uptime`: Print the target system's uptime for Windows agents
 
 ## Configurable settings
 * `sleep` has been modified. Just `sleep 30 60` instead of `set sleep 30s` and `set skew 30000`. In seconds.
@@ -57,6 +58,7 @@
 * Added `ps` command for Windows agents
 * Added `netstat` command for Windows agents
 * Added `pipes` command for Windows agents
+* Added `uptime` command for Windows agents
 * Renamed `kill` to `exit`
 * A sweet banner
 * Removed help menu from agent

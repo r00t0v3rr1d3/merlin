@@ -671,7 +671,7 @@ func handleAgentShell(curAgent uuid.UUID, cmd []string) {
 	case "upload":
 		MessageChannel <- agentAPI.Upload(curAgent, cmd)
 	case "uptime":
-		//MessageChannel <- agentAPI.Uptime(curAgent, cmd)
+		MessageChannel <- agentAPI.UPTIME(curAgent, cmd)
 	default:
 		if len(cmd) > 1 {
 			executeCommand(cmd[0], cmd[1:])
