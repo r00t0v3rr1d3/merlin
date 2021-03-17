@@ -528,6 +528,31 @@ func KillProcess(agentID uuid.UUID, Args []string) messages.UserMessage {
 	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent Kill call: %s", Args))
 }
 
+// Netstat is used to print network connections on the target system
+// Supports a "-p tcp" or "-p udp"
+func NETSTAT(agentID uuid.UUID, Args []string) messages.UserMessage {
+	// Ensure the provided args are valid
+	// Args[0] = "netstat"
+	// Args[1] = (optional) "-p"
+	// Args[2] = (optional) "tcp" or "udp"
+	if len(Args) > 3 {
+		return messages.ErrorMessage("Too many arguments provided to the netstat command")
+	} else if len(Args) == 2 {
+		return messages.ErrorMessage("Incorrect arguments provided to the netstat command")
+	} else if len(Args) == 3 {
+		if Args[1] != "-p" {
+			return messages.ErrorMessage("Incorrect arguments provided to the netstat command")
+		} else if !(Args[2] == "tcp" || Args[2] == "udp") {
+			return messages.ErrorMessage("Incorrect arguments provided to the netstat command")
+		}
+	}
+	job, err := jobs.Add(agentID, "netstat", Args)
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
 // NSLOOKUP instructs the agent to perform a DNS query on the input
 func NSLOOKUP(agentID uuid.UUID, Args []string) messages.UserMessage {
 	if len(Args) < 1 {

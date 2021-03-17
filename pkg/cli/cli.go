@@ -600,7 +600,7 @@ func handleAgentShell(curAgent uuid.UUID, cmd []string) {
 	case "maxretry":
 		MessageChannel <- agentAPI.SetMaxRetry(curAgent, cmd)
 	case "netstat":
-		//MessageChannel <- agentAPI.Netstat(curAgent, cmd)
+		MessageChannel <- agentAPI.NETSTAT(curAgent, cmd)
 	case "note":
 		if len(cmd) > 1 {
 			MessageChannel <- agentAPI.SetNote(shellAgent, cmd[1:])

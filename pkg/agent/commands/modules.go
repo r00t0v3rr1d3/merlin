@@ -124,6 +124,28 @@ func MiniDump(cmd jobs.Command) (jobs.FileTransfer, error) {
 	}, nil
 }
 
+// Netstat is used to print network connections on the target system
+func NETSTAT(cmd jobs.Command) jobs.Results {
+	var results jobs.Results
+	var err string
+	var actualargument string
+
+	if len(cmd.Args) == 1 {
+		actualargument = cmd.Args[0]
+	} else {
+		actualargument = cmd.Args[2]
+	}
+
+	out, err := Netstat(actualargument)
+
+	if err != "" {
+		results.Stderr = fmt.Sprintf("%s\r\n", err)
+	} else {
+		results.Stdout = out
+	}
+	return results
+}
+
 // Ps is only a valid function on Windows agents...for now
 func PS(cmd jobs.Command) jobs.Results {
 	var results jobs.Results

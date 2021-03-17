@@ -116,6 +116,11 @@ func miniDump(tempDir string, process string, inPid uint32) (map[string]interfac
 	return mini, errors.New("minidump doesn't work on non-windows hosts")
 }
 
+// Netstat is only a valid function on Windows agents...for now
+func Netstat(filter string) (stdout string, stderr string) {
+	return "", "Process listing is not implemented for this operating system"
+}
+
 // Ps is only a valid function on Windows agents...for now
 func Ps() (stdout string, stderr string) {
 	return "", "Process listing is not implemented for this operating system"
