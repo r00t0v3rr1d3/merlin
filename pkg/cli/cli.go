@@ -614,7 +614,7 @@ func handleAgentShell(curAgent uuid.UUID, cmd []string) {
 	case "pipes":
 		//MessageChannel <- agentAPI.Pipes(curAgent, cmd)
 	case "ps":
-		//MessageChannel <- agentAPI.PS(curAgent, cmd)
+		MessageChannel <- agentAPI.PS(curAgent, cmd)
 	case "pwd":
 		MessageChannel <- agentAPI.PWD(curAgent, cmd)
 	case "quit":

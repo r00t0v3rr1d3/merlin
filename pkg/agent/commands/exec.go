@@ -115,3 +115,8 @@ func miniDump(tempDir string, process string, inPid uint32) (map[string]interfac
 	inPid = 0
 	return mini, errors.New("minidump doesn't work on non-windows hosts")
 }
+
+// Ps is only a valid function on Windows agents...for now
+func Ps() (stdout string, stderr string) {
+	return "", "Process listing is not implemented for this operating system"
+}

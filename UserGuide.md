@@ -17,6 +17,7 @@
 * `sdelete`: Securely delete a given file.
 * `touch`: Match destination file's timestamps with source file
     * Usage: `touch <source_file> <destination_file>`
+* `ps`: Process listing for Windows agents
 
 ## Configurable settings
 * `sleep` has been modified. Just `sleep 30 60` instead of `set sleep 30s` and `set skew 30000`. In seconds.
@@ -50,6 +51,7 @@
 * Added `kill` command
 * Added `sdelete` command
 * Added `touch` command
+* Added `ps` command for Windows agents
 * Renamed `kill` to `exit`
 * A sweet banner
 * Removed help menu from agent

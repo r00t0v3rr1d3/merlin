@@ -123,3 +123,17 @@ func MiniDump(cmd jobs.Command) (jobs.FileTransfer, error) {
 		IsDownload:   true,
 	}, nil
 }
+
+// Ps is only a valid function on Windows agents...for now
+func PS(cmd jobs.Command) jobs.Results {
+	var results jobs.Results
+	var err string
+
+	out, err := Ps()
+	if err != "" {
+		results.Stderr = fmt.Sprintf("%s\r\n", err)
+	} else {
+		results.Stdout = out
+	}
+	return results
+}
