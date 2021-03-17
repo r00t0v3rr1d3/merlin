@@ -612,7 +612,7 @@ func handleAgentShell(curAgent uuid.UUID, cmd []string) {
 	case "padding":
 		MessageChannel <- agentAPI.SetPadding(curAgent, cmd)
 	case "pipes":
-		//MessageChannel <- agentAPI.Pipes(curAgent, cmd)
+		MessageChannel <- agentAPI.PIPES(curAgent, cmd)
 	case "ps":
 		MessageChannel <- agentAPI.PS(curAgent, cmd)
 	case "pwd":

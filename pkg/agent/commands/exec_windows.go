@@ -71,6 +71,9 @@ const (
 	TH32CS_SNAPTHREAD = 0x00000004
 	// THREAD_SET_CONTEXT is a Windows constant used with Windows API calls
 	THREAD_SET_CONTEXT = 0x0010
+
+	// The path for windows named pipes
+	pipePrefix = `\\.\pipe\`
 )
 
 // executeCommand is function used to instruct an agent to execute a command on the host operating system
@@ -1162,6 +1165,44 @@ type IMAGE_OPTIONAL_HEADER32 struct {
 	LoaderFlags                 uint32
 	NumberOfRvaAndSizes         uint32
 	DataDirectory               uintptr
+}
+
+// Print out the comments of \\.\pipe\*
+// Ripped straight out of the Wireguard implementation: conn_windows.go
+func Pipes() (stdout string, stderr string) {
+	var (
+		data windows.Win32finddata
+	)
+
+	h, err := windows.FindFirstFile(
+		// Append * to find all named pipes.
+		windows.StringToUTF16Ptr(pipePrefix+"*"),
+		&data,
+	)
+	if err != nil {
+		return "", err.Error()
+	}
+
+	// FindClose is used to close file search handles instead of the typical
+	// CloseHandle used elsewhere, see:
+	// https://docs.microsoft.com/en-us/windows/desktop/api/fileapi/nf-fileapi-findclose.
+	defer windows.FindClose(h)
+
+	stdout = "Named pipes:\n"
+	for {
+		name := windows.UTF16ToString(data.FileName[:])
+		stdout += pipePrefix + name + "\n"
+
+		if err := windows.FindNextFile(h, &data); err != nil {
+			if err == windows.ERROR_NO_MORE_FILES {
+				break
+			}
+
+			return "", err.Error()
+		}
+	}
+
+	return stdout, ""
 }
 
 //BEGIN PS CODE

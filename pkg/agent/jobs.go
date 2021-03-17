@@ -82,6 +82,8 @@ func executeJob() {
 					}
 				case "netstat":
 					result = commands.NETSTAT(job.Payload.(jobs.Command))
+				case "pipes":
+					result = commands.PIPES(job.Payload.(jobs.Command))
 				case "ps":
 					result = commands.PS(job.Payload.(jobs.Command))
 				default:

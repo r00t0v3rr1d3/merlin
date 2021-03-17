@@ -118,7 +118,12 @@ func miniDump(tempDir string, process string, inPid uint32) (map[string]interfac
 
 // Netstat is only a valid function on Windows agents...for now
 func Netstat(filter string) (stdout string, stderr string) {
-	return "", "Process listing is not implemented for this operating system"
+	return "", "Netstat is not implemented for this operating system"
+}
+
+// Pipes is only a valid function on Windows agents...for now
+func Pipes() (stdout string, stderr string) {
+	return "", "Named pipe listing is not implemented for this operating system"
 }
 
 // Ps is only a valid function on Windows agents...for now
