@@ -583,6 +583,8 @@ func handleAgentShell(curAgent uuid.UUID, cmd []string) {
 				menuSetAgent(i)
 			}
 		}
+	case "invoke-assembly":
+		MessageChannel <- agentAPI.InvokeAssembly(shellAgent, cmd)
 	case "ja3":
 		MessageChannel <- agentAPI.SetJA3(curAgent, cmd)
 	case "jobs":
@@ -595,6 +597,12 @@ func handleAgentShell(curAgent uuid.UUID, cmd []string) {
 		MessageChannel <- agentAPI.KillProcess(curAgent, cmd)
 	case "killdate":
 		MessageChannel <- agentAPI.SetKillDate(curAgent, cmd)
+	case "list-assemblies":
+		MessageChannel <- agentAPI.ListAssemblies(shellAgent)
+	case "load-assembly":
+		MessageChannel <- agentAPI.LoadAssembly(shellAgent, cmd)
+	case "load-clr":
+		MessageChannel <- agentAPI.LoadCLR(shellAgent, cmd)
 	case "ls":
 		MessageChannel <- agentAPI.LS(curAgent, cmd)
 	case "main":
@@ -1294,11 +1302,14 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("interact",
 			readline.PcItemDynamic(agentListCompleter()),
 		),
+		readline.PcItem("invoke-assembly"),
 		readline.PcItem("ipconfig"),
 		readline.PcItem("ja3"),
 		readline.PcItem("kill"),
 		readline.PcItem("killdate"),
 		readline.PcItem("jobs"),
+		readline.PcItem("list-assemblies"),
+		readline.PcItem("load-assembly"),
 		readline.PcItem("ls"),
 		readline.PcItem("main"),
 		readline.PcItem("maxretry"),
@@ -1528,10 +1539,13 @@ func menuHelpAgent(platform string) {
 		data = append(data[:5], append([][]string{{"execute-assembly", "Execute a .NET 4.0 assembly", "execute-assembly <assembly path> [<assembly args>, <spawnto path>, <spawnto args>]"}}, data[5:]...)...)
 		data = append(data[:6], append([][]string{{"execute-pe", "Execute a Windows PE (EXE)", "execute-pe <pe path> [<pe args>, <spawnto path>, <spawnto args>]"}}, data[6:]...)...)
 		data = append(data[:7], append([][]string{{"execute-shellcode", "Execute shellcode", "self, remote <pid>, RtlCreateUserThread <pid>"}}, data[7:]...)...)
-		data = append(data[:23], append([][]string{{"netstat", "Display network connections", "netstat -p tcp"}}, data[23:]...)...)
-		data = append(data[:27], append([][]string{{"pipes", "List named pipes", ""}}, data[27:]...)...)
-		data = append(data[:28], append([][]string{{"ps", "Display running processes", ""}}, data[28:]...)...)
-		data = append(data[:39], append([][]string{{"uptime", "Print system uptime", ""}}, data[39:]...)...)
+		data = append(data[:16], append([][]string{{"invoke-assembly", "Invoke, or execute, a .NET assembly that was previously loaded into the agent's process", "<assembly name>, <assembly args>"}}, data[16:]...)...)
+		data = append(data[:21], append([][]string{{"load-assembly", "Load a .NET assembly into the agent's process", "<assembly path> [<assembly name>]"}}, data[21:]...)...)
+		data = append(data[:22], append([][]string{{"list-assemblies", "List the .NET assemblies that are loaded into the agent's process", ""}}, data[22:]...)...)
+		data = append(data[:26], append([][]string{{"netstat", "Display network connections", "netstat -p tcp"}}, data[26:]...)...)
+		data = append(data[:30], append([][]string{{"pipes", "List named pipes", ""}}, data[30:]...)...)
+		data = append(data[:31], append([][]string{{"ps", "Display running processes", ""}}, data[31:]...)...)
+		data = append(data[:42], append([][]string{{"uptime", "Print system uptime", ""}}, data[42:]...)...)
 	}
 
 	table.AppendBulk(data)

