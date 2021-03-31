@@ -26,7 +26,7 @@ require (
 	github.com/gophish/gophish v0.11.0 // indirect
 	github.com/kardianos/govendor v1.0.9 // indirect
 	github.com/lib/pq v1.8.0 // indirect
-	github.com/lucas-clemente/quic-go v0.17.3
+	github.com/lucas-clemente/quic-go v0.18.1
 	github.com/marten-seemann/qtls v0.10.0 // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect
