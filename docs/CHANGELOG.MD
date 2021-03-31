@@ -9,10 +9,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Added `nslookup` command to execute a DNS query using native Go
+<<<<<<< HEAD
 - Added [go-clr](https://github.com/Ne0nd0g/go-clr) for in process .NET Common Lanaguage Runtime (CLR)
   - `load-assembly` to load a .NET assembly into memory
   - `invoke-assembly` to execute a previously loaded .NET assembly
   - `list-assemblies` to list previously loaded .NET assemblies
+=======
+- Added `memfd` command to run Linux executables in-memory as an anonymous file
+>>>>>>> ce9d034... Added Linux memfd command
 
 ## 0.10.0 - 2021-02-13
 

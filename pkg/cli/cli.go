@@ -609,6 +609,8 @@ func handleAgentShell(curAgent uuid.UUID, cmd []string) {
 		menuSetMain()
 	case "maxretry":
 		MessageChannel <- agentAPI.SetMaxRetry(curAgent, cmd)
+	case "memfd":
+		MessageChannel <- agentAPI.MEMFD(shellAgent, cmd)
 	case "netstat":
 		MessageChannel <- agentAPI.NETSTAT(curAgent, cmd)
 	case "note":
@@ -1261,6 +1263,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("ls"),
 		readline.PcItem("main"),
 		readline.PcItem("maxretry"),
+		readline.PcItem("memfd"),
 		readline.PcItem("note"),
 		readline.PcItem("nslookup"),
 		readline.PcItem("padding"),
@@ -1520,6 +1523,7 @@ func menuHelpAgent(platform string) {
 		{"ls", "List directory contents", "ls /etc OR ls C:\\\\Users OR ls C:/Users"},
 		{"main", "Return to the main menu", ""},
 		{"maxretry", "Set number of failed check in attempts before the agent exits", "maxretry 30"},
+		{"memfd", "Execute Linux file in memory", "<file path> [<arguments>]"},
 		{"note", "Set a custom note for an agent", "note My workstation"},
 		{"nslookup", "Perform lookup of hostname or IP address", "nslookup 8.8.8.8"},
 		{"padding", "Set maximum number of random bytes to pad messages", "padding 4096"},
@@ -1542,6 +1546,8 @@ func menuHelpAgent(platform string) {
 		data = append(data[:16], append([][]string{{"invoke-assembly", "Invoke, or execute, a .NET assembly that was previously loaded into the agent's process", "<assembly name>, <assembly args>"}}, data[16:]...)...)
 		data = append(data[:21], append([][]string{{"load-assembly", "Load a .NET assembly into the agent's process", "<assembly path> [<assembly name>]"}}, data[21:]...)...)
 		data = append(data[:22], append([][]string{{"list-assemblies", "List the .NET assemblies that are loaded into the agent's process", ""}}, data[22:]...)...)
+		//remove memfd from windows agent help menu
+		data = append(data[:26], data[27:]...)
 		data = append(data[:26], append([][]string{{"netstat", "Display network connections", "netstat -p tcp"}}, data[26:]...)...)
 		data = append(data[:30], append([][]string{{"pipes", "List named pipes", ""}}, data[30:]...)...)
 		data = append(data[:31], append([][]string{{"ps", "Display running processes", ""}}, data[31:]...)...)
