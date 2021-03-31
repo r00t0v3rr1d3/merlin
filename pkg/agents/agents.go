@@ -62,6 +62,7 @@ type Agent struct {
 	UserName       string
 	UserGUID       string
 	HostName       string
+	MachineID      string
 	Ips            []string
 	Pid            int
 	Process        string
@@ -200,6 +201,7 @@ func (a *Agent) UpdateInfo(info messages.AgentInfo) {
 
 	a.Architecture = info.SysInfo.Architecture
 	a.HostName = info.SysInfo.HostName
+	a.MachineID = info.SysInfo.MachineID
 	a.Pid = info.SysInfo.Pid
 	a.Process = info.SysInfo.Process
 	a.Ips = info.SysInfo.Ips

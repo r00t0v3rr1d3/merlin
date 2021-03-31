@@ -29,6 +29,7 @@ import (
 	"time"
 
 	// 3rd Party
+	"github.com/denisbrodbeck/machineid"
 	uuid "github.com/satori/go.uuid"
 
 	// Merlin
@@ -50,6 +51,7 @@ type Agent struct {
 	UserName      string                  // UserName is the username that the agent is running as
 	UserGUID      string                  // UserGUID is a Globally Unique Identifier associated with username
 	HostName      string                  // HostName is the computer's host name
+	MachineID     string                  // MachineID is the computer's unique identifer
 	Ips           []string                // Ips is a slice of all the IP addresses assigned to the host's interfaces
 	Pid           int                     // Pid is the Process ID that the agent is running under
 	Process       string                  // Process is this agent's process name in memory
@@ -103,10 +105,18 @@ func New(config Config) (*Agent, error) {
 
 	agent.HostName = h
 
+	mID, errM := machineid.ID()
+	if errM != nil {
+		return &agent, fmt.Errorf("there was an error getting the Machine ID:\r\n%s", errM)
+	}
+
+	agent.MachineID = mID
+
 	p, errP := os.Executable()
 	if errP != nil {
 		return &agent, fmt.Errorf("there was an error getting the process name:\r\n%s", errH)
 	}
+
 	agent.Process = p
 
 	interfaces, errI := net.Interfaces()
@@ -177,6 +187,7 @@ func New(config Config) (*Agent, error) {
 	cli.Message(cli.INFO, fmt.Sprintf("\tUser Name: %s", agent.UserName)) //TODO A username like _svctestaccont causes error
 	cli.Message(cli.INFO, fmt.Sprintf("\tUser GUID: %s", agent.UserGUID))
 	cli.Message(cli.INFO, fmt.Sprintf("\tHostname: %s", agent.HostName))
+	cli.Message(cli.INFO, fmt.Sprintf("\tMachine ID: %s", agent.MachineID))
 	cli.Message(cli.INFO, fmt.Sprintf("\tProcess: %s", agent.Process))
 	cli.Message(cli.INFO, fmt.Sprintf("\tPID: %d", agent.Pid))
 	cli.Message(cli.INFO, fmt.Sprintf("\tIPs: %v", agent.Ips))

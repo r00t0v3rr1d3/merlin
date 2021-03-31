@@ -150,6 +150,7 @@ func (a *Agent) getAgentInfoMessage() messages.AgentInfo {
 		Pid:          a.Pid,
 		Ips:          a.Ips,
 		Domain:       os.Getenv("USERDOMAIN"),
+		MachineID:    a.MachineID,
 	}
 
 	padding, _ := strconv.Atoi(a.Client.Get("paddingmax"))
