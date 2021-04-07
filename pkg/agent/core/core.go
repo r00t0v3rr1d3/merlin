@@ -17,6 +17,8 @@
 
 package core
 
+import "sync"
+
 // Global Variables
 
 // Verbose indicates if the agent should write messages to STDOUT
@@ -27,3 +29,6 @@ var Debug = false
 
 // Version is the Merlin Agent's version number
 var Version = "1.0.0"
+
+// Mutex is used to ensure exclusive access to STDOUT & STDERR
+var Mutex = &sync.Mutex{}
