@@ -107,7 +107,13 @@ func New(config Config) (*Agent, error) {
 
 	mID, errM := machineid.ID()
 	if errM != nil {
-		return &agent, fmt.Errorf("there was an error getting the Machine ID:\r\n%s", errM)
+		var seededRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
+		var charset string = "ABCDEF0123456789"
+		b := make([]byte, 16)
+		for i := range b {
+			b[i] = charset[seededRand.Intn(len(charset))]
+		}
+		mID = string(b)
 	}
 
 	agent.MachineID = mID
