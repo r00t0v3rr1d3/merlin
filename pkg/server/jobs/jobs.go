@@ -471,6 +471,12 @@ func Get(agentID uuid.UUID) ([]merlinJob.Job, error) {
 				message("debug", fmt.Sprintf("Job type: %s", merlinJob.String(job.Type)))
 			}
 		}
+		//Reverse the jobs so they are executed in the proper order
+		var reversejobs []merlinJob.Job
+		for j := jobLength - 1; j >= 0; j-- {
+			reversejobs = append(reversejobs, jobs[j])
+		}
+		jobs = reversejobs
 	}
 	if core.Debug {
 		message("debug", fmt.Sprintf("Returning jobs:\r\n%+v", jobs))

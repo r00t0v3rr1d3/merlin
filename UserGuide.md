@@ -82,3 +82,4 @@
 * pwnboard integration for events such as CCDC using -pwn <address_of_pwnboard>
 * When using http or https protocol, the connection only appears in netstat for one second or less
 * Added in retrieval of MachineID for AgentInfo to identify unique hosts (eventually will remove external dependency)
+* Commands are now executed in the order entered. Results return in order of command completion time
