@@ -91,6 +91,10 @@ server-windows:
 agent-windows:
 	export GOOS=windows GOARCH=amd64;go build ${WINAGENTLDFLAGS} ${GCFLAGS} ${ASMFLAGS} -o ${DIR}/${MAGENT}-${W}.exe cmd/merlinagent/main.go
 
+# Compile Agent - Windows x86
+agent-windows86:
+	export GOOS=windows GOARCH=386;go build ${WINAGENTLDFLAGS} ${GCFLAGS} ${ASMFLAGS} -o ${DIR}/${MAGENT}-${W32}.exe cmd/merlinagent/main.go
+
 # Compile Agent - Windows x64 with DEBUG output
 agent-windows-debug:
 	export GOOS=windows GOARCH=amd64;go build ${WINAGENTLDFLAGSDEBUG} ${GCFLAGS} ${ASMFLAGS} -o ${DIR}/${MAGENT}-${W}-DEBUG.exe cmd/merlinagent/main.go
