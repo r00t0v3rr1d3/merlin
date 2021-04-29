@@ -3,9 +3,9 @@
 # Merlin Server & Agent version number
 VERSION=$(shell cat pkg/merlin.go |grep "const Version ="|cut -d"\"" -f2)
 
-MSERVER=merlinServer
-MAGENT=merlinAgent
-PASSWORD=merlin
+MSERVER=gandalfServer
+MAGENT=gandalfAgentTemplate
+PASSWORD=gandalf
 BUILD=$(shell git rev-parse HEAD)
 DIR=data/temp/v${VERSION}/${BUILD}
 BIN=data/bin/
@@ -47,7 +47,14 @@ PACKAGE=7za a -p${PASSWORD} -mhe -mx=9
 F=README.MD LICENSE data/modules docs data/README.MD data/agents/README.MD data/db/ data/log/README.MD data/x509 data/src data/bin data/html
 F2=LICENSE
 W=Windows-x64
+W32=Windows-x86
 L=Linux-x64
+L32=Linux-x86
+FB=FreeBSD-x64
+FB32=FreeBSD-x86
+S=Solaris-x64
+O=OpenBSD-x64
+O32=OpenBSD-x86
 A=Linux-arm
 M=Linux-mips
 D=Darwin-x64
@@ -115,6 +122,10 @@ agent-arm:
 agent-linux:
 	export GOOS=linux;export GOARCH=amd64;go build ${LDFLAGS} ${GCFLAGS} ${ASMFLAGS} -o ${DIR}/${MAGENT}-${L} cmd/merlinagent/main.go
 
+# Compile Agent - Linux x86
+agent-linux86:
+	export GOOS=linux;export GOARCH=386;go build ${LDFLAGS} ${GCFLAGS} ${ASMFLAGS} -o ${DIR}/${MAGENT}-${L32} cmd/merlinagent/main.go
+
 # Compile PRISM - Linux x64
 prism-linux:
 	export GOOS=linux;export GOARCH=amd64;go build ${LDFLAGS} -o ${DIR}/PRISM-${L} cmd/prism/main.go
@@ -130,6 +141,27 @@ agent-darwin:
 # Compile PRISM - Darwin x64
 prism-darwin:
 	export GOOS=darwin;export GOARCH=amd64;go build ${LDFLAGS} -o ${DIR}/PRISM-${D} cmd/prism/main.go
+
+# Compile Agent - FreeBSD x64
+agent-freebsd:
+	export GOOS=freebsd;export GOARCH=amd64;go build ${LDFLAGS} ${GCFLAGS} ${ASMFLAGS} -o ${DIR}/${MAGENT}-${FB} cmd/merlinagent/main.go
+
+# Compile Agent - FreeBSD x86
+agent-freebsd86:
+	export GOOS=freebsd;export GOARCH=386;go build ${LDFLAGS} ${GCFLAGS} ${ASMFLAGS} -o ${DIR}/${MAGENT}-${FB32} cmd/merlinagent/main.go
+
+# Compile Agent - Solaris
+agent-solaris:
+	export GOOS=solaris;export GOARCH=amd64;go build ${LDFLAGS} ${GCFLAGS} ${ASMFLAGS} -o ${DIR}/${MAGENT}-${S} cmd/merlinagent/main.go
+
+# Compile Agent - OpenBSD
+agent-openbsd:
+	export GOOS=openbsd;export GOARCH=amd64;go build ${LDFLAGS} ${GCFLAGS} ${ASMFLAGS} -o ${DIR}/${MAGENT}-${O} cmd/merlinagent/main.go
+ 
+# Compile Agent - OpenBSD x86
+agent-openbsd32:
+	export GOOS=openbsd;export GOARCH=386;go build ${LDFLAGS} ${GCFLAGS} ${ASMFLAGS} -o ${DIR}/${MAGENT}-${O32} cmd/merlinagent/main.go
+
 
 # Update JavaScript Information
 agent-javascript:

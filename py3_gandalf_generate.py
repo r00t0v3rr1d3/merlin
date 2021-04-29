@@ -2,13 +2,13 @@
 
 DEFAULT_TEMPLATE = "gandalfAgentTemplate-Windows-x64.exe"
 DEFAULT_URL = "https://127.0.0.1"
-DEFAULT_PROTO = "h2"
+DEFAULT_PROTO = "https"
 DEFAULT_PSK = "gandalf"
 DEFAULT_SLEEPMIN = "15"
 DEFAULT_SLEEPMAX = "30"
 DEFAULT_INACTIVEMULTIPLIER = "5"
 DEFAULT_INACTIVETHRESHOLD = "6"
-DEFAULT_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36"
+DEFAULT_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36"
 DEFAULT_MAXRETRY = "99999"
 DEFAULT_PADDING = "4096"
 DEFAULT_PROXY = ""
@@ -25,6 +25,8 @@ temptemplate = input('[' + DEFAULT_TEMPLATE + '] > ')
 if (len(temptemplate) > 0):
    DEFAULT_TEMPLATE = temptemplate
 
+gandalftemplate = open(DEFAULT_TEMPLATE, "rb")
+
 print ("\nTemplate File Location Selection: " + DEFAULT_TEMPLATE)
 
 print ("\nEnter Output File Location:\n")
@@ -32,6 +34,8 @@ print ("\nEnter Output File Location:\n")
 tempoutput = input('[' + DEFAULT_OUTPUT + '] > ')
 if (len(tempoutput) > 0):
    DEFAULT_OUTPUT = tempoutput
+
+gandalfoutput = open(DEFAULT_OUTPUT, "wb")
 
 print ("\nOutput File Location Selection: " + DEFAULT_OUTPUT)
 
@@ -44,16 +48,16 @@ if (len(tempurl) > 0):
 
 print ("\nCallback URL Selection: " + DEFAULT_URL)
 
-print ("\nSelect Protocol:\n\n    [1] - http2\n    [2] - https\n    [3] - http\n    [4] - h2c\n    [5] - http3\n")
+print ("\nSelect Protocol:\n\n    [1] - https\n    [2] - http\n    [3] - http2\n    [4] - h2c\n    [5] - http3\n")
 
 tempproto = input('[' + "1" + '] > ')
 if (len(tempproto) > 0 and (tempproto == "1" or tempproto == "2" or tempproto == "3" or tempproto == "4" or tempproto == "5")):
     if (tempproto == "1"):
-	    DEFAULT_PROTO = "h2   "
+	    DEFAULT_PROTO = "https"
     elif (tempproto == "2"):
-        DEFAULT_PROTO = "https"
-    elif (tempproto == "3"):
         DEFAULT_PROTO = "http "
+    elif (tempproto == "3"):
+        DEFAULT_PROTO = "h2   "
     elif (tempproto == "4"):
         DEFAULT_PROTO = "h2c  "
     elif (tempproto == "5"):
@@ -62,7 +66,7 @@ elif (len(tempproto) != 0):
     print ("Invalid input!")
     raise SystemExit
 else:
-    DEFAULT_PROTO = "h2   "
+    DEFAULT_PROTO = "https"
 
 if (DEFAULT_PROTO == "h2   "):
     print ("\nProtocol Selection: http2")
@@ -165,7 +169,6 @@ if (len(tempkilldate) > 0):
 
 print ("\nKill Date Selection: " + DEFAULT_KILLDATE)
 
-gandalftemplate = open(DEFAULT_TEMPLATE, "rb")
 gandalfcontents = gandalftemplate.read()
 gandalftemplate.close()
 
@@ -303,7 +306,6 @@ replacementkilldate = '0' * killdatedifference
 replacementkilldate += DEFAULT_KILLDATE
 gandalfcontents = gandalfcontents.replace(b'0'*18, str.encode(replacementkilldate))
 
-gandalfoutput = open(DEFAULT_OUTPUT, "wb")
 gandalfoutput.write(gandalfcontents)
 gandalfoutput.close()
 
