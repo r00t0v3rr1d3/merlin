@@ -115,6 +115,26 @@ func Add(agentID uuid.UUID, jobType string, jobArgs []string) (string, error) {
 			Command: "ifconfig",
 		}
 		job.Payload = p
+	case "inactivemultiplier":
+		job.Type = merlinJob.CONTROL
+		p := merlinJob.Command{
+			Command: jobArgs[0],
+		}
+
+		if len(jobArgs) == 2 {
+			p.Args = jobArgs[1:]
+		}
+		job.Payload = p
+	case "inactivethreshold":
+		job.Type = merlinJob.CONTROL
+		p := merlinJob.Command{
+			Command: jobArgs[0],
+		}
+
+		if len(jobArgs) == 2 {
+			p.Args = jobArgs[1:]
+		}
+		job.Payload = p
 	case "cmd":
 		job.Type = merlinJob.CMD
 		payload := merlinJob.Command{

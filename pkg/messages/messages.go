@@ -84,17 +84,22 @@ type SysInfo struct {
 
 // AgentInfo is a JSON payload containing information about the agent and its configuration
 type AgentInfo struct {
-	Version       string  `json:"version,omitempty"`
-	Build         string  `json:"build,omitempty"`
-	WaitTimeMin   int64   `json:"waittimemin,omitempty"`
-	WaitTimeMax   int64   `json:"waittimemax,omitempty"`
-	PaddingMax    int     `json:"paddingmax,omitempty"`
-	MaxRetry      int     `json:"maxretry,omitempty"`
-	FailedCheckin int     `json:"failedcheckin,omitempty"`
-	Proto         string  `json:"proto,omitempty"`
-	SysInfo       SysInfo `json:"sysinfo,omitempty"`
-	KillDate      int64   `json:"killdate,omitempty"`
-	JA3           string  `json:"ja3,omitempty"`
+	Version            string  `json:"version,omitempty"`
+	Build              string  `json:"build,omitempty"`
+	WaitTimeMin        int64   `json:"waittimemin,omitempty"`
+	WaitTimeMax        int64   `json:"waittimemax,omitempty"`
+	ActiveMin          int64   `json:"activemin,omitempty"`
+	ActiveMax          int64   `json:"activemax,omitempty"`
+	InactiveCount      int     `json:"inactivecount,omitempty"`
+	InactiveMultiplier int64   `json:"inactivemultiplier,omitempty"`
+	InactiveThreshold  int     `json:"inactivethreshold,omitempty"`
+	PaddingMax         int     `json:"paddingmax,omitempty"`
+	MaxRetry           int     `json:"maxretry,omitempty"`
+	FailedCheckin      int     `json:"failedcheckin,omitempty"`
+	Proto              string  `json:"proto,omitempty"`
+	SysInfo            SysInfo `json:"sysinfo,omitempty"`
+	KillDate           int64   `json:"killdate,omitempty"`
+	JA3                string  `json:"ja3,omitempty"`
 }
 
 // String returns the text representation of a message constant

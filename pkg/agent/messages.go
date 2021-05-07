@@ -41,15 +41,47 @@ func (a *Agent) messageHandler(m messages.Base) {
 	switch m.Type {
 	case messages.JOBS:
 		a.jobHandler(m.Payload.([]jobs.Job))
+		a.InactiveCount = 0
+		if a.WaitTimeMin != a.ActiveMin {
+			a.WaitTimeMin = a.ActiveMin
+			a.WaitTimeMax = a.ActiveMax
+			//a.sendMessage("POST", a.getAgentInfoMessage())
+		}
 	case messages.IDLE:
 		cli.Message(cli.NOTE, "Received idle command, doing nothing")
+		a.InactiveCount++
+		if a.InactiveCount == a.InactiveThreshold {
+			a.InactiveCount = 0
+			a.WaitTimeMin *= a.InactiveMultiplier
+			a.WaitTimeMax *= a.InactiveMultiplier
+			//a.sendMessage("POST", a.getAgentInfoMessage())
+		}
 	case messages.OPAQUE:
 		if m.Payload.(opaque.Opaque).Type == opaque.ReAuthenticate {
 			cli.Message(cli.NOTE, "Received re-authentication request")
 			// Re-authenticate, but do not re-register
 			msg, err := a.Client.Auth("opaque", false)
+			//temporarily speed up for orphan recovery
+			a.WaitTimeMin = 15
+			a.WaitTimeMax = 30
+			a.InactiveCount = 0
 			if err != nil {
 				a.FailedCheckin++
+				a.InactiveCount++
+				if a.InactiveCount == a.InactiveThreshold {
+					a.InactiveCount = 0
+					a.WaitTimeMin *= a.InactiveMultiplier
+					a.WaitTimeMax *= a.InactiveMultiplier
+					//Should only happen if orphaned agents checks in and isn't interacted with
+					if a.WaitTimeMin < a.ActiveMin {
+						a.WaitTimeMin = a.ActiveMin
+						a.WaitTimeMax = a.ActiveMax
+					} else {
+						a.WaitTimeMin *= a.InactiveMultiplier
+						a.WaitTimeMax *= a.InactiveMultiplier
+					}
+					//a.sendMessage("POST", a.getAgentInfoMessage())
+				}
 				result.Stderr = err.Error()
 				jobsOut <- jobs.Job{
 					AgentID: a.ID,

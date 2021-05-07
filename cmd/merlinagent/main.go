@@ -44,6 +44,8 @@ var ja3 = ""
 var useragent = ""
 var waittimemin int64 = 0
 var waittimemax int64 = 0
+var inactivemultiplier int64 = 0
+var inactivethreshold int = 0
 var killdate = ""
 var maxretry = ""
 var padding = ""
@@ -61,6 +63,8 @@ func main() {
 	flag.StringVar(&ja3, "ja3", ja3, "JA3 signature string (not the MD5 hash). Overrides -proto flag")
 	flag.Int64Var(&waittimemin, "waittimemin", waittimemin, "Minimum time for agent to sleep")
 	flag.Int64Var(&waittimemax, "waittimemax", waittimemax, "Maximum time for agent to sleep")
+	flag.Int64Var(&inactivemultiplier, "inactivemultiplier", inactivemultiplier, "Number to multiply waittimemin and waittimemax by every time the inactivethreshold is met")
+	flag.IntVar(&inactivethreshold, "inactivethreshold", inactivethreshold, "Number of checkins with no tasking before agent goes inactive")
 	flag.StringVar(&killdate, "killdate", killdate, "The date, as a Unix EPOCH timestamp, that the agent will quit running")
 	flag.StringVar(&maxretry, "maxretry", maxretry, "The maximum amount of failed checkins before the agent will quit running")
 	flag.StringVar(&padding, "padding", padding, "The maximum amount of data that will be randomly selected and appended to every message")
@@ -80,10 +84,12 @@ func main() {
 
 	// Setup and run agent
 	agentConfig := agent.Config{
-		WaitTimeMin: waittimemin,
-		WaitTimeMax: waittimemax,
-		KillDate:    killdate,
-		MaxRetry:    maxretry,
+		WaitTimeMin:        waittimemin,
+		WaitTimeMax:        waittimemax,
+		InactiveMultiplier: inactivemultiplier,
+		InactiveThreshold:  inactivethreshold,
+		KillDate:           killdate,
+		MaxRetry:           maxretry,
 	}
 	a, err := agent.New(agentConfig)
 	if err != nil {

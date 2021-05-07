@@ -388,6 +388,10 @@ func GetAgentInfo(agentID uuid.UUID) ([][]string, messages.UserMessage) {
 		{"Agent Build", a.Build},
 		{"Agent Wait Time Min", strconv.FormatInt(a.WaitTimeMin, 10)},
 		{"Agent Wait Time Max", strconv.FormatInt(a.WaitTimeMax, 10)},
+		{"Agent Active Min", strconv.FormatInt(a.ActiveMin, 10)},
+		{"Agent Active Max", strconv.FormatInt(a.ActiveMax, 10)},
+		{"Agent Inactive Multiplier", strconv.FormatInt(a.InactiveMultiplier, 10)},
+		{"Agent Inactive Threshold", strconv.Itoa(a.InactiveThreshold)},
 		{"Agent Message Padding Max", strconv.Itoa(a.PaddingMax)},
 		{"Agent Max Retries", strconv.Itoa(a.MaxRetry)},
 		{"Agent Failed Check In", strconv.Itoa(a.FailedCheckin)},
@@ -629,6 +633,50 @@ func SecureDelete(agentID uuid.UUID, Args []string) messages.UserMessage {
 		return messages.ErrorMessage(err.Error())
 	}
 	return messages.JobMessage(agentID, job)
+}
+
+// SetInactiveMultiplier configures how much the agent will slow down once the InactiveThreshold is met
+// Args[0] = "inactivemultiplier"
+// Args[1] = int64
+func SetInactiveMultiplier(agentID uuid.UUID, Args []string) messages.UserMessage {
+	if len(Args) == 2 {
+		NewInactiveMultiplier, err := strconv.ParseInt(Args[1], 10, 64)
+		if err != nil {
+			return messages.ErrorMessage(err.Error())
+		}
+		if NewInactiveMultiplier > 0 {
+			job, err2 := jobs.Add(agentID, "inactivemultiplier", Args)
+			if err2 != nil {
+				return messages.ErrorMessage(err2.Error())
+			}
+			return messages.JobMessage(agentID, job)
+		}
+		return messages.ErrorMessage(fmt.Sprintf("InactiveMultiplier value must be greater than zero: %s", Args))
+	} else {
+		return messages.ErrorMessage(fmt.Sprintf("Incorrect number of arguments provided for the Agent SetInactiveMultiplier call: %s", Args))
+	}
+}
+
+// SetInactiveThreshold configures how many check ins with no queued commands will make the agent go inactive
+// Args[0] = "inactivethreshold"
+// Args[1] = int
+func SetInactiveThreshold(agentID uuid.UUID, Args []string) messages.UserMessage {
+	if len(Args) == 2 {
+		NewInactiveThreshold, err := strconv.Atoi(Args[1])
+		if err != nil {
+			return messages.ErrorMessage(err.Error())
+		}
+		if NewInactiveThreshold > 0 {
+			job, err2 := jobs.Add(agentID, "inactivethreshold", Args)
+			if err2 != nil {
+				return messages.ErrorMessage(err2.Error())
+			}
+			return messages.JobMessage(agentID, job)
+		}
+		return messages.ErrorMessage(fmt.Sprintf("InactiveThreshold value must be greater than zero: %s", Args))
+	} else {
+		return messages.ErrorMessage(fmt.Sprintf("Incorrect number of arguments provided for the Agent SetInactiveThreshold call: %s", Args))
+	}
 }
 
 // SetJA3 is used to change the Agent's JA3 signature

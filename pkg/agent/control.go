@@ -59,7 +59,7 @@ func (a *Agent) control(job jobs.Job) {
 
 		if tmin > 0 {
 			a.WaitTimeMin = tmin
-			//a.ActiveMin = tmin //coming soon
+			a.ActiveMin = tmin
 		} else {
 			results.Stderr = fmt.Sprintf("The agent was provided with a WaitTimeMin that was not greater than zero:\r\n%s", strconv.FormatInt(tmin, 10))
 			break
@@ -67,11 +67,25 @@ func (a *Agent) control(job jobs.Job) {
 
 		if tmax > 0 {
 			a.WaitTimeMax = tmax
-			//a.ActiveMax = tmax //coming soon
+			a.ActiveMax = tmax
 		} else {
 			results.Stderr = fmt.Sprintf("The agent was provided with a WaitTimeMax that was not greater than zero:\r\n%s", strconv.FormatInt(tmax, 10))
 			break
 		}
+	case "inactivemultiplier":
+		t, err := strconv.ParseInt(cmd.Args[0], 10, 64)
+		if err != nil {
+			results.Stderr = fmt.Sprintf("There was an error changing the agent inactive multiplier:\r\n%s", err.Error())
+			break
+		}
+		a.InactiveMultiplier = t
+	case "inactivethreshold":
+		t, err := strconv.Atoi(cmd.Args[0])
+		if err != nil {
+			results.Stderr = fmt.Sprintf("There was an error changing the agent inactive threshold:\r\n%s", err.Error())
+			break
+		}
+		a.InactiveThreshold = t
 	case "padding":
 		err := a.Client.Set("paddingmax", cmd.Args[0])
 		if err != nil {
@@ -155,17 +169,22 @@ func (a *Agent) getAgentInfoMessage() messages.AgentInfo {
 
 	padding, _ := strconv.Atoi(a.Client.Get("paddingmax"))
 	agentInfoMessage := messages.AgentInfo{
-		Version:       merlin.Version,
-		Build:         build,
-		WaitTimeMin:   a.WaitTimeMin,
-		WaitTimeMax:   a.WaitTimeMax,
-		PaddingMax:    padding,
-		MaxRetry:      a.MaxRetry,
-		FailedCheckin: a.FailedCheckin,
-		Proto:         a.Client.Get("protocol"),
-		SysInfo:       sysInfoMessage,
-		KillDate:      a.KillDate,
-		JA3:           a.Client.Get("ja3"),
+		Version:            merlin.Version,
+		Build:              build,
+		WaitTimeMin:        a.WaitTimeMin,
+		WaitTimeMax:        a.WaitTimeMax,
+		ActiveMin:          a.ActiveMin,
+		ActiveMax:          a.ActiveMax,
+		InactiveCount:      a.InactiveCount,
+		InactiveMultiplier: a.InactiveMultiplier,
+		InactiveThreshold:  a.InactiveThreshold,
+		PaddingMax:         padding,
+		MaxRetry:           a.MaxRetry,
+		FailedCheckin:      a.FailedCheckin,
+		Proto:              a.Client.Get("protocol"),
+		SysInfo:            sysInfoMessage,
+		KillDate:           a.KillDate,
+		JA3:                a.Client.Get("ja3"),
 	}
 	cli.Message(cli.DEBUG, fmt.Sprintf("Returning AgentInfo message:\r\n%+v", agentInfoMessage))
 	return agentInfoMessage

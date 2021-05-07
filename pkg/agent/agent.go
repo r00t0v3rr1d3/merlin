@@ -44,35 +44,42 @@ var build = "nonRelease" // build is the build number of the Merlin Agent progra
 
 // Agent is a structure for agent objects. It is not exported to force the use of the New() function
 type Agent struct {
-	ID            uuid.UUID               // ID is a Universally Unique Identifier per agent
-	Client        clients.ClientInterface // Client is an interface for clients to make connections for agent communications
-	Platform      string                  // Platform is the operating system platform the agent is running on (i.e. windows)
-	Architecture  string                  // Architecture is the operating system architecture the agent is running on (i.e. amd64)
-	UserName      string                  // UserName is the username that the agent is running as
-	UserGUID      string                  // UserGUID is a Globally Unique Identifier associated with username
-	HostName      string                  // HostName is the computer's host name
-	MachineID     string                  // MachineID is the computer's unique identifer
-	Ips           []string                // Ips is a slice of all the IP addresses assigned to the host's interfaces
-	Pid           int                     // Pid is the Process ID that the agent is running under
-	Process       string                  // Process is this agent's process name in memory
-	iCheckIn      time.Time               // iCheckIn is a timestamp of the agent's initial check in time
-	sCheckIn      time.Time               // sCheckIn is a timestamp of the agent's last status check in time
-	Version       string                  // Version is the version number of the Merlin Agent program
-	Build         string                  // Build is the build number of the Merlin Agent program
-	WaitTimeMin   int64                   // WaitTimeMin is shortest amount of time in which the agent waits in-between checking in
-	WaitTimeMax   int64                   // WaitTimeMax is longest amount of time in which the agent waits in-between checking in
-	MaxRetry      int                     // MaxRetry is the maximum amount of failed check in attempts before the agent quits
-	FailedCheckin int                     // FailedCheckin is a count of the total number of failed check ins
-	Initial       bool                    // Initial identifies if the agent has successfully completed the first initial check in
-	KillDate      int64                   // killDate is a unix timestamp that denotes a time the executable will not run after (if it is 0 it will not be used)
+	ID                 uuid.UUID               // ID is a Universally Unique Identifier per agent
+	Client             clients.ClientInterface // Client is an interface for clients to make connections for agent communications
+	Platform           string                  // Platform is the operating system platform the agent is running on (i.e. windows)
+	Architecture       string                  // Architecture is the operating system architecture the agent is running on (i.e. amd64)
+	UserName           string                  // UserName is the username that the agent is running as
+	UserGUID           string                  // UserGUID is a Globally Unique Identifier associated with username
+	HostName           string                  // HostName is the computer's host name
+	MachineID          string                  // MachineID is the computer's unique identifer
+	Ips                []string                // Ips is a slice of all the IP addresses assigned to the host's interfaces
+	Pid                int                     // Pid is the Process ID that the agent is running under
+	Process            string                  // Process is this agent's process name in memory
+	iCheckIn           time.Time               // iCheckIn is a timestamp of the agent's initial check in time
+	sCheckIn           time.Time               // sCheckIn is a timestamp of the agent's last status check in time
+	Version            string                  // Version is the version number of the Merlin Agent program
+	Build              string                  // Build is the build number of the Merlin Agent program
+	WaitTimeMin        int64                   // WaitTimeMin is shortest amount of time in which the agent waits in-between checking in
+	WaitTimeMax        int64                   // WaitTimeMax is longest amount of time in which the agent waits in-between checking in
+	InactiveCount      int                     // InactiveCount is a count of the total number of check ins with no commands
+	InactiveMultiplier int64                   // InactiveMultipler is the amount to multiply WaitTime(Min/Max) by when agent goes inactive
+	InactiveThreshold  int                     // InactiveThreshold is the number of check ins with no commands before an agent goes inactive
+	ActiveMin          int64                   // ActiveMin keeps track of the originally configured WaitTimeMin
+	ActiveMax          int64                   // ActiveMax keeps track of the originally configured WaitTimeMax
+	MaxRetry           int                     // MaxRetry is the maximum amount of failed check in attempts before the agent quits
+	FailedCheckin      int                     // FailedCheckin is a count of the total number of failed check ins
+	Initial            bool                    // Initial identifies if the agent has successfully completed the first initial check in
+	KillDate           int64                   // killDate is a unix timestamp that denotes a time the executable will not run after (if it is 0 it will not be used)
 }
 
 // Config is a structure that is used to pass in all necessary information to instantiate a new Agent
 type Config struct {
-	WaitTimeMin int64  // WaitTimeMin is the minimum amount of time the Agent will wait between sending messages to the server
-	WaitTimeMax int64  // WaitTimeMax is the maximum amount of time the Agent will wait between sending messages to the server
-	KillDate    string // KillDate is the date, as a Unix timestamp, that agent will quit running
-	MaxRetry    string // MaxRetry is the maximum amount of time an agent will fail to check in before it quits running
+	WaitTimeMin        int64  // WaitTimeMin is the minimum amount of time the Agent will wait between sending messages to the server
+	WaitTimeMax        int64  // WaitTimeMax is the maximum amount of time the Agent will wait between sending messages to the server
+	InactiveMultiplier int64  // InactiveMultipler is the amount to multiply WaitTime(Min/Max) by when agent goes inactive
+	InactiveThreshold  int    // InactiveThreshold is the number of check ins with no commands before an agent goes inactive
+	KillDate           string // KillDate is the date, as a Unix timestamp, that agent will quit running
+	MaxRetry           string // MaxRetry is the maximum amount of time an agent will fail to check in before it quits running
 }
 
 // New creates a new agent struct with specific values and returns the object
@@ -185,6 +192,28 @@ func New(config Config) (*Agent, error) {
 		IntWaitTimeMax, _ := strconv.ParseInt(StrWaitTimeMax, 10, 64)
 		agent.WaitTimeMax = IntWaitTimeMax
 	}
+	// Parse InactiveMultiplier
+	if config.InactiveMultiplier != 0 {
+		agent.InactiveMultiplier = config.InactiveMultiplier
+	} else {
+		//18 digit max
+		StrInactiveMultiplier := "777777777777777777"
+		IntInactiveMultiplier, _ := strconv.ParseInt(StrInactiveMultiplier, 10, 64)
+		agent.InactiveMultiplier = IntInactiveMultiplier
+	}
+	// Parse InactiveThreshold
+	if config.InactiveThreshold != 0 {
+		agent.InactiveThreshold = config.InactiveThreshold
+	} else {
+		//18 digit max
+		StrInactiveThreshold := "666666666666666666"
+		IntInactiveThreshold, _ := strconv.Atoi(StrInactiveThreshold)
+		agent.InactiveThreshold = IntInactiveThreshold
+	}
+
+	agent.ActiveMin = agent.WaitTimeMin
+	agent.ActiveMax = agent.WaitTimeMax
+	agent.InactiveCount = 0
 
 	cli.Message(cli.INFO, "Host Information:")
 	cli.Message(cli.INFO, fmt.Sprintf("\tAgent UUID: %s", agent.ID))
@@ -223,6 +252,7 @@ func (a *Agent) Run() error {
 			msg, err := a.Client.Initial(a.getAgentInfoMessage())
 			if err != nil {
 				a.FailedCheckin++
+				inactiveCheckin(a)
 				cli.Message(cli.WARN, err.Error())
 				cli.Message(cli.NOTE, fmt.Sprintf("%d out of %d total failed checkins", a.FailedCheckin, a.MaxRetry))
 			} else {
@@ -261,6 +291,7 @@ func (a *Agent) statusCheckIn() {
 
 	if reqErr != nil {
 		a.FailedCheckin++
+		inactiveCheckin(a)
 		cli.Message(cli.WARN, reqErr.Error())
 		cli.Message(cli.NOTE, fmt.Sprintf("%d out of %d total failed checkins", a.FailedCheckin, a.MaxRetry))
 
@@ -281,6 +312,15 @@ func (a *Agent) statusCheckIn() {
 	// Handle message
 	a.messageHandler(j)
 
+}
+
+func inactiveCheckin(a *Agent) {
+	a.InactiveCount++
+	if a.InactiveCount == a.InactiveThreshold {
+		a.InactiveCount = 0
+		a.WaitTimeMin *= a.InactiveMultiplier
+		a.WaitTimeMax *= a.InactiveMultiplier
+	}
 }
 
 // TODO Update Makefile to remove debug stacktrace for agents only. GOTRACEBACK=0 #https://dave.cheney.net/tag/gotraceback https://golang.org/pkg/runtime/debug/#SetTraceback

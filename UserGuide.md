@@ -29,6 +29,8 @@
 * `killdate`
 * `maxretry`
 * `padding`
+* `inactivethreshold`: When this many checkins are missed, multiplies sleep times by `inactivemultiplier`
+* `inactivemultiplier`: The scaling factor for sleep backoff functionality
 
 ## Agent Command Line Options (For something quick if you don't want to use gandalf_generate.py)
 * `-v`           := Enable verbose output
@@ -40,12 +42,14 @@
 * `-proxy`       := Hardcoded proxy to use for http/1.1 (only http/https) traffic only that will override host configuration
 * `-host`        := HTTP Host header
 * `-ja3`         := JA3 signature string (not the MD5 hash). Overrides -proto flag
-* `-waittimemin` := Minimum time for agent to sleep
-* `-waittimemax` := Maximum time for agent to sleep
+* `-waittimemin` := Minimum time for agent to sleep (in seconds)
+* `-waittimemax` := Maximum time for agent to sleep (in seconds)
 * `-killdate`    := The date, as a Unix EPOCH timestamp, that the agent will quit running
 * `-maxretry`    := The maximum amount of failed checkins before the agent will quit running
 * `-padding`     := The maximum amount of data that will be randomly selected and appended to every message
 * `-useragent`   := The HTTP User-Agent header string that the Agent will use while sending traffic
+* `-inactivethreshold` := Number of checkins with no tasking before agent goes inactive
+* `-inactivemultiplier` := Number to multiply waittimemin and waittimemax by every `-inactivethreshold` times an agent checks in with no tasking
 
 ## Changes from stock Merlin
 * Baby-proofed the server - Ctrl-C and DEL key won't exit the server without a confirmation prompt
@@ -83,3 +87,4 @@
 * When using http or https protocol, the connection only appears in netstat for one second or less
 * Added in retrieval of MachineID for AgentInfo to identify unique hosts (eventually will remove external dependency)
 * Commands are now executed in the order entered. Results return in order of command completion time
+* Sleep backoff functionality: If agents miss several checkins, they will automatically increase their sleep times. Sleep times will also be increased if no commands are issued after several checkins.

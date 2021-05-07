@@ -56,34 +56,39 @@ func init() {
 
 // Agent is a server side structure that holds information about a Merlin Agent
 type Agent struct {
-	ID             uuid.UUID
-	Platform       string
-	Architecture   string
-	UserName       string
-	UserGUID       string
-	HostName       string
-	MachineID      string
-	Ips            []string
-	Pid            int
-	Process        string
-	agentLog       *os.File
-	InitialCheckIn time.Time
-	StatusCheckIn  time.Time
-	Version        string
-	Build          string
-	WaitTimeMin    int64
-	WaitTimeMax    int64
-	PaddingMax     int
-	MaxRetry       int
-	FailedCheckin  int
-	Proto          string
-	KillDate       int64
-	RSAKeys        *rsa.PrivateKey // RSA Private/Public key pair; Private key used to decrypt messages
-	PublicKey      rsa.PublicKey   // Public key used to encrypt messages
-	Secret         []byte          // secret is used to perform symmetric encryption operations
-	OPAQUE         *opaque.Server  // Holds information about OPAQUE Registration and Authentication
-	JA3            string          // The JA3 signature applied to the agent's TLS client
-	Note           string          //Notes are only stored server-side
+	ID                 uuid.UUID
+	Platform           string
+	Architecture       string
+	UserName           string
+	UserGUID           string
+	HostName           string
+	MachineID          string
+	Ips                []string
+	Pid                int
+	Process            string
+	agentLog           *os.File
+	InitialCheckIn     time.Time
+	StatusCheckIn      time.Time
+	Version            string
+	Build              string
+	WaitTimeMin        int64
+	WaitTimeMax        int64
+	ActiveMin          int64
+	ActiveMax          int64
+	InactiveCount      int
+	InactiveMultiplier int64
+	InactiveThreshold  int
+	PaddingMax         int
+	MaxRetry           int
+	FailedCheckin      int
+	Proto              string
+	KillDate           int64
+	RSAKeys            *rsa.PrivateKey // RSA Private/Public key pair; Private key used to decrypt messages
+	PublicKey          rsa.PublicKey   // Public key used to encrypt messages
+	Secret             []byte          // secret is used to perform symmetric encryption operations
+	OPAQUE             *opaque.Server  // Holds information about OPAQUE Registration and Authentication
+	JA3                string          // The JA3 signature applied to the agent's TLS client
+	Note               string          //Notes are only stored server-side
 }
 
 // KeyExchange is used to exchange public keys between the server and agent
@@ -169,6 +174,10 @@ func (a *Agent) UpdateInfo(info messages.AgentInfo) {
 		message("debug", fmt.Sprintf("Agent Build: %s", info.Build))
 		message("debug", fmt.Sprintf("Agent WaitTimeMin: %d", info.WaitTimeMin))
 		message("debug", fmt.Sprintf("Agent WaitTimeMax: %d", info.WaitTimeMax))
+		message("debug", fmt.Sprintf("Agent ActiveMin: %d", info.ActiveMin))
+		message("debug", fmt.Sprintf("Agent ActiveMax: %d", info.ActiveMax))
+		message("debug", fmt.Sprintf("Agent InactiveMultiplier: %d", info.InactiveMultiplier))
+		message("debug", fmt.Sprintf("Agent InactiveThreshold: %d", info.InactiveThreshold))
 		message("debug", fmt.Sprintf("Agent paddingMax: %d", info.PaddingMax))
 		message("debug", fmt.Sprintf("Agent maxRetry: %d", info.MaxRetry))
 		message("debug", fmt.Sprintf("Agent failedCheckin: %d", info.FailedCheckin))
@@ -179,8 +188,12 @@ func (a *Agent) UpdateInfo(info messages.AgentInfo) {
 	a.Log("Processing AgentInfo message:")
 	a.Log(fmt.Sprintf("\tAgent Version: %s ", info.Version))
 	a.Log(fmt.Sprintf("\tAgent Build: %s ", info.Build))
-	a.Log(fmt.Sprintf("\tAgent WaitTimeMin: %s ", info.WaitTimeMin))
-	a.Log(fmt.Sprintf("\tAgent WaitTimeMax: %s ", info.WaitTimeMax))
+	a.Log(fmt.Sprintf("\tAgent WaitTimeMin: %d ", info.WaitTimeMin))
+	a.Log(fmt.Sprintf("\tAgent WaitTimeMax: %d ", info.WaitTimeMax))
+	a.Log(fmt.Sprintf("\tAgent ActiveMin: %d ", info.ActiveMin))
+	a.Log(fmt.Sprintf("\tAgent ActiveMax: %d ", info.ActiveMax))
+	a.Log(fmt.Sprintf("\tAgent InactiveMultiplier: %d ", info.InactiveMultiplier))
+	a.Log(fmt.Sprintf("\tAgent InactiveThreshold: %d ", info.InactiveThreshold))
 	a.Log(fmt.Sprintf("\tAgent paddingMax: %d ", info.PaddingMax))
 	a.Log(fmt.Sprintf("\tAgent maxRetry: %d ", info.MaxRetry))
 	a.Log(fmt.Sprintf("\tAgent failedCheckin: %d ", info.FailedCheckin))
@@ -192,6 +205,11 @@ func (a *Agent) UpdateInfo(info messages.AgentInfo) {
 	a.Build = info.Build
 	a.WaitTimeMin = info.WaitTimeMin
 	a.WaitTimeMax = info.WaitTimeMax
+	a.ActiveMin = info.ActiveMin
+	a.ActiveMax = info.ActiveMax
+	a.InactiveCount = info.InactiveCount
+	a.InactiveMultiplier = info.InactiveMultiplier
+	a.InactiveThreshold = info.InactiveThreshold
 	a.PaddingMax = info.PaddingMax
 	a.MaxRetry = info.MaxRetry
 	a.FailedCheckin = info.FailedCheckin
@@ -274,6 +292,14 @@ func GetAgentFieldValue(agentID uuid.UUID, field string) (string, error) {
 			return strconv.FormatInt(Agents[agentID].WaitTimeMin, 10), nil
 		case "waittimemax":
 			return strconv.FormatInt(Agents[agentID].WaitTimeMax, 10), nil
+		case "activemin":
+			return strconv.FormatInt(Agents[agentID].ActiveMin, 10), nil
+		case "activemax":
+			return strconv.FormatInt(Agents[agentID].ActiveMax, 10), nil
+		case "inactivemultiplier":
+			return strconv.FormatInt(Agents[agentID].InactiveMultiplier, 10), nil
+		case "inactivethreshold":
+			return strconv.FormatInt(int64(Agents[agentID].InactiveThreshold), 10), nil
 		}
 		return "", fmt.Errorf("the provided agent field could not be found: %s", field)
 	}

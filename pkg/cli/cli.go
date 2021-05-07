@@ -557,9 +557,9 @@ func handleAgentShell(curAgent uuid.UUID, cmd []string) {
 	case "ifconfig", "ipconfig":
 		MessageChannel <- agentAPI.Ipconfig(curAgent, cmd)
 	case "inactivemultiplier":
-		//MessageChannel <- agentAPI.SetInactiveMultiplier(curAgent, cmd)
+		MessageChannel <- agentAPI.SetInactiveMultiplier(curAgent, cmd)
 	case "inactivethreshold":
-		//MessageChannel <- agentAPI.SetInactiveThreshold(curAgent, cmd)
+		MessageChannel <- agentAPI.SetInactiveThreshold(curAgent, cmd)
 	case "info":
 		rows, message := agentAPI.GetAgentInfo(curAgent)
 		if message.Error {
