@@ -26,7 +26,7 @@ require (
 	github.com/gophish/gophish v0.11.0 // indirect
 	github.com/kardianos/govendor v1.0.9 // indirect
 	github.com/lib/pq v1.8.0 // indirect
-	github.com/lucas-clemente/quic-go v0.17.3
+	github.com/lucas-clemente/quic-go v0.18.0
 	github.com/marten-seemann/qtls v0.10.0 // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect
@@ -46,7 +46,7 @@ require (
 	golang.org/x/net v0.0.0-20201021035429-f5854403a974
 	golang.org/x/net/http2/h2demo v0.0.0-20200904194848-62affa334b73 // indirect
 	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
-	golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f
+	golang.org/x/sys v0.0.0-20201231184435-2d18734c6014
 	golang.org/x/tools v0.0.0-20210114065538-d78b04bdf963 // indirect
 	golang.org/x/tools/gopls v0.5.0 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect

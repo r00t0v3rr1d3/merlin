@@ -19,11 +19,11 @@ package pwnboard
 
 import (
 	"bytes"
-	"fmt"
-	"time"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	// Merlin
 	"github.com/Ne0nd0g/merlin/pkg/api/agents"
@@ -41,9 +41,9 @@ type pwnBoard struct {
 func updatepwnBoard(pwnboardURL string, ip string) {
 	//logging.Server("[*] PwnBoard Data starting")
 	url := "http://127.0.0.1/generic"
-	if strings.Contains(pwnboardURL, "http"){
+	if strings.Contains(pwnboardURL, "http") {
 		url = fmt.Sprintf("%s/generic", pwnboardURL)
-	}else{
+	} else {
 		url = fmt.Sprintf("http://%s/generic", pwnboardURL)
 	}
 
@@ -84,19 +84,19 @@ func Updateserver(pwnboardURL string) {
 		for _, v := range agents.GetAgents() {
 			// If the agent is not dead we'll tell pwnboard
 			status, _ := agents.GetAgentStatus(v)
-			if status != "Dead"{
+			if status != "Dead" {
 				info, _ := agents.GetAgentInfo(v)
-				if len(info) >=8{
+				if len(info) >= 8 {
 					// Iterate over the data section looking for the IP field
-					for _, data := range info{
-						if data[0] == "IP"{
+					for _, data := range info {
+						if data[0] == "IP" {
 							// Perform string parsing on info [127.0.0.1/8 10.1.30.2/24 172.16.2.9/24] -> "127.0.0.1/8", "10.1.30.2/24", "172.16.2.9/24"
 							for _, ip := range strings.Split(data[1], "\n") {
 								// Remove subnet substring
 								uniqueIP := strings.Split(ip, "/")[0]
 								// If the IP is not localhost send it to pwnboard
 								// This will catch a lot of non-existnet IPs but pwnboard will only care about the ones it's aware of.
-								if uniqueIP != "127.0.0.1"{
+								if uniqueIP != "127.0.0.1" {
 									updatepwnBoard(pwnboardURL, uniqueIP)
 								}
 							}
@@ -108,4 +108,3 @@ func Updateserver(pwnboardURL string) {
 		time.Sleep(4 * time.Minute)
 	}
 }
-
