@@ -45,7 +45,14 @@ func (a *Agent) messageHandler(m messages.Base) {
 		if a.WaitTimeMin != a.ActiveMin {
 			a.WaitTimeMin = a.ActiveMin
 			a.WaitTimeMax = a.ActiveMax
-			//a.sendMessage("POST", a.getAgentInfoMessage())
+
+			// Send unprompted agentInfo command to update the sleep time
+			aInfo := jobs.Job{
+				AgentID: a.ID,
+				Type:    jobs.AGENTINFO,
+			}
+			aInfo.Payload = a.getAgentInfoMessage()
+			jobsOut <- aInfo
 		}
 	case messages.IDLE:
 		cli.Message(cli.NOTE, "Received idle command, doing nothing")
@@ -54,7 +61,14 @@ func (a *Agent) messageHandler(m messages.Base) {
 			a.InactiveCount = 0
 			a.WaitTimeMin *= a.InactiveMultiplier
 			a.WaitTimeMax *= a.InactiveMultiplier
-			//a.sendMessage("POST", a.getAgentInfoMessage())
+
+			// Send unprompted agentInfo command to update the sleep time
+			aInfo := jobs.Job{
+				AgentID: a.ID,
+				Type:    jobs.AGENTINFO,
+			}
+			aInfo.Payload = a.getAgentInfoMessage()
+			jobsOut <- aInfo
 		}
 	case messages.OPAQUE:
 		if m.Payload.(opaque.Opaque).Type == opaque.ReAuthenticate {
@@ -80,7 +94,14 @@ func (a *Agent) messageHandler(m messages.Base) {
 						a.WaitTimeMin *= a.InactiveMultiplier
 						a.WaitTimeMax *= a.InactiveMultiplier
 					}
-					//a.sendMessage("POST", a.getAgentInfoMessage())
+					// Send unprompted agentInfo command to update the sleep time
+					aInfo := jobs.Job{
+						AgentID: a.ID,
+						Type:    jobs.AGENTINFO,
+					}
+					aInfo.Payload = a.getAgentInfoMessage()
+					jobsOut <- aInfo
+
 				}
 				result.Stderr = err.Error()
 				jobsOut <- jobs.Job{

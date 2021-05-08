@@ -713,10 +713,10 @@ func checkJob(job merlinJob.Job) error {
 		return fmt.Errorf("job %s was for an invalid agent %s", job.ID, job.AgentID)
 	}
 	j, k := Jobs[job.ID]
-	if !k {
+	if job.Type != merlinJob.AGENTINFO && !k {
 		return fmt.Errorf("job %s was not found for agent %s", job.ID, job.AgentID)
 	}
-	if job.Token != j.Token {
+	if job.Type != merlinJob.AGENTINFO && job.Token != j.Token {
 		return fmt.Errorf("job %s for agent %s did not contain the correct token.\r\nExpected: %s, Got: %s", job.ID, job.AgentID, j.Token, job.Token)
 	}
 	if j.Status == merlinJob.COMPLETE {
