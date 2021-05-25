@@ -36,7 +36,7 @@ import (
 var url = ""
 var urls []string
 var protocol = ""
-var build = "nonRelease"
+var build = "Release"
 var psk = ""
 var proxy = ""
 var host = ""
@@ -50,9 +50,10 @@ var killdate = ""
 var maxretry = ""
 var padding = ""
 var opaque []byte
+var covertconfig = ""
 
 func main() {
-	verbose := flag.Bool("v", false, "Enable verbose output")
+	verbose := flag.Bool("dbg", false, "Enable verbose output")
 	version := flag.Bool("version", false, "Print the agent version and exit")
 	debug := flag.Bool("debug", false, "Enable debug output")
 	flag.StringVar(&url, "url", url, "Full URL for agent to connect to")
@@ -69,6 +70,7 @@ func main() {
 	flag.StringVar(&maxretry, "maxretry", maxretry, "The maximum amount of failed checkins before the agent will quit running")
 	flag.StringVar(&padding, "padding", padding, "The maximum amount of data that will be randomly selected and appended to every message")
 	flag.StringVar(&useragent, "useragent", useragent, "The HTTP User-Agent header string that the Agent will use while sending traffic")
+	flag.StringVar(&covertconfig, "covertconfig", covertconfig, "The path to the covert config file on disk")
 
 	flag.Usage = usage
 	flag.Parse()
@@ -90,6 +92,7 @@ func main() {
 		InactiveThreshold:  inactivethreshold,
 		KillDate:           killdate,
 		MaxRetry:           maxretry,
+		CovertConfig:       covertconfig,
 	}
 	a, err := agent.New(agentConfig)
 	if err != nil {

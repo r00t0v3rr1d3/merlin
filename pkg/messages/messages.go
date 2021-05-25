@@ -100,6 +100,7 @@ type AgentInfo struct {
 	SysInfo            SysInfo `json:"sysinfo,omitempty"`
 	KillDate           int64   `json:"killdate,omitempty"`
 	JA3                string  `json:"ja3,omitempty"`
+	CovertConfig       string  `json:"covertconfig,omitempty"`
 }
 
 // String returns the text representation of a message constant

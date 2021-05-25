@@ -19,9 +19,11 @@
     * Usage: `touch <source_file> <destination_file>`
 * `ps`: Process listing for Windows agents
 * `netstat`: Display network connection for Windows agents (tcp, tcp6, udp, udp6)
-    * Usage `netstat [-p tcp|udp]
+    * Usage `netstat [-p tcp|udp]`
 * `pipes`: List Windows named pipes
 * `uptime`: Print the target system's uptime for Windows agents
+* `hibernate`: A one-off immediate sleep in seconds that will survive agent restart
+    * Usage `hibernate 86400`
 
 ## Configurable settings
 * `sleep` has been modified. Just `sleep 30 60` instead of `set sleep 30s` and `set skew 30000`. In seconds.
@@ -66,6 +68,7 @@
 * Renamed `kill` to `exit`
 * A sweet banner
 * Removed help menu from agent
+* Changed agent `-v` argument for verbose to `-dbg` to be less guessable
 * Changed listener default from 127.0.0.1 to 0.0.0.0
 * Changed agent `sleep` command and agent behavior
 * Updated `sessions` and agent `info` output for more useful information
@@ -88,3 +91,4 @@
 * Added in retrieval of MachineID for AgentInfo to identify unique hosts (eventually will remove external dependency)
 * Commands are now executed in the order entered. Results return in order of command completion time
 * Sleep backoff functionality: If agents miss several checkins, they will automatically increase their sleep times. Sleep times will also be increased if no commands are issued after several checkins.
+* Added `hibernate` command that allows you to sleep an agent for a one-off long period of time, such as between operational days. It utilizes a covert config file to keep track of the sleep amount, so even if the agent restarts due to system restart, new persistence kick-off, etc. - it will still sleep the specified time. Note: after a hibernation, the agent's inactive count will reset to 0 so it will take the full `-inactivethreshold` to begin going inactive again. Also note: if an agent is inactive and the `hibernate` command is issued, once hibernation is complete, the agent will return to the active sleep interval. Another note: the first time the covert config is created, it will attempt to touch itself to the same modified date / time as the agent - if some other time is desired, you will need to touch it once it exists.

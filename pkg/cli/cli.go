@@ -554,6 +554,8 @@ func handleAgentShell(curAgent uuid.UUID, cmd []string) {
 		}
 	case "help", "?":
 		menuHelpAgent(agents.Agents[curAgent].Platform)
+	case "hibernate":
+		MessageChannel <- agentAPI.Hibernate(curAgent, cmd)
 	case "ifconfig", "ipconfig":
 		MessageChannel <- agentAPI.Ipconfig(curAgent, cmd)
 	case "inactivemultiplier":
@@ -1235,6 +1237,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("exec"),
 		readline.PcItem("exit"),
 		readline.PcItem("help"),
+		readline.PcItem("hibernate"),
 		readline.PcItem("ifconfig"),
 		readline.PcItem("inactivemultiplier"),
 		readline.PcItem("inactivethreshold"),
@@ -1283,6 +1286,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		),
 		readline.PcItem("exit"),
 		readline.PcItem("help"),
+		readline.PcItem("hibernate"),
 		readline.PcItem("ifconfig"),
 		readline.PcItem("inactivemultiplier"),
 		readline.PcItem("inactivethreshold"),
@@ -1492,6 +1496,7 @@ func menuHelpAgent(platform string) {
 		{"exec", "Alias for run", "exec ping -c 3 8.8.8.8"},
 		{"exit", "Instruct the agent to die", ""},
 		{"help", "Display this message", ""},
+		{"hibernate", "One-off sleep in seconds. Persists across agent restart", "hibernate 86400"},
 		{"ifconfig", "Displays host network adapter information", ""},
 		{"inactivemultiplier", "Multiply sleep values by this number each time threshold is reached", "inactivemultiplier 10"},
 		{"inactivethreshold", "Go inactive if operator is idle for this many check ins", "inactivethreshold 3"},
@@ -1523,10 +1528,10 @@ func menuHelpAgent(platform string) {
 		data = append(data[:5], append([][]string{{"execute-assembly", "Execute a .NET 4.0 assembly", "execute-assembly <assembly path> [<assembly args>, <spawnto path>, <spawnto args>]"}}, data[5:]...)...)
 		data = append(data[:6], append([][]string{{"execute-pe", "Execute a Windows PE (EXE)", "execute-pe <pe path> [<pe args>, <spawnto path>, <spawnto args>]"}}, data[6:]...)...)
 		data = append(data[:7], append([][]string{{"execute-shellcode", "Execute shellcode", "self, remote <pid>, RtlCreateUserThread <pid>"}}, data[7:]...)...)
-		data = append(data[:22], append([][]string{{"netstat", "Display network connections", "netstat -p tcp"}}, data[22:]...)...)
-		data = append(data[:26], append([][]string{{"pipes", "List named pipes", ""}}, data[26:]...)...)
-		data = append(data[:27], append([][]string{{"ps", "Display running processes", ""}}, data[27:]...)...)
-		data = append(data[:38], append([][]string{{"uptime", "Print system uptime", ""}}, data[38:]...)...)
+		data = append(data[:23], append([][]string{{"netstat", "Display network connections", "netstat -p tcp"}}, data[23:]...)...)
+		data = append(data[:27], append([][]string{{"pipes", "List named pipes", ""}}, data[27:]...)...)
+		data = append(data[:28], append([][]string{{"ps", "Display running processes", ""}}, data[28:]...)...)
+		data = append(data[:39], append([][]string{{"uptime", "Print system uptime", ""}}, data[39:]...)...)
 	}
 
 	table.AppendBulk(data)

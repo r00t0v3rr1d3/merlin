@@ -26,4 +26,4 @@ var Verbose = false
 var Debug = false
 
 // Version is the Merlin Agent's version number
-var Version = "0.10.0-Beta"
+var Version = "1.0.0"

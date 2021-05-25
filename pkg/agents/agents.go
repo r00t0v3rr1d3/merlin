@@ -89,6 +89,7 @@ type Agent struct {
 	OPAQUE             *opaque.Server  // Holds information about OPAQUE Registration and Authentication
 	JA3                string          // The JA3 signature applied to the agent's TLS client
 	Note               string          //Notes are only stored server-side
+	CovertConfig       string
 }
 
 // KeyExchange is used to exchange public keys between the server and agent
@@ -184,6 +185,7 @@ func (a *Agent) UpdateInfo(info messages.AgentInfo) {
 		message("debug", fmt.Sprintf("Agent proto: %s", info.Proto))
 		message("debug", fmt.Sprintf("Agent killdate: %s", time.Unix(a.KillDate, 0).UTC().Format(time.RFC3339)))
 		message("debug", fmt.Sprintf("Agent JA3 signature: %s", info.JA3))
+		message("debug", fmt.Sprintf("Agent Covert Config: %s", info.CovertConfig))
 	}
 	a.Log("Processing AgentInfo message:")
 	a.Log(fmt.Sprintf("\tAgent Version: %s ", info.Version))
@@ -200,6 +202,7 @@ func (a *Agent) UpdateInfo(info messages.AgentInfo) {
 	a.Log(fmt.Sprintf("\tAgent proto: %s ", info.Proto))
 	a.Log(fmt.Sprintf("\tAgent KillDate: %s", time.Unix(a.KillDate, 0).UTC().Format(time.RFC3339)))
 	a.Log(fmt.Sprintf("\tAgent JA3 signature: %s", info.JA3))
+	a.Log(fmt.Sprintf("\tAgent Covert Config: %s", info.CovertConfig))
 
 	a.Version = info.Version
 	a.Build = info.Build
@@ -216,6 +219,7 @@ func (a *Agent) UpdateInfo(info messages.AgentInfo) {
 	a.Proto = info.Proto
 	a.KillDate = info.KillDate
 	a.JA3 = info.JA3
+	a.CovertConfig = info.CovertConfig
 
 	a.Architecture = info.SysInfo.Architecture
 	a.HostName = info.SysInfo.HostName

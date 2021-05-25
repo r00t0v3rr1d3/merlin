@@ -378,6 +378,7 @@ func GetAgentInfo(agentID uuid.UUID) ([][]string, messages.UserMessage) {
 		{"Machine ID", a.MachineID},
 		{"Process ID", strconv.Itoa(a.Pid)},
 		{"Process Name", procName},
+		{"Covert Config", a.CovertConfig},
 		{"Initial Check In", a.InitialCheckIn.Format(time.RFC3339)},
 		{"Last Check In", fmt.Sprintf("%s (%s)", a.StatusCheckIn.Format(time.RFC3339), lastCheckin(a.StatusCheckIn))},
 		{"", ""},
@@ -491,6 +492,18 @@ func GroupRemove(agentID uuid.UUID, groupName string) messages.UserMessage {
 		}
 	}
 	return messages.ErrorMessage(err.Error())
+}
+
+// Performs a one-off single sleep for the supplied amount in seconds
+func Hibernate(agentID uuid.UUID, Args []string) messages.UserMessage {
+	if len(Args) < 2 {
+		return messages.ErrorMessage("Not enough arguments. Amount of time in seconds not provided.")
+	}
+	job, err := jobs.Add(agentID, "hibernate", Args)
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
 }
 
 // Ipconfig lists the agent's network adapter information

@@ -20,6 +20,9 @@ package agent
 import (
 	// Standard
 	"fmt"
+	"io/ioutil"
+	"os"
+	"time"
 
 	// Internal
 	"github.com/Ne0nd0g/merlin/pkg/agent/cli"
@@ -41,8 +44,8 @@ func (a *Agent) messageHandler(m messages.Base) {
 	switch m.Type {
 	case messages.JOBS:
 		a.jobHandler(m.Payload.([]jobs.Job))
-		a.InactiveCount = 0
-		if a.WaitTimeMin != a.ActiveMin {
+		if (a.WaitTimeMin != a.ActiveMin) && (a.InactiveCount >= 0) {
+			a.InactiveCount = 0
 			a.WaitTimeMin = a.ActiveMin
 			a.WaitTimeMax = a.ActiveMax
 
@@ -53,9 +56,52 @@ func (a *Agent) messageHandler(m messages.Base) {
 			}
 			aInfo.Payload = a.getAgentInfoMessage()
 			jobsOut <- aInfo
+		} else if (a.InactiveCount == -1) && (a.WaitTimeMin != a.ActiveMin) {
+			a.InactiveCount = 0
+			a.WaitTimeMin = a.ActiveMin
+			a.WaitTimeMax = a.ActiveMax
+			// Get the file's touch time
+			origcovertconfigtimefile, err := os.Stat(a.CovertConfig)
+			var origcovertconfigtime time.Time
+			if err != nil {
+				origcovertconfigtime = time.Unix(0, 0)
+			} else {
+				origcovertconfigtime = origcovertconfigtimefile.ModTime()
+			}
+
+			err2 := ioutil.WriteFile(a.CovertConfig, []byte("0000000000"), 0755)
+			if err2 == nil {
+				// Touch it back
+				if origcovertconfigtime != time.Unix(0, 0) {
+					os.Chtimes(a.CovertConfig, origcovertconfigtime, origcovertconfigtime)
+				}
+			}
+		} else {
+			a.InactiveCount++
 		}
 	case messages.IDLE:
 		cli.Message(cli.NOTE, "Received idle command, doing nothing")
+		if (a.InactiveCount == -1) && (a.WaitTimeMin != a.ActiveMin) {
+			a.InactiveCount = 0
+			a.WaitTimeMin = a.ActiveMin
+			a.WaitTimeMax = a.ActiveMax
+			// Get the file's touch time
+			origcovertconfigtimefile, err := os.Stat(a.CovertConfig)
+			var origcovertconfigtime time.Time
+			if err != nil {
+				origcovertconfigtime = time.Unix(0, 0)
+			} else {
+				origcovertconfigtime = origcovertconfigtimefile.ModTime()
+			}
+
+			err2 := ioutil.WriteFile(a.CovertConfig, []byte("0000000000"), 0755)
+			if err2 == nil {
+				// Touch it back
+				if origcovertconfigtime != time.Unix(0, 0) {
+					os.Chtimes(a.CovertConfig, origcovertconfigtime, origcovertconfigtime)
+				}
+			}
+		}
 		a.InactiveCount++
 		if a.InactiveCount == a.InactiveThreshold {
 			a.InactiveCount = 0

@@ -8,6 +8,7 @@ DEFAULT_SLEEPMIN = "15"
 DEFAULT_SLEEPMAX = "30"
 DEFAULT_INACTIVEMULTIPLIER = "5"
 DEFAULT_INACTIVETHRESHOLD = "6"
+DEFAULT_COVERTCONFIG = "compatibility.ini"
 DEFAULT_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36"
 DEFAULT_MAXRETRY = "99999"
 DEFAULT_PADDING = "4096"
@@ -112,6 +113,14 @@ if (len(tempinactivethreshold) > 0):
    DEFAULT_INACTIVETHRESHOLD = tempinactivethreshold
 
 print "\nInactivity Threshold Selection: " + DEFAULT_INACTIVETHRESHOLD
+
+print "\nEnter Covert Config File Path (if full path is not given, it will be in the same location as the agent):\n"
+
+tempcovertconfig = raw_input('[' + DEFAULT_COVERTCONFIG + '] > ')
+if (len(tempcovertconfig) > 0):
+   DEFAULT_COVERTCONFIG = tempcovertconfig
+
+print "\nCovert Config Selection: " + DEFAULT_COVERTCONFIG
 
 print "\nEnter User Agent String:\n"
 
@@ -236,6 +245,16 @@ else:
 replacementthreshold = '0' * thresholddifference
 replacementthreshold += DEFAULT_INACTIVETHRESHOLD
 gandalfcontents = gandalfcontents.replace('6'*18, replacementthreshold)
+
+if (len(DEFAULT_COVERTCONFIG) < 200 ):
+    covertdifference = 200 - (len(DEFAULT_COVERTCONFIG))
+else:
+    print "Invalid input!"
+    raise SystemExit
+
+replacementcovert = ' ' * covertdifference
+replacementcovert += DEFAULT_COVERTCONFIG
+gandalfcontents = gandalfcontents.replace('S'*200, replacementcovert)
 
 replacementua = DEFAULT_UA
 if (len(replacementua) < 200 ):

