@@ -184,7 +184,7 @@ func Add(agentID uuid.UUID, jobType string, jobArgs []string) (string, error) {
 			Command: "kill",
 			Args:    jobArgs,
 		}
-		job.Payload = 
+		job.Payload = p
 	case "list-assemblies":
 		job.Type = merlinJob.MODULE
 		job.Payload = merlinJob.Command{
@@ -205,7 +205,7 @@ func Add(agentID uuid.UUID, jobType string, jobArgs []string) (string, error) {
 		if err != nil {
 			message("warn", fmt.Sprintf("there was an error generating a file hash:\n%s", err))
 		}
-		agent.Log(fmt.Sprintf("loading assembly from %s with a SHA256: %s to agent", jobArgs[0], fileHash.Sum(nil)))
+		//agent.Log(fmt.Sprintf("loading assembly from %s with a SHA256: %s to agent", jobArgs[0], fileHash.Sum(nil)))
 
 		name := filepath.Base(jobArgs[0])
 		if len(jobArgs) > 1 {
