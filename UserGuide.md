@@ -35,8 +35,7 @@
 * `inactivemultiplier`: The scaling factor for sleep backoff functionality
 
 ## Agent Command Line Options (For something quick if you don't want to use gandalf_generate.py)
-* `-v`           := Enable verbose output
-* `-version`     := Print the agent version and exit
+* `-dbg`         := Enable verbose output
 * `-debug`       := Enable debug output
 * `-url`         := Full URL for agent to connect to
 * `-psk`         := Pre-Shared Key used to encrypt initial communications
@@ -92,3 +91,6 @@
 * Commands are now executed in the order entered. Results return in order of command completion time
 * Sleep backoff functionality: If agents miss several checkins, they will automatically increase their sleep times. Sleep times will also be increased if no commands are issued after several checkins.
 * Added `hibernate` command that allows you to sleep an agent for a one-off long period of time, such as between operational days. It utilizes a covert config file to keep track of the sleep amount, so even if the agent restarts due to system restart, new persistence kick-off, etc. - it will still sleep the specified time. Note: after a hibernation, the agent's inactive count will reset to 0 so it will take the full `-inactivethreshold` to begin going inactive again. Also note: if an agent is inactive and the `hibernate` command is issued, once hibernation is complete, the agent will return to the active sleep interval. Another note: the first time the covert config is created, it will attempt to touch itself to the same modified date / time as the agent - if some other time is desired, you will need to touch it once it exists.
+* Note regarding shell: if you plan to pipe or redirect output to a file, you must put your entire command in quotes after the `shell` keyword:
+ -- shell "last | grep root"
+ -- shell "uptime > uptime.txt"
