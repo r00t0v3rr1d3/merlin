@@ -1540,10 +1540,10 @@ func menuHelpAgent(platform string) {
 	}
 
 	if platform == "windows" {
-		data = append(data[:5], append([][]string{{"execute-assembly", "Execute a .NET 4.0 assembly", "execute-assembly <assembly path> [<assembly args>, <spawnto path>, <spawnto args>]"}}, data[5:]...)...)
-		data = append(data[:6], append([][]string{{"execute-pe", "Execute a Windows PE (EXE)", "execute-pe <pe path> [<pe args>, <spawnto path>, <spawnto args>]"}}, data[6:]...)...)
+		data = append(data[:5], append([][]string{{"execute-assembly", "Execute a .NET 4.0 assembly", "execute-assembly <assembly path> [<assembly args> <spawnto path> <spawnto args>]"}}, data[5:]...)...)
+		data = append(data[:6], append([][]string{{"execute-pe", "Execute a Windows PE (EXE)", "execute-pe <pe path> [<pe args> <spawnto path> <spawnto args>]"}}, data[6:]...)...)
 		data = append(data[:7], append([][]string{{"execute-shellcode", "Execute shellcode", "self, remote <pid>, RtlCreateUserThread <pid>"}}, data[7:]...)...)
-		data = append(data[:16], append([][]string{{"invoke-assembly", "Invoke, or execute, a .NET assembly that was previously loaded into the agent's process", "<assembly name>, <assembly args>"}}, data[16:]...)...)
+		data = append(data[:16], append([][]string{{"invoke-assembly", "Invoke, or execute, a .NET assembly that was previously loaded into the agent's process", "<assembly name> <assembly args>"}}, data[16:]...)...)
 		data = append(data[:21], append([][]string{{"load-assembly", "Load a .NET assembly into the agent's process", "<assembly path> [<assembly name>]"}}, data[21:]...)...)
 		data = append(data[:22], append([][]string{{"list-assemblies", "List the .NET assemblies that are loaded into the agent's process", ""}}, data[22:]...)...)
 		//remove memfd from windows agent help menu
