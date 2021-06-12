@@ -107,6 +107,32 @@ func Download(agentID uuid.UUID, Args []string) messages.UserMessage {
 	return messages.ErrorMessage(fmt.Sprintf("not enough arguments provided for the Agent Download call: %s", Args))
 }
 
+// View or modify environment variables
+func ENV(agentID uuid.UUID, Args []string) messages.UserMessage {
+	if len(Args) < 2 {
+		return messages.ErrorMessage("Not enough arguments. An action must be provided.")
+	} else if len(Args) == 2 {
+		if Args[1] != "showall" {
+			return messages.ErrorMessage("Invalid arguments.")
+		}
+	} else if len(Args) == 3 {
+		if !(Args[1] == "get" || Args[1] == "unset") {
+			return messages.ErrorMessage("Invalid arguments.")
+		}
+	} else if len(Args) == 4 {
+		if Args[1] != "set" {
+			return messages.ErrorMessage("Invalid arguments.")
+		}
+	} else if len(Args) > 4 {
+		return messages.ErrorMessage("Invalid arguments.")
+	}
+	job, err := jobs.Add(agentID, "env", Args)
+	if err != nil {
+		return messages.ErrorMessage(err.Error())
+	}
+	return messages.JobMessage(agentID, job)
+}
+
 // ExecuteAssembly calls the donut module to create shellcode from a .NET 4.0 assembly and then uses the CreateProcess
 // module to create a job that executes the shellcode in a remote process
 func ExecuteAssembly(agentID uuid.UUID, Args []string) messages.UserMessage {

@@ -55,6 +55,8 @@ func Native(cmd jobs.Command) jobs.Results {
 				results.Stdout = fmt.Sprintf("Changed working directory to %s", path)
 			}
 		}
+	case "env":
+		results.Stdout, results.Stderr = env(cmd.Args)
 	case "kill":
 		targetpid, err := strconv.Atoi(cmd.Args[0])
 		if err != nil || targetpid < 0 {
@@ -104,6 +106,43 @@ func Native(cmd jobs.Command) jobs.Results {
 		cli.Message(cli.WARN, results.Stderr)
 	}
 	return results
+}
+
+func env(Args []string) (string, string) {
+	var resp string
+	var stderr string
+	if len(Args) == 2 {
+		if Args[1] == "showall" {
+			resp += "\n"
+			for _, element := range os.Environ() {
+				resp += element
+				resp += "\n"
+			}
+		} else {
+			stderr += fmt.Sprintf("Unknown action: %s", Args[1])
+		}
+	} else if len(Args) == 3 {
+		if Args[1] == "get" {
+			resp = Args[2] + "="
+			resp += os.Getenv(Args[2])
+		} else if Args[1] == "unset" {
+			os.Unsetenv(Args[2])
+			resp = fmt.Sprintf("Unset environment variable: %s", Args[2])
+		} else {
+			stderr += fmt.Sprintf("Invalid action: %s", Args[1])
+		}
+	} else if len(Args) == 4 {
+		if Args[1] == "set" {
+			os.Setenv(Args[2], Args[3])
+			resp = fmt.Sprintf("Setting environment variable: %s=%s", Args[2], Args[3])
+		} else {
+			stderr += fmt.Sprintf("Invalid action: %s", Args[1])
+		}
+	} else {
+		stderr += fmt.Sprintf("Invalid arguments")
+	}
+
+	return resp, stderr
 }
 
 // list gets and returns a list of files and directories from the input file path

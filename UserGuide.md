@@ -24,6 +24,11 @@
 * `uptime`: Print the target system's uptime for Windows agents
 * `hibernate`: A one-off immediate sleep in seconds that will survive agent restart
     * Usage `hibernate 86400`
+* `env` : View and modify environment variables. "set" will create a new variable if it didn't exist
+    * Usage: `env showall`
+    * Usage: `env get PATH`
+    * Usage: `env set CUSTOM "my desired value"`
+    * Usage: `env unset HISTFILE`
 
 ## Configurable settings
 * `sleep` has been modified. Just `sleep 30 60` instead of `set sleep 30s` and `set skew 30000`. In seconds.
@@ -60,6 +65,7 @@
 * Added `kill` command
 * Added `sdelete` command
 * Added `touch` command
+* Added `env` command
 * Added `ps` command for Windows agents
 * Added `netstat` command for Windows agents
 * Added `pipes` command for Windows agents

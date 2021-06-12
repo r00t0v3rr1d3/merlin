@@ -514,6 +514,8 @@ func handleAgentShell(curAgent uuid.UUID, cmd []string) {
 		MessageChannel <- agentAPI.CMD(curAgent, cmd)
 	case "download":
 		MessageChannel <- agentAPI.Download(curAgent, cmd)
+	case "env":
+		MessageChannel <- agentAPI.ENV(curAgent, cmd)
 	case "execute-assembly", "assembly":
 		go func() { MessageChannel <- agentAPI.ExecuteAssembly(curAgent, cmd) }()
 	case "execute-pe", "pe":
@@ -1244,6 +1246,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("cd"),
 		readline.PcItem("clear"),
 		readline.PcItem("download"),
+		readline.PcItem("env"),
 		readline.PcItem("exec"),
 		readline.PcItem("exit"),
 		readline.PcItem("help"),
@@ -1287,6 +1290,7 @@ func getCompleter(completer string) *readline.PrefixCompleter {
 		readline.PcItem("cd"),
 		readline.PcItem("clear"),
 		readline.PcItem("download"),
+		readline.PcItem("env"),
 		readline.PcItem("exec"),
 		readline.PcItem("execute-assembly"),
 		readline.PcItem("execute-pe"),
@@ -1507,6 +1511,7 @@ func menuHelpAgent(platform string) {
 		{"cd", "Change directories", "cd ../../ OR cd c:\\\\Users"},
 		{"clear", "Clear any UNSENT jobs from the queue", ""},
 		{"download", "Download a file from the agent", "download <remote_file>"},
+		{"env", "View and modify environment variables", "env <get | set | unset | showall> [variable] [value]"},
 		{"exec", "Alias for run", "exec ping -c 3 8.8.8.8"},
 		{"exit", "Instruct the agent to die", ""},
 		{"help", "Display this message", ""},
@@ -1540,18 +1545,18 @@ func menuHelpAgent(platform string) {
 	}
 
 	if platform == "windows" {
-		data = append(data[:5], append([][]string{{"execute-assembly", "Execute a .NET 4.0 assembly", "execute-assembly <assembly path> [<assembly args> <spawnto path> <spawnto args>]"}}, data[5:]...)...)
-		data = append(data[:6], append([][]string{{"execute-pe", "Execute a Windows PE (EXE)", "execute-pe <pe path> [<pe args> <spawnto path> <spawnto args>]"}}, data[6:]...)...)
-		data = append(data[:7], append([][]string{{"execute-shellcode", "Execute shellcode", "self, remote <pid>, RtlCreateUserThread <pid>"}}, data[7:]...)...)
-		data = append(data[:16], append([][]string{{"invoke-assembly", "Invoke, or execute, a .NET assembly that was previously loaded into the agent's process", "<assembly name> <assembly args>"}}, data[16:]...)...)
-		data = append(data[:21], append([][]string{{"load-assembly", "Load a .NET assembly into the agent's process", "<assembly path> [<assembly name>]"}}, data[21:]...)...)
-		data = append(data[:22], append([][]string{{"list-assemblies", "List the .NET assemblies that are loaded into the agent's process", ""}}, data[22:]...)...)
+		data = append(data[:6], append([][]string{{"execute-assembly", "Execute a .NET 4.0 assembly", "execute-assembly <assembly path> [<assembly args> <spawnto path> <spawnto args>]"}}, data[6:]...)...)
+		data = append(data[:7], append([][]string{{"execute-pe", "Execute a Windows PE (EXE)", "execute-pe <pe path> [<pe args> <spawnto path> <spawnto args>]"}}, data[7:]...)...)
+		data = append(data[:8], append([][]string{{"execute-shellcode", "Execute shellcode", "self, remote <pid>, RtlCreateUserThread <pid>"}}, data[8:]...)...)
+		data = append(data[:17], append([][]string{{"invoke-assembly", "Invoke, or execute, a .NET assembly that was previously loaded into the agent's process", "<assembly name> <assembly args>"}}, data[17:]...)...)
+		data = append(data[:22], append([][]string{{"load-assembly", "Load a .NET assembly into the agent's process", "<assembly path> [<assembly name>]"}}, data[22:]...)...)
+		data = append(data[:23], append([][]string{{"list-assemblies", "List the .NET assemblies that are loaded into the agent's process", ""}}, data[23:]...)...)
 		//remove memfd from windows agent help menu
-		data = append(data[:26], data[27:]...)
-		data = append(data[:26], append([][]string{{"netstat", "Display network connections", "netstat -p tcp"}}, data[26:]...)...)
-		data = append(data[:30], append([][]string{{"pipes", "List named pipes", ""}}, data[30:]...)...)
-		data = append(data[:31], append([][]string{{"ps", "Display running processes", ""}}, data[31:]...)...)
-		data = append(data[:42], append([][]string{{"uptime", "Print system uptime", ""}}, data[42:]...)...)
+		data = append(data[:27], data[28:]...)
+		data = append(data[:27], append([][]string{{"netstat", "Display network connections", "netstat -p tcp"}}, data[27:]...)...)
+		data = append(data[:31], append([][]string{{"pipes", "List named pipes", ""}}, data[31:]...)...)
+		data = append(data[:32], append([][]string{{"ps", "Display running processes", ""}}, data[32:]...)...)
+		data = append(data[:43], append([][]string{{"uptime", "Print system uptime", ""}}, data[43:]...)...)
 	}
 
 	table.AppendBulk(data)
