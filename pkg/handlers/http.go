@@ -210,7 +210,7 @@ func (ctx *HTTPContext) AgentHTTP(w http.ResponseWriter, r *http.Request) {
 
 				// Verify JWT ID matches Merlin message ID
 				if agentID != k.ID || k.ID == uuid.Nil {
-					message("warn", fmt.Sprintf("Recieved a message with JWT Agent ID of %s but a Merlin "+
+					message("warn", fmt.Sprintf("Received a message with JWT Agent ID of %s but a Merlin "+
 						"message ID of %s. Returning 404", agentID, k.ID))
 					w.WriteHeader(404)
 					return
@@ -335,7 +335,7 @@ func (ctx *HTTPContext) AgentHTTP(w http.ResponseWriter, r *http.Request) {
 
 			// Verify JWT ID matches Merlin message ID
 			if agentID != j.ID || j.ID == uuid.Nil {
-				message("warn", fmt.Sprintf("Recieved a message with JWT Agent ID of %s but a Merlin "+
+				message("warn", fmt.Sprintf("Received a message with JWT Agent ID of %s but a Merlin "+
 					"message ID of %s. Returning 404", agentID, j.ID))
 				w.WriteHeader(404)
 				return

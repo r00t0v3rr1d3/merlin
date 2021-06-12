@@ -100,7 +100,7 @@ func (client *Client) opaqueRegister() error {
 		}
 		// Verify the payload type is correct
 		if msg.Type != messages.OPAQUE {
-			return fmt.Errorf("expected message type %s, recieved type %s", messages.String(messages.OPAQUE), messages.String(msg.Type))
+			return fmt.Errorf("expected message type %s, received type %s", messages.String(messages.OPAQUE), messages.String(msg.Type))
 		}
 	} else {
 		msg.Payload = opaque.Opaque{
@@ -125,11 +125,11 @@ func (client *Client) opaqueRegister() error {
 	}
 	// Verify the payload type is correct
 	if msg.Type != messages.OPAQUE {
-		return fmt.Errorf("expected message type %s, recieved type %s", messages.String(messages.OPAQUE), messages.String(msg.Type))
+		return fmt.Errorf("expected message type %s, received type %s", messages.String(messages.OPAQUE), messages.String(msg.Type))
 	}
 	// Verify OPAQUE response is correct
 	if msg.Payload.(opaque.Opaque).Type != opaque.RegComplete {
-		return fmt.Errorf("expected OPAQUE message type %d, recieved type %d", opaque.RegComplete, msg.Payload.(opaque.Opaque).Type)
+		return fmt.Errorf("expected OPAQUE message type %d, received type %d", opaque.RegComplete, msg.Payload.(opaque.Opaque).Type)
 	}
 
 	cli.Message(cli.NOTE, "OPAQUE registration complete")
@@ -169,7 +169,7 @@ func (client *Client) opaqueAuthenticate() (messages.Base, error) {
 	}
 	// Verify the payload type is correct
 	if msg.Type != messages.OPAQUE {
-		return msg, fmt.Errorf("expected message type %s, recieved type %s", messages.String(messages.OPAQUE), messages.String(msg.Type))
+		return msg, fmt.Errorf("expected message type %s, received type %s", messages.String(messages.OPAQUE), messages.String(msg.Type))
 	}
 	// When the Merlin server has restarted but doesn't know the agent
 	if msg.Payload.(opaque.Opaque).Type == opaque.ReRegister {

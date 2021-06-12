@@ -40,7 +40,7 @@ import (
 // http://manpages.ubuntu.com/manpages/bionic/man2/memfd_create.2.html
 func Memfd(cmd jobs.Command) (result jobs.Results) {
 	if len(cmd.Args) < 0 {
-		result.Stderr = fmt.Sprintf("Expected 1 or more arguments for the Memfd command, recieved: %d", len(cmd.Args))
+		result.Stderr = fmt.Sprintf("Expected 1 or more arguments for the Memfd command, received: %d", len(cmd.Args))
 		return
 	}
 	// Base64 decode the executable
