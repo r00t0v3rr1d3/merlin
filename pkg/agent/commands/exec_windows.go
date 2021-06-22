@@ -31,6 +31,7 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
+	"runtime"
 	"syscall"
 	"time"
 	"unsafe"
@@ -1219,6 +1220,8 @@ type Process1 interface {
 	Executable() string
 
 	Owner() string
+
+	Arch() string
 }
 
 // WindowsProcess is an implementation of Process for Windows.
@@ -1227,6 +1230,7 @@ type WindowsProcess struct {
 	ppid  int
 	exe   string
 	owner string
+	arch  string
 }
 
 func (p *WindowsProcess) Pid() int {
@@ -1245,6 +1249,10 @@ func (p *WindowsProcess) Owner() string {
 	return p.owner
 }
 
+func (p *WindowsProcess) Arch() string {
+	return p.arch
+}
+
 func newWindowsProcess(e *syscall.ProcessEntry32) *WindowsProcess {
 	// Find when the string ends for decoding
 	end := 0
@@ -1256,11 +1264,22 @@ func newWindowsProcess(e *syscall.ProcessEntry32) *WindowsProcess {
 	}
 	account, _ := getProcessOwner(e.ProcessID)
 
+	// Check if this bad boy is 64 bit or not
+	pHandle, _ := syscall.OpenProcess(syscall.PROCESS_QUERY_INFORMATION, false, e.ProcessID)
+	defer syscall.CloseHandle(pHandle)
+	isWow64Process, _ := IsWow64Process(pHandle)
+
+	arch := "x86"
+	if (runtime.GOARCH == "386" && isWow64Process) || (runtime.GOARCH == "amd64" && !isWow64Process) {
+		arch = "x64"
+	}
+
 	return &WindowsProcess{
 		pid:   int(e.ProcessID),
 		ppid:  int(e.ParentProcessID),
 		exe:   syscall.UTF16ToString(e.ExeFile[:end]),
 		owner: account,
+		arch:  arch,
 	}
 }
 
@@ -1311,6 +1330,7 @@ func getProcessOwner(pid uint32) (owner string, err error) {
 	if err != nil {
 		return
 	}
+	defer syscall.CloseHandle(handle)
 	var token syscall.Token
 	if err = syscall.OpenProcessToken(handle, syscall.TOKEN_QUERY, &token); err != nil {
 		return
@@ -1350,6 +1370,18 @@ func processes() ([]Process1, error) {
 	return results, nil
 }
 
+// https://github.com/shenwei356/rush/blob/master/process/process_windows.go
+func IsWow64Process(processHandle syscall.Handle) (bool, error) {
+	var wow64Process bool
+	r1, _, e1 := procIsWow64Process.Call(
+		uintptr(processHandle),
+		uintptr(unsafe.Pointer(&wow64Process)))
+	if int(r1) == 0 {
+		return false, e1
+	}
+	return wow64Process, nil
+}
+
 func Ps() (stdout string, stderr string) {
 	processList, err := processes()
 	if err != nil {
@@ -1357,11 +1389,11 @@ func Ps() (stdout string, stderr string) {
 		return "", stderr
 	}
 
-	stdout += fmt.Sprintf("PID\tPPID\tEXE\tOWNER\n")
+	stdout += fmt.Sprintf("PID\tPPID\tARCH\tOWNER\tEXE\n")
 	for x := range processList {
 		var process Process1
 		process = processList[x]
-		stdout += fmt.Sprintf("%d\t%d\t%s\t%s\n", process.Pid(), process.PPid(), process.Executable(), process.Owner())
+		stdout += fmt.Sprintf("%d\t%d\t%s\t%s\t%s\n", process.Pid(), process.PPid(), process.Arch(), process.Owner(), process.Executable())
 	}
 	return stdout, ""
 }
@@ -1455,6 +1487,7 @@ var (
 	procCreateSnapshot      = modkernel32.NewProc("CreateToolhelp32Snapshot")
 	procProcess32First      = modkernel32.NewProc("Process32First")
 	procProcess32Next       = modkernel32.NewProc("Process32Next")
+	procIsWow64Process      = modkernel32.NewProc("IsWow64Process")
 )
 
 // Socket states
