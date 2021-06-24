@@ -1267,17 +1267,21 @@ func newWindowsProcess(e *syscall.ProcessEntry32) *WindowsProcess {
 	// Check if this bad boy is 64 bit or not
 	pHandle, _ := syscall.OpenProcess(syscall.PROCESS_QUERY_INFORMATION, false, e.ProcessID)
 	defer syscall.CloseHandle(pHandle)
-	isWow64Process, _ := IsWow64Process(pHandle)
+	isWow64Process, err := IsWow64Process(pHandle)
 
 	arch := "x86"
-	if (runtime.GOARCH == "386" && isWow64Process) || (runtime.GOARCH == "amd64" && !isWow64Process) {
+	if (!isWow64Process) {
 		arch = "x64"
+	}
+
+	if err != nil {
+		arch = "err"
 	}
 
 	return &WindowsProcess{
 		pid:   int(e.ProcessID),
 		ppid:  int(e.ParentProcessID),
-		exe:   syscall.UTF16ToString(e.ExeFile[:end]),
+		exe:   syscall.UTF16ToString(e.ExeFile[:end]) + runtime.GOARCH,
 		owner: account,
 		arch:  arch,
 	}
