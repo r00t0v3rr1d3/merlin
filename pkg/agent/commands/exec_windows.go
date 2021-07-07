@@ -1281,7 +1281,7 @@ func newWindowsProcess(e *syscall.ProcessEntry32) *WindowsProcess {
 	return &WindowsProcess{
 		pid:   int(e.ProcessID),
 		ppid:  int(e.ParentProcessID),
-		exe:   syscall.UTF16ToString(e.ExeFile[:end]) + runtime.GOARCH,
+		exe:   syscall.UTF16ToString(e.ExeFile[:end]),
 		owner: account,
 		arch:  arch,
 	}
