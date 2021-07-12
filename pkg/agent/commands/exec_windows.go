@@ -31,7 +31,6 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
-	"runtime"
 	"syscall"
 	"time"
 	"unsafe"
@@ -1270,7 +1269,7 @@ func newWindowsProcess(e *syscall.ProcessEntry32) *WindowsProcess {
 	isWow64Process, err := IsWow64Process(pHandle)
 
 	arch := "x86"
-	if (!isWow64Process) {
+	if !isWow64Process {
 		arch = "x64"
 	}
 
